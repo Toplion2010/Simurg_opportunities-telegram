@@ -1,0 +1,212 @@
+{
+  "finance_01.jpg": {
+    "brightness": 0.186,
+    "content_density": 0.0,
+    "contrast": 0.078,
+    "dominant_color": "#094733",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "textured"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "finance_02.jpg": {
+    "brightness": 0.634,
+    "content_density": 0.0,
+    "contrast": 0.05,
+    "dominant_color": "#41D69B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "mesh"
+    ],
+    "visual_complexity": 0.034,
+    "weight": 1
+  },
+  "finance_03.jpg": {
+    "brightness": 0.155,
+    "content_density": 0.0,
+    "contrast": 0.053,
+    "dominant_color": "#033F1A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "finance_04.jpg": {
+    "brightness": 0.212,
+    "content_density": 0.0,
+    "contrast": 0.074,
+    "dominant_color": "#0B4F37",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "finance_05.jpg": {
+    "brightness": 0.196,
+    "content_density": 0.0,
+    "contrast": 0.1,
+    "dominant_color": "#1A452E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "finance_06.jpg": {
+    "brightness": 0.575,
+    "content_density": 0.0,
+    "contrast": 0.131,
+    "dominant_color": "#48BF89",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "mesh"
+    ],
+    "visual_complexity": 0.031,
+    "weight": 1
+  },
+  "finance_07.jpg": {
+    "brightness": 0.586,
+    "content_density": 0.0,
+    "contrast": 0.057,
+    "dominant_color": "#1CD2AF",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "mesh"
+    ],
+    "visual_complexity": 0.031,
+    "weight": 1
+  },
+  "finance_08.jpg": {
+    "brightness": 0.207,
+    "content_density": 0.0,
+    "contrast": 0.078,
+    "dominant_color": "#1A472F",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "textured"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "finance_09.jpg": {
+    "brightness": 0.177,
+    "content_density": 0.0,
+    "contrast": 0.065,
+    "dominant_color": "#03491E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "finance_10.jpg": {
+    "brightness": 0.2,
+    "content_density": 0.0,
+    "contrast": 0.074,
+    "dominant_color": "#094B36",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "finance",
+      "green",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  }
+}

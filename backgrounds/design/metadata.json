@@ -1,0 +1,212 @@
+{
+  "design_01.jpg": {
+    "brightness": 0.368,
+    "content_density": 0.0,
+    "contrast": 0.064,
+    "dominant_color": "#9238B2",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "mesh"
+    ],
+    "visual_complexity": 0.021,
+    "weight": 1
+  },
+  "design_02.jpg": {
+    "brightness": 0.107,
+    "content_density": 0.0,
+    "contrast": 0.046,
+    "dominant_color": "#290F40",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "design_03.jpg": {
+    "brightness": 0.185,
+    "content_density": 0.0,
+    "contrast": 0.07,
+    "dominant_color": "#651637",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "geometric"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "design_04.jpg": {
+    "brightness": 0.155,
+    "content_density": 0.0,
+    "contrast": 0.061,
+    "dominant_color": "#4A114E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "textured"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "design_05.jpg": {
+    "brightness": 0.166,
+    "content_density": 0.0,
+    "contrast": 0.067,
+    "dominant_color": "#501254",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "design_06.jpg": {
+    "brightness": 0.13,
+    "content_density": 0.0,
+    "contrast": 0.054,
+    "dominant_color": "#30144E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "design_07.jpg": {
+    "brightness": 0.113,
+    "content_density": 0.0,
+    "contrast": 0.046,
+    "dominant_color": "#2B1043",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "design_08.jpg": {
+    "brightness": 0.146,
+    "content_density": 0.0,
+    "contrast": 0.069,
+    "dominant_color": "#48104B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "geometric"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "design_09.jpg": {
+    "brightness": 0.122,
+    "content_density": 0.0,
+    "contrast": 0.058,
+    "dominant_color": "#3D0D3F",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "design_10.jpg": {
+    "brightness": 0.194,
+    "content_density": 0.0,
+    "contrast": 0.078,
+    "dominant_color": "#6A1739",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "design",
+      "magenta",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "space_01.jpg": {
+    "brightness": 0.523,
+    "content_density": 0.0,
+    "contrast": 0.073,
+    "dominant_color": "#9573D6",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "mesh"
+    ],
+    "visual_complexity": 0.027,
+    "weight": 1
+  },
+  "space_02.jpg": {
+    "brightness": 0.154,
+    "content_density": 0.0,
+    "contrast": 0.063,
+    "dominant_color": "#1E245D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "space_03.jpg": {
+    "brightness": 0.157,
+    "content_density": 0.0,
+    "contrast": 0.063,
+    "dominant_color": "#2D1C62",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "space_04.jpg": {
+    "brightness": 0.414,
+    "content_density": 0.0,
+    "contrast": 0.047,
+    "dominant_color": "#6659D3",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "mesh"
+    ],
+    "visual_complexity": 0.024,
+    "weight": 1
+  },
+  "space_05.jpg": {
+    "brightness": 0.098,
+    "content_density": 0.0,
+    "contrast": 0.052,
+    "dominant_color": "#1C1241",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "gradient"
+    ],
+    "visual_complexity": 0.011,
+    "weight": 1
+  },
+  "space_06.jpg": {
+    "brightness": 0.107,
+    "content_density": 0.0,
+    "contrast": 0.051,
+    "dominant_color": "#161943",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "gradient"
+    ],
+    "visual_complexity": 0.011,
+    "weight": 1
+  },
+  "space_07.jpg": {
+    "brightness": 0.132,
+    "content_density": 0.0,
+    "contrast": 0.054,
+    "dominant_color": "#1A1F50",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "gradient"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "space_08.jpg": {
+    "brightness": 0.113,
+    "content_density": 0.0,
+    "contrast": 0.053,
+    "dominant_color": "#171B47",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "space_09.jpg": {
+    "brightness": 0.137,
+    "content_density": 0.0,
+    "contrast": 0.062,
+    "dominant_color": "#1B2155",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "geometric"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "space_10.jpg": {
+    "brightness": 0.186,
+    "content_density": 0.0,
+    "contrast": 0.082,
+    "dominant_color": "#362957",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "space",
+      "violet",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  }
+}

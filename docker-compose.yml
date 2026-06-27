@@ -1,0 +1,70 @@
+version: "3.11"
+
+services:
+  app:
+    build:
+      context: .
+      target: production
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./telethon_session:/app/telethon_session
+      - ./backgrounds:/app/backgrounds
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: simurg
+      POSTGRES_USER: simurg
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simurg"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    build:
+      context: .
+      target: production
+    command: alembic upgrade head
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  seed-channels:
+    build:
+      context: .
+      target: production
+    command: python -m scripts.seed_channels
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./telethon_session:/app/telethon_session
+    restart: "no"
+
+volumes:
+  pgdata:
+  redisdata:

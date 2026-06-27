@@ -1,0 +1,212 @@
+{
+  "exchange_01.jpg": {
+    "brightness": 0.598,
+    "content_density": 0.0,
+    "contrast": 0.061,
+    "dominant_color": "#3FC4B9",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.031,
+    "weight": 1
+  },
+  "exchange_02.jpg": {
+    "brightness": 0.482,
+    "content_density": 0.0,
+    "contrast": 0.092,
+    "dominant_color": "#31A299",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.025,
+    "weight": 1
+  },
+  "exchange_03.jpg": {
+    "brightness": 0.272,
+    "content_density": 0.0,
+    "contrast": 0.1,
+    "dominant_color": "#295753",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "exchange_04.jpg": {
+    "brightness": 0.181,
+    "content_density": 0.0,
+    "contrast": 0.075,
+    "dominant_color": "#0E403D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "exchange_05.jpg": {
+    "brightness": 0.166,
+    "content_density": 0.0,
+    "contrast": 0.065,
+    "dominant_color": "#0B3B38",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "exchange_06.jpg": {
+    "brightness": 0.207,
+    "content_density": 0.0,
+    "contrast": 0.082,
+    "dominant_color": "#184542",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "exchange_07.jpg": {
+    "brightness": 0.174,
+    "content_density": 0.0,
+    "contrast": 0.068,
+    "dominant_color": "#133A37",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "exchange_08.jpg": {
+    "brightness": 0.172,
+    "content_density": 0.0,
+    "contrast": 0.067,
+    "dominant_color": "#133937",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "exchange_09.jpg": {
+    "brightness": 0.514,
+    "content_density": 0.0,
+    "contrast": 0.169,
+    "dominant_color": "#4FA09A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.027,
+    "weight": 1
+  },
+  "exchange_10.jpg": {
+    "brightness": 0.146,
+    "content_density": 0.0,
+    "contrast": 0.055,
+    "dominant_color": "#093431",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "exchange",
+      "teal",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "medicine_01.jpg": {
+    "brightness": 0.281,
+    "content_density": 0.0,
+    "contrast": 0.106,
+    "dominant_color": "#2C5858",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.018,
+    "weight": 1
+  },
+  "medicine_02.jpg": {
+    "brightness": 0.259,
+    "content_density": 0.0,
+    "contrast": 0.109,
+    "dominant_color": "#205658",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "medicine_03.jpg": {
+    "brightness": 0.56,
+    "content_density": 0.0,
+    "contrast": 0.063,
+    "dominant_color": "#3EB3BB",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.03,
+    "weight": 1
+  },
+  "medicine_04.jpg": {
+    "brightness": 0.201,
+    "content_density": 0.0,
+    "contrast": 0.105,
+    "dominant_color": "#154546",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "textured"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "medicine_05.jpg": {
+    "brightness": 0.574,
+    "content_density": 0.0,
+    "contrast": 0.109,
+    "dominant_color": "#42B8BE",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.03,
+    "weight": 1
+  },
+  "medicine_06.jpg": {
+    "brightness": 0.165,
+    "content_density": 0.0,
+    "contrast": 0.066,
+    "dominant_color": "#0A3B3C",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "medicine_07.jpg": {
+    "brightness": 0.2,
+    "content_density": 0.0,
+    "contrast": 0.072,
+    "dominant_color": "#0C4648",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "textured"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "medicine_08.jpg": {
+    "brightness": 0.183,
+    "content_density": 0.0,
+    "contrast": 0.075,
+    "dominant_color": "#0B4143",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "medicine_09.jpg": {
+    "brightness": 0.215,
+    "content_density": 0.0,
+    "contrast": 0.092,
+    "dominant_color": "#17494A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "medicine_10.jpg": {
+    "brightness": 0.683,
+    "content_density": 0.0,
+    "contrast": 0.103,
+    "dominant_color": "#6CCECF",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "medicine",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.035,
+    "weight": 1
+  }
+}

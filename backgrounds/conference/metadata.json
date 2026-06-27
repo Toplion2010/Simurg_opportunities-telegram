@@ -1,0 +1,212 @@
+{
+  "conference_01.jpg": {
+    "brightness": 0.211,
+    "content_density": 0.062,
+    "contrast": 0.083,
+    "dominant_color": "#1A425A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "conference_02.jpg": {
+    "brightness": 0.153,
+    "content_density": 0.0,
+    "contrast": 0.065,
+    "dominant_color": "#0D3149",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "conference_03.jpg": {
+    "brightness": 0.147,
+    "content_density": 0.0,
+    "contrast": 0.07,
+    "dominant_color": "#0C3047",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "textured"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "conference_04.jpg": {
+    "brightness": 0.45,
+    "content_density": 0.0,
+    "contrast": 0.12,
+    "dominant_color": "#3A87BC",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "mesh"
+    ],
+    "visual_complexity": 0.024,
+    "weight": 1
+  },
+  "conference_05.jpg": {
+    "brightness": 0.175,
+    "content_density": 0.0,
+    "contrast": 0.066,
+    "dominant_color": "#232D53",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "conference_06.jpg": {
+    "brightness": 0.177,
+    "content_density": 0.0,
+    "contrast": 0.067,
+    "dominant_color": "#0E3953",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "conference_07.jpg": {
+    "brightness": 0.238,
+    "content_density": 0.0,
+    "contrast": 0.097,
+    "dominant_color": "#1C4B66",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "conference_08.jpg": {
+    "brightness": 0.233,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#1D4861",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "conference_09.jpg": {
+    "brightness": 0.507,
+    "content_density": 0.0,
+    "contrast": 0.091,
+    "dominant_color": "#4A95CC",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "mesh"
+    ],
+    "visual_complexity": 0.027,
+    "weight": 1
+  },
+  "conference_10.jpg": {
+    "brightness": 0.136,
+    "content_density": 0.0,
+    "contrast": 0.054,
+    "dominant_color": "#1A2442",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "conference",
+      "blue",
+      "textured"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  }
+}

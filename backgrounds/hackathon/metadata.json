@@ -1,0 +1,212 @@
+{
+  "hackathon_01.jpg": {
+    "brightness": 0.22,
+    "content_density": 0.0,
+    "contrast": 0.093,
+    "dominant_color": "#0A4F59",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "hackathon_02.jpg": {
+    "brightness": 0.555,
+    "content_density": 0.0,
+    "contrast": 0.061,
+    "dominant_color": "#05C9D7",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.029,
+    "weight": 1
+  },
+  "hackathon_03.jpg": {
+    "brightness": 0.487,
+    "content_density": 0.0,
+    "contrast": 0.128,
+    "dominant_color": "#08ADC7",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.027,
+    "weight": 1
+  },
+  "hackathon_04.jpg": {
+    "brightness": 0.214,
+    "content_density": 0.0,
+    "contrast": 0.08,
+    "dominant_color": "#064A67",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "hackathon_05.jpg": {
+    "brightness": 0.245,
+    "content_density": 0.0,
+    "contrast": 0.095,
+    "dominant_color": "#0B5760",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "hackathon_06.jpg": {
+    "brightness": 0.23,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#04526A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "hackathon_07.jpg": {
+    "brightness": 0.281,
+    "content_density": 0.0,
+    "contrast": 0.11,
+    "dominant_color": "#0C646C",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.018,
+    "weight": 1
+  },
+  "hackathon_08.jpg": {
+    "brightness": 0.332,
+    "content_density": 0.0,
+    "contrast": 0.149,
+    "dominant_color": "#097691",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.019,
+    "weight": 1
+  },
+  "hackathon_09.jpg": {
+    "brightness": 0.17,
+    "content_density": 0.0,
+    "contrast": 0.083,
+    "dominant_color": "#053B5B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "hackathon_10.jpg": {
+    "brightness": 0.226,
+    "content_density": 0.0,
+    "contrast": 0.108,
+    "dominant_color": "#0A525B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "hackathon",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  }
+}

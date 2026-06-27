@@ -1,0 +1,212 @@
+{
+  "academic_01.jpg": {
+    "brightness": 0.206,
+    "content_density": 0.0,
+    "contrast": 0.079,
+    "dominant_color": "#453A02",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "academic_02.jpg": {
+    "brightness": 0.217,
+    "content_density": 0.0,
+    "contrast": 0.089,
+    "dominant_color": "#503903",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "academic_03.jpg": {
+    "brightness": 0.249,
+    "content_density": 0.0,
+    "contrast": 0.097,
+    "dominant_color": "#5B4302",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "geometric"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "academic_04.jpg": {
+    "brightness": 0.165,
+    "content_density": 0.0,
+    "contrast": 0.071,
+    "dominant_color": "#3E2C03",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "academic_05.jpg": {
+    "brightness": 0.25,
+    "content_density": 0.0,
+    "contrast": 0.143,
+    "dominant_color": "#504625",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "academic_06.jpg": {
+    "brightness": 0.223,
+    "content_density": 0.0,
+    "contrast": 0.095,
+    "dominant_color": "#463C1F",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "academic_07.jpg": {
+    "brightness": 0.515,
+    "content_density": 0.0,
+    "contrast": 0.103,
+    "dominant_color": "#B78803",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "mesh"
+    ],
+    "visual_complexity": 0.026,
+    "weight": 1
+  },
+  "academic_08.jpg": {
+    "brightness": 0.659,
+    "content_density": 0.0,
+    "contrast": 0.053,
+    "dominant_color": "#D6B403",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "mesh"
+    ],
+    "visual_complexity": 0.034,
+    "weight": 1
+  },
+  "academic_09.jpg": {
+    "brightness": 0.252,
+    "content_density": 0.0,
+    "contrast": 0.104,
+    "dominant_color": "#5D4203",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "gradient"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "academic_10.jpg": {
+    "brightness": 0.172,
+    "content_density": 0.0,
+    "contrast": 0.078,
+    "dominant_color": "#3A3103",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "academic",
+      "gold",
+      "textured"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  }
+}

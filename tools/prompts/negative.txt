@@ -1,0 +1,10 @@
+text, words, letters, typography, logo, watermark, signature,
+people, faces, hands, body parts,
+low quality, blurry, noisy, grainy, pixelated,
+overexposed, underexposed, washed out,
+cluttered, busy, chaotic, distracting,
+bright neon colors, rainbow, garish,
+reflection, shadow, silhouette,
+frame, border, margin, white space,
+screenshot, UI, interface, button, icon,
+ugly, deformed, distorted, malformed

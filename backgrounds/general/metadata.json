@@ -1,0 +1,212 @@
+{
+  "general_01.jpg": {
+    "brightness": 0.144,
+    "content_density": 0.0,
+    "contrast": 0.054,
+    "dominant_color": "#241E57",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "general_02.jpg": {
+    "brightness": 0.235,
+    "content_density": 0.0,
+    "contrast": 0.091,
+    "dominant_color": "#1D4862",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "general_03.jpg": {
+    "brightness": 0.249,
+    "content_density": 0.0,
+    "contrast": 0.081,
+    "dominant_color": "#0A566E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "general_04.jpg": {
+    "brightness": 0.24,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#1A4B65",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "general_05.jpg": {
+    "brightness": 0.222,
+    "content_density": 0.0,
+    "contrast": 0.099,
+    "dominant_color": "#1C465F",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "general_06.jpg": {
+    "brightness": 0.617,
+    "content_density": 0.0,
+    "contrast": 0.096,
+    "dominant_color": "#73AFD8",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.031,
+    "weight": 1
+  },
+  "general_07.jpg": {
+    "brightness": 0.559,
+    "content_density": 0.0,
+    "contrast": 0.096,
+    "dominant_color": "#35B4CE",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.029,
+    "weight": 1
+  },
+  "general_08.jpg": {
+    "brightness": 0.18,
+    "content_density": 0.0,
+    "contrast": 0.084,
+    "dominant_color": "#054155",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "general_09.jpg": {
+    "brightness": 0.207,
+    "content_density": 0.0,
+    "contrast": 0.094,
+    "dominant_color": "#054A61",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "general_10.jpg": {
+    "brightness": 0.542,
+    "content_density": 0.0,
+    "contrast": 0.126,
+    "dominant_color": "#539FD3",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "general",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.028,
+    "weight": 1
+  }
+}

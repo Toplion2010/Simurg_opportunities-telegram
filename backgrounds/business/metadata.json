@@ -1,0 +1,212 @@
+{
+  "business_01.jpg": {
+    "brightness": 0.179,
+    "content_density": 0.0,
+    "contrast": 0.067,
+    "dominant_color": "#242E55",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "business_02.jpg": {
+    "brightness": 0.175,
+    "content_density": 0.0,
+    "contrast": 0.057,
+    "dominant_color": "#222D51",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "business_03.jpg": {
+    "brightness": 0.217,
+    "content_density": 0.0,
+    "contrast": 0.095,
+    "dominant_color": "#293F57",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "business_04.jpg": {
+    "brightness": 0.274,
+    "content_density": 0.0,
+    "contrast": 0.109,
+    "dominant_color": "#344E66",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "business_05.jpg": {
+    "brightness": 0.154,
+    "content_density": 0.0,
+    "contrast": 0.053,
+    "dominant_color": "#1B2948",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "business_06.jpg": {
+    "brightness": 0.235,
+    "content_density": 0.0,
+    "contrast": 0.095,
+    "dominant_color": "#1D4963",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "business_07.jpg": {
+    "brightness": 0.499,
+    "content_density": 0.0,
+    "contrast": 0.098,
+    "dominant_color": "#3E9BC3",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "mesh"
+    ],
+    "visual_complexity": 0.026,
+    "weight": 1
+  },
+  "business_08.jpg": {
+    "brightness": 0.164,
+    "content_density": 0.0,
+    "contrast": 0.065,
+    "dominant_color": "#143348",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "business_09.jpg": {
+    "brightness": 0.296,
+    "content_density": 0.0,
+    "contrast": 0.101,
+    "dominant_color": "#2A5976",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.018,
+    "weight": 1
+  },
+  "business_10.jpg": {
+    "brightness": 0.226,
+    "content_density": 0.0,
+    "contrast": 0.115,
+    "dominant_color": "#2C425A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "business",
+      "blue",
+      "geometric"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  }
+}

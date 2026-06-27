@@ -1,0 +1,212 @@
+{
+  "startup_01.jpg": {
+    "brightness": 0.209,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#562E1D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "textured"
+    ],
+    "visual_complexity": 0.018,
+    "weight": 1
+  },
+  "startup_02.jpg": {
+    "brightness": 0.414,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#AC5B21",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "mesh"
+    ],
+    "visual_complexity": 0.023,
+    "weight": 1
+  },
+  "startup_03.jpg": {
+    "brightness": 0.223,
+    "content_density": 0.0,
+    "contrast": 0.107,
+    "dominant_color": "#5E3705",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "geometric"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "startup_04.jpg": {
+    "brightness": 0.177,
+    "content_density": 0.0,
+    "contrast": 0.103,
+    "dominant_color": "#55260E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "geometric"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "startup_05.jpg": {
+    "brightness": 0.152,
+    "content_density": 0.0,
+    "contrast": 0.084,
+    "dominant_color": "#491F0D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "startup_06.jpg": {
+    "brightness": 0.201,
+    "content_density": 0.0,
+    "contrast": 0.078,
+    "dominant_color": "#5E2811",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "startup_07.jpg": {
+    "brightness": 0.163,
+    "content_density": 0.0,
+    "contrast": 0.067,
+    "dominant_color": "#4C210D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "startup_08.jpg": {
+    "brightness": 0.214,
+    "content_density": 0.0,
+    "contrast": 0.088,
+    "dominant_color": "#652B13",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "geometric"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "startup_09.jpg": {
+    "brightness": 0.62,
+    "content_density": 0.0,
+    "contrast": 0.077,
+    "dominant_color": "#D69846",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "mesh"
+    ],
+    "visual_complexity": 0.032,
+    "weight": 1
+  },
+  "startup_10.jpg": {
+    "brightness": 0.16,
+    "content_density": 0.0,
+    "contrast": 0.076,
+    "dominant_color": "#422803",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "startup",
+      "orange",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  }
+}

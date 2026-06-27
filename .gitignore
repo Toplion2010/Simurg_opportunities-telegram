@@ -1,0 +1,20 @@
+.env
+__pycache__/
+*.py[cod]
+*.session
+*.session-journal
+telethon_session/*.session
+telethon_session/*.session-journal
+.venv/
+dist/
+build/
+*.egg-info/
+
+# Generated test output (regression renders, gallery)
+output/
+
+# Background library: track structure + metadata, ignore image binaries
+backgrounds/**/*.png
+backgrounds/**/*.jpg
+backgrounds/**/*.jpeg
+backgrounds/**/*.webp

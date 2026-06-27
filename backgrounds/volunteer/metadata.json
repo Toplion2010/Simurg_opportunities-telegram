@@ -1,0 +1,212 @@
+{
+  "volunteer_01.jpg": {
+    "brightness": 0.25,
+    "content_density": 0.0,
+    "contrast": 0.11,
+    "dominant_color": "#5D3931",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "volunteer_02.jpg": {
+    "brightness": 0.598,
+    "content_density": 0.0,
+    "contrast": 0.106,
+    "dominant_color": "#CF887E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "mesh"
+    ],
+    "visual_complexity": 0.03,
+    "weight": 1
+  },
+  "volunteer_03.jpg": {
+    "brightness": 0.248,
+    "content_density": 0.0,
+    "contrast": 0.082,
+    "dominant_color": "#5B3736",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "geometric"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "volunteer_04.jpg": {
+    "brightness": 0.748,
+    "content_density": 0.0,
+    "contrast": 0.115,
+    "dominant_color": "#D5BBB2",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "mesh"
+    ],
+    "visual_complexity": 0.037,
+    "weight": 1
+  },
+  "volunteer_05.jpg": {
+    "brightness": 0.272,
+    "content_density": 0.0,
+    "contrast": 0.115,
+    "dominant_color": "#633F36",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "gradient"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "volunteer_06.jpg": {
+    "brightness": 0.273,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#6F3A36",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "volunteer_07.jpg": {
+    "brightness": 0.566,
+    "content_density": 0.0,
+    "contrast": 0.122,
+    "dominant_color": "#C28080",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "mesh"
+    ],
+    "visual_complexity": 0.029,
+    "weight": 1
+  },
+  "volunteer_08.jpg": {
+    "brightness": 0.782,
+    "content_density": 0.0,
+    "contrast": 0.085,
+    "dominant_color": "#D8C6B7",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "mesh"
+    ],
+    "visual_complexity": 0.04,
+    "weight": 1
+  },
+  "volunteer_09.jpg": {
+    "brightness": 0.201,
+    "content_density": 0.0,
+    "contrast": 0.118,
+    "dominant_color": "#4D3029",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "volunteer_10.jpg": {
+    "brightness": 0.578,
+    "content_density": 0.0,
+    "contrast": 0.121,
+    "dominant_color": "#C6847B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "volunteer",
+      "coral",
+      "mesh"
+    ],
+    "visual_complexity": 0.03,
+    "weight": 1
+  }
+}

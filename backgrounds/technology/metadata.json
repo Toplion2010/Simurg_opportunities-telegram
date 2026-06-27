@@ -1,0 +1,327 @@
+{
+  "technology_01.jpg": {
+    "brightness": 0.225,
+    "content_density": 0.0,
+    "contrast": 0.091,
+    "dominant_color": "#045168",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "technology_02.jpg": {
+    "brightness": 0.175,
+    "content_density": 0.0,
+    "contrast": 0.084,
+    "dominant_color": "#083F4A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "technology_03.jpg": {
+    "brightness": 0.564,
+    "content_density": 0.0,
+    "contrast": 0.087,
+    "dominant_color": "#1EC3D2",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.029,
+    "weight": 1
+  },
+  "technology_04.jpg": {
+    "brightness": 0.273,
+    "content_density": 0.0,
+    "contrast": 0.113,
+    "dominant_color": "#0C636C",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "technology_05.jpg": {
+    "brightness": 0.263,
+    "content_density": 0.0,
+    "contrast": 0.102,
+    "dominant_color": "#0B5D66",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "technology_06.jpg": {
+    "brightness": 0.167,
+    "content_density": 0.0,
+    "contrast": 0.089,
+    "dominant_color": "#093C47",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "technology_07.jpg": {
+    "brightness": 0.153,
+    "content_density": 0.0,
+    "contrast": 0.059,
+    "dominant_color": "#053548",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "gradient"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "technology_08.jpg": {
+    "brightness": 0.416,
+    "content_density": 0.0,
+    "contrast": 0.047,
+    "dominant_color": "#1A81D3",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "mesh"
+    ],
+    "visual_complexity": 0.024,
+    "weight": 1
+  },
+  "technology_09.jpg": {
+    "brightness": 0.124,
+    "content_density": 0.0,
+    "contrast": 0.058,
+    "dominant_color": "#0D244B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "textured"
+    ],
+    "visual_complexity": 0.012,
+    "weight": 1
+  },
+  "technology_10.jpg": {
+    "brightness": 0.175,
+    "content_density": 0.0,
+    "contrast": 0.064,
+    "dominant_color": "#103467",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "technology",
+      "cyan",
+      "geometric"
+    ],
+    "visual_complexity": 0.013,
+    "weight": 1
+  },
+  "technology_11.jpg": {
+    "brightness": 0.064,
+    "content_density": 0.0,
+    "contrast": 0.005,
+    "dominant_color": "#06112A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "procedural": true,
+    "quality": 3,
+    "style": "gradient",
+    "tags": [
+      "technology",
+      "gradient"
+    ],
+    "theme": "technology",
+    "visual_complexity": 0.003,
+    "weight": 1
+  },
+  "technology_12.jpg": {
+    "brightness": 0.162,
+    "content_density": 0.0,
+    "contrast": 0.003,
+    "dominant_color": "#15295D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "procedural": true,
+    "quality": 3,
+    "style": "gradient",
+    "tags": [
+      "technology",
+      "gradient"
+    ],
+    "theme": "technology",
+    "visual_complexity": 0.007,
+    "weight": 1
+  },
+  "technology_13.jpg": {
+    "brightness": 0.063,
+    "content_density": 0.0,
+    "contrast": 0.009,
+    "dominant_color": "#061128",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "procedural": true,
+    "quality": 3,
+    "style": "gradient",
+    "tags": [
+      "technology",
+      "gradient"
+    ],
+    "theme": "technology",
+    "visual_complexity": 0.004,
+    "weight": 1
+  },
+  "technology_14.jpg": {
+    "brightness": 0.16,
+    "content_density": 0.0,
+    "contrast": 0.007,
+    "dominant_color": "#16295C",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "procedural": true,
+    "quality": 3,
+    "style": "gradient",
+    "tags": [
+      "technology",
+      "gradient"
+    ],
+    "theme": "technology",
+    "visual_complexity": 0.008,
+    "weight": 1
+  },
+  "technology_15.jpg": {
+    "brightness": 0.094,
+    "content_density": 0.0,
+    "contrast": 0.006,
+    "dominant_color": "#0A193A",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "procedural": true,
+    "quality": 3,
+    "style": "gradient",
+    "tags": [
+      "technology",
+      "gradient"
+    ],
+    "theme": "technology",
+    "visual_complexity": 0.005,
+    "weight": 1
+  }
+}

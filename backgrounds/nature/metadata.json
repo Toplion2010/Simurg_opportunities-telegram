@@ -1,0 +1,212 @@
+{
+  "nature_01.jpg": {
+    "brightness": 0.26,
+    "content_density": 0.0,
+    "contrast": 0.109,
+    "dominant_color": "#36503B",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "gradient"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "nature_02.jpg": {
+    "brightness": 0.225,
+    "content_density": 0.0,
+    "contrast": 0.081,
+    "dominant_color": "#1D4D34",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "geometric"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "nature_03.jpg": {
+    "brightness": 0.192,
+    "content_density": 0.0,
+    "contrast": 0.083,
+    "dominant_color": "#034F27",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "nature_04.jpg": {
+    "brightness": 0.651,
+    "content_density": 0.0,
+    "contrast": 0.125,
+    "dominant_color": "#73CA9C",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "mesh"
+    ],
+    "visual_complexity": 0.032,
+    "weight": 1
+  },
+  "nature_05.jpg": {
+    "brightness": 0.234,
+    "content_density": 0.0,
+    "contrast": 0.068,
+    "dominant_color": "#0D5930",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "geometric"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "nature_06.jpg": {
+    "brightness": 0.212,
+    "content_density": 0.0,
+    "contrast": 0.085,
+    "dominant_color": "#1B4931",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "nature_07.jpg": {
+    "brightness": 0.651,
+    "content_density": 0.0,
+    "contrast": 0.07,
+    "dominant_color": "#59D1A2",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "mesh"
+    ],
+    "visual_complexity": 0.034,
+    "weight": 1
+  },
+  "nature_08.jpg": {
+    "brightness": 0.266,
+    "content_density": 0.0,
+    "contrast": 0.106,
+    "dominant_color": "#235B3E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "gradient"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "nature_09.jpg": {
+    "brightness": 0.426,
+    "content_density": 0.0,
+    "contrast": 0.068,
+    "dominant_color": "#3A8B5D",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "mesh"
+    ],
+    "visual_complexity": 0.025,
+    "weight": 1
+  },
+  "nature_10.jpg": {
+    "brightness": 0.178,
+    "content_density": 0.0,
+    "contrast": 0.068,
+    "dominant_color": "#163E29",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "nature",
+      "green",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  }
+}

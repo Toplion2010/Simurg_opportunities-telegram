@@ -1,0 +1,212 @@
+{
+  "research_01.jpg": {
+    "brightness": 0.215,
+    "content_density": 0.0,
+    "contrast": 0.085,
+    "dominant_color": "#23414E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "textured"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "research_02.jpg": {
+    "brightness": 0.188,
+    "content_density": 0.0,
+    "contrast": 0.079,
+    "dominant_color": "#1F3946",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "textured"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "research_03.jpg": {
+    "brightness": 0.239,
+    "content_density": 0.0,
+    "contrast": 0.101,
+    "dominant_color": "#1D4D5C",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "textured"
+    ],
+    "visual_complexity": 0.017,
+    "weight": 1
+  },
+  "research_04.jpg": {
+    "brightness": 0.202,
+    "content_density": 0.0,
+    "contrast": 0.09,
+    "dominant_color": "#213D4E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "research_05.jpg": {
+    "brightness": 0.216,
+    "content_density": 0.0,
+    "contrast": 0.1,
+    "dominant_color": "#22405E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.015,
+    "weight": 1
+  },
+  "research_06.jpg": {
+    "brightness": 0.185,
+    "content_density": 0.0,
+    "contrast": 0.061,
+    "dominant_color": "#1C364E",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "research_07.jpg": {
+    "brightness": 0.697,
+    "content_density": 0.0,
+    "contrast": 0.089,
+    "dominant_color": "#7DCBD6",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.38,
+      "x": 0.18,
+      "y": 0.1
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.035,
+    "weight": 1
+  },
+  "research_08.jpg": {
+    "brightness": 0.163,
+    "content_density": 0.0,
+    "contrast": 0.069,
+    "dominant_color": "#133442",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "gradient"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1
+  },
+  "research_09.jpg": {
+    "brightness": 0.234,
+    "content_density": 0.0,
+    "contrast": 0.08,
+    "dominant_color": "#1B4A58",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "geometric"
+    ],
+    "visual_complexity": 0.016,
+    "weight": 1
+  },
+  "research_10.jpg": {
+    "brightness": 0.665,
+    "content_density": 0.0,
+    "contrast": 0.124,
+    "dominant_color": "#70C5CE",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3,
+    "tags": [
+      "research",
+      "teal",
+      "mesh"
+    ],
+    "visual_complexity": 0.034,
+    "weight": 1
+  }
+}
