@@ -25,6 +25,7 @@ from src.db.models.source_channel import SourceChannel
 from src.db.repositories.source_channel import SourceChannelRepository
 
 SOURCE_CHANNELS = [
+    {"username": "logic_aktau_bil",        "name": "Logic Aktau BIL (test)"},
     {"username": "bilopportunities",       "name": "Bil Opportunities"},
     {"username": "uppertunity",            "name": "Uppertunity"},
     {"username": "astana_hub",             "name": "Astana Hub"},

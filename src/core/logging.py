@@ -1,7 +1,12 @@
 import logging
+import logging.handlers
 import sys
+from pathlib import Path
 
 import structlog
+
+_LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs"
+_LOG_FILE = _LOG_DIR / "simurg.log"
 
 
 def setup_logging(environment: str = "production") -> None:
@@ -37,12 +42,21 @@ def setup_logging(environment: str = "production") -> None:
         ],
     )
 
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
+    root_logger.addHandler(stream_handler)
     root_logger.setLevel(logging.INFO)
+
+    # Also log to a rotating file — required when launched via pythonw.exe (Task
+    # Scheduler), which has no console for stdout to go to.
+    _LOG_DIR.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.handlers.RotatingFileHandler(
+        _LOG_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
 
     # Silence noisy third-party loggers
     logging.getLogger("telethon").setLevel(logging.WARNING)

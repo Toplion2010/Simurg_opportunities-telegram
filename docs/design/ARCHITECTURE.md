@@ -1,6 +1,6 @@
 # Simurg Visual System — Architecture RFC
 
-**Version:** 1.0  **Status:** Frozen  **Last Updated:** 2026-06-27
+**Version:** 1.1  **Status:** Frozen, amended by ADR-006  **Last Updated:** 2026-07-21
 
 > **Frozen.** Real problems surface from publishing hundreds of real cards, not from more RFC
 > revisions. Build *order* lives in [ROADMAP.md](ROADMAP.md); this document describes **how the
@@ -13,8 +13,10 @@
 feature needs multiple special cases, reconsider the architecture.
 
 ## Why this architecture exists
-- **Deterministic rendering** — same input → same card.
-- **Offline-first** — no runtime network, no API dependency.
+- **Deterministic factual text** — title, dates, prize, CTA render identically from the database
+  every time, regardless of what the background image looks like.
+- **Live per-post backgrounds** (ADR-006) — each card's illustration is generated fresh, tied to
+  that specific opportunity, rather than picked from a finite offline library.
 - **Maintainability** — appearance and behavior are separable.
 - **Extensibility** — new layouts/backgrounds are data, not code branches.
 - **Recognizable branding** — one visual language across every card.
@@ -43,13 +45,13 @@ Telegram
 
 ## Runtime data flow
 
+**As of ADR-006 (2026-07-21), background generation is live and per-post,** superseding
+ADR-001. Each approved opportunity gets a fresh, opportunity-specific illustration:
+
 ```
-tools/  (offline: prompt composer, image-generator backend, QC)
-   ↓        produces images + metadata.json
-backgrounds/   (immutable library, API-free)
-   ↓
-BackgroundManager   (folder-first → tag-rank selection)
-   ↓
+src/publisher/live_background.py   (Gemini "Nano Banana", live, per opportunity)
+   ↓        prompt built from title/category/organizer/location/raw_message.text
+   ↓        image required to contain ZERO text — no dates, numbers, names, URLs
 Grammar Engine      (Layout · Priority · Responsive · Visibility)
    ↓
 Design System       (tokens · typography · color · icons · spacing · animation)
@@ -59,17 +61,27 @@ Rendering Pipeline  (HTML/CSS → Chromium → JPEG)
 Telegram
 ```
 
-Generation is **offline only**; the runtime path touches **no network and no image analysis**.
+There is **no fallback**: if generation fails (rate limit, safety block, network error), the
+publish attempt fails outright (`PublishError`) rather than silently substituting a generic
+image — the admin just re-approves to retry. All factual text (title, dates, prize, CTA) is
+rendered by the deterministic HTML/CSS Rendering Pipeline from the database, never by the
+image model — image models are unreliable at rendering exact text, so none is ever asked of
+them.
+
+The offline pipeline (`tools/generate_ai_backgrounds.py`, `tools/prompt_composer.py`,
+`tools/qc.py`, `backgrounds/`, `BackgroundManager`) still exists and still works, but the
+runtime path described above no longer calls it. It's kept for manual/offline use (e.g.
+curating a library for some future fallback mode) but isn't currently wired into publishing.
 
 ## Core Invariants
 - The **Title is never removed**.
-- **Runtime never calls image generation.**
 - The **Rendering Pipeline never modifies metadata.**
 - **Design never decides content; Grammar never decides colors.**
 - **Design tokens are immutable during rendering.**
-- **Backgrounds are immutable during rendering**; **no runtime component writes to `backgrounds/`.**
-- **Every card is renderable offline.**
-- **`BackgroundManager` is the single source of truth for image selection.**
+- **Every card's factual text (title, dates, prize, CTA, category) is rendered by HTML/CSS
+  from the database — never by the image model** (ADR-006).
+- **A failed live generation fails the publish attempt; it never silently substitutes a
+  different image** (ADR-006 — deliberately no fallback).
 
 ## Design Constraints (every card must satisfy)
 - Readable on mobile and in **Telegram dark mode**.
@@ -150,41 +162,60 @@ Cheap → expensive, **Vision last/optional**: `Resolution → Brightness → En
   near-duplicate / low-variance clustering.
 
 ### 9. Target performance
-- Rendering fast enough for **real-time publishing**.
-- **No runtime network requests.**
-- **Metadata lookups O(1)** (precomputed; no per-render image analysis).
-- **Image processing happens only offline.**
+- Rendering fast enough for **real-time publishing**, including one live image-generation
+  round-trip per post (ADR-006).
+- **Metadata lookups O(1)** (precomputed; no per-render image analysis on the HTML/CSS side).
+- **Factual text is always deterministic** — never subject to model variance.
 
 ---
 
 ## Non-goals
-Generate images at runtime · guarantee every card is unique · replace manual art direction · optimize
-for every social platform · support arbitrary layouts.
+Guarantee every card is unique beyond what live generation naturally produces · replace manual
+art direction · optimize for every social platform · support arbitrary layouts · ask the image
+model to render any factual text.
 
 ## Future ideas intentionally excluded (do not reopen the RFC)
-Video cards · animated cards · AI layout generation · per-card AI backgrounds · dynamic typography
-generation · runtime AI Vision · ratings / preference engines · ML / self-learning · analytics.
+Video cards · animated cards · AI layout generation · dynamic typography generation · runtime AI
+Vision (image *analysis*, as opposed to generation) · ratings / preference engines · ML /
+self-learning · analytics.
+
+*(Per-card AI backgrounds moved from "excluded" to "adopted" — see ADR-006.)*
 
 ## Acceptance Criteria (checkable)
-- Rendering Pipeline performs **no image analysis** and makes **no runtime API calls**.
-- **No runtime component writes to `backgrounds/`.**
+- **Live-generated images never contain model-rendered text** — verify the negative prompt in
+  `live_background.py` still excludes text/words/letters/numbers/logos.
+- **A failed live generation raises**, it never falls back to a different/generic image.
 - **Title always visible.**
 - **Grammar and Design remain isolated** (no layout code in `design/`; no color decisions in
   `grammar/`).
 - **Adding a new layout requires no Rendering Pipeline changes.**
-- **Visual regression passes.**
+- **Visual regression passes** for the HTML/CSS layer given a fixed background.
 
 ## Architecture Decisions (ADR)
-- **ADR-001 — Runtime never generates images.** *Reason:* deterministic rendering, zero API
-  dependency.
+- **ADR-001 — ~~Runtime never generates images.~~ Superseded by ADR-006 (2026-07-21).**
+  *Original reason:* deterministic rendering, zero API dependency.
 - **ADR-002 — Folder-first selection, not global tag search.** *Reason:* keeps the mental model
-  simple; avoids search-engine complexity.
+  simple; avoids search-engine complexity. *(Still applies to the now-unused offline library, if
+  it's ever reactivated as a fallback.)*
 - **ADR-003 — Appearance and behavior are separated (`design/` vs `grammar/`).** *Reason:* lets
   visuals and layout logic evolve independently.
 - **ADR-004 — Image metrics precomputed into metadata.** *Reason:* keeps the render path O(1) and
-  network-free.
+  network-free. *(Applies to the offline library; live-generated images compute brightness/
+  contrast inline instead, since there's no persistent metadata file to precompute into.)*
 - **ADR-005 — Image Generator Backend is an interface, not a vendor.** *Reason:* models change
-  yearly; the architecture shouldn't.
+  yearly; the architecture shouldn't. *(The interface pattern lives on in `tools/`; the live
+  runtime path currently talks to Gemini directly rather than through that interface, since it
+  has different constraints — no disk cache, no QC pass, bounded retries instead of resumable
+  batch jobs.)*
+- **ADR-006 — Live, per-post background generation, no fallback.** *Reason:* the product owner
+  wants each post's background to be a fresh illustration tied to that specific opportunity
+  (title/category/organizer/location/original announcement text), not picked from a finite
+  pre-built library — richer and more varied, at the cost of a live API call per publish.
+  *Guardrails carried over from ADR-001's original concerns:* the image model is never asked to
+  render factual text (dates, prize amounts, URLs are exactly the kind of thing image models
+  render unreliably), so all of that stays in the deterministic HTML/CSS layer; and there is no
+  silent fallback — a failed generation fails the publish attempt loudly (`PublishError`) so a
+  bad or missing image is never posted, rather than being masked by a generic substitute.
 
 ---
 

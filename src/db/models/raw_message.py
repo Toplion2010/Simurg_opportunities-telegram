@@ -22,6 +22,6 @@ class RawMessage(Base):
     source_channel: Mapped["SourceChannel | None"] = relationship(  # noqa: F821
         back_populates="raw_messages"
     )
-    opportunity: Mapped["Opportunity | None"] = relationship(  # noqa: F821
+    opportunities: Mapped[list["Opportunity"]] = relationship(  # noqa: F821
         back_populates="raw_message"
     )

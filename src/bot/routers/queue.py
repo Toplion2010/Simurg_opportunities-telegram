@@ -128,7 +128,7 @@ async def approve_opportunity(
     settings: Settings,
 ) -> None:
     repo = OpportunityRepository(session)
-    opp = await repo.get(callback_data.opp_id)
+    opp = await repo.get_with_raw_message(callback_data.opp_id)
     if not opp:
         await call.answer("Not found.", show_alert=True)
         return

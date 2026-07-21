@@ -1,4 +1,6 @@
 .env
+tools/.gen_token
+tools/rejected/
 __pycache__/
 *.py[cod]
 *.session
@@ -9,6 +11,11 @@ telethon_session/*.session-journal
 dist/
 build/
 *.egg-info/
+*.db
+
+# Runtime logs (rotating file handler in src/core/logging.py)
+logs/*.log*
+!logs/.gitkeep
 
 # Generated test output (regression renders, gallery)
 output/

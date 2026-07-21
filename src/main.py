@@ -16,7 +16,7 @@ from src.publisher.scheduler import publish_scheduled
 logger = get_logger(__name__)
 
 
-async def main() -> None:
+async def run_async() -> None:
     settings = Settings()
     setup_logging(settings.ENVIRONMENT)
 
@@ -51,36 +51,60 @@ async def main() -> None:
     scheduler.start()
     logger.info("scheduler_started")
 
-    coroutines = [
-        dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types()),
-    ]
-
-    # Telethon userbot — optional, skipped if session file not yet created
-    userbot = None
-    try:
-        from src.collector.userbot import start_userbot
-        userbot = await start_userbot(settings, redis, session_factory)
-        coroutines.append(userbot.run_until_disconnected())
-        logger.info("userbot_started")
-    except Exception as e:
-        logger.warning(
-            "userbot_skipped",
-            reason=str(e),
-            hint="Run auth_telethon.py to authorize Telethon session",
-        )
+    # Telethon userbot — optional, skipped if session file not yet created. Run as
+    # its own task, independent of dp.start_polling() below, so a dead/revoked user
+    # session never takes down the admin bot or scheduled publishing with it — only
+    # new-message collection pauses until someone re-authenticates.
+    userbot_task: asyncio.Task | None = None
+    if settings.TELETHON_API_ID:
+        try:
+            from src.collector.userbot import start_userbot
+            userbot = await start_userbot(settings, redis, session_factory)
+            userbot_task = asyncio.create_task(userbot.run_until_disconnected())
+            userbot_task.add_done_callback(_log_userbot_exit)
+            logger.info("userbot_started")
+        except Exception as e:
+            logger.warning(
+                "userbot_skipped",
+                reason=str(e),
+                hint="Run auth_telethon.py to authorize Telethon session",
+            )
+    else:
+        logger.info("userbot_disabled", hint="Set TELETHON_API_ID to enable message collection")
 
     logger.info("all_services_started")
     try:
-        await asyncio.gather(*coroutines)
+        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     except Exception:
         logger.exception("fatal_error")
         raise
     finally:
+        if userbot_task is not None:
+            userbot_task.remove_done_callback(_log_userbot_exit)
+            userbot_task.cancel()
         scheduler.shutdown(wait=False)
         await bot.session.close()
         await engine.dispose()
         logger.info("shutdown_complete")
 
 
+def _log_userbot_exit(task: asyncio.Task) -> None:
+    if task.cancelled():
+        return
+    error = task.exception()
+    if error is not None:
+        logger.error(
+            "telethon_session_invalid",
+            error=str(error),
+            hint="Run `python auth_telethon.py` to re-authenticate the Telethon session",
+        )
+    else:
+        logger.warning("userbot_disconnected", hint="run_until_disconnected() returned unexpectedly")
+
+
+def main() -> None:
+    asyncio.run(run_async())
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

@@ -1,4 +1,83 @@
 {
+  "business_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.143,
+    "content_density": 0.25,
+    "contrast": 0.156,
+    "dominant_color": "midnight blue and silver",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "business",
+      "internship",
+      "innovation"
+    ],
+    "visual_complexity": 0.046,
+    "weight": 1.0
+  },
+  "business_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.316,
+    "dominant_color": "midnight blue and silver",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "business",
+      "internship",
+      "discovery"
+    ],
+    "weight": 1.0
+  },
+  "business_003.jpg": {
+    "ai_generated": true,
+    "brightness": 0.173,
+    "content_density": 0.281,
+    "contrast": 0.157,
+    "dominant_color": "midnight blue and silver",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "business",
+      "job",
+      "prestige"
+    ],
+    "visual_complexity": 0.032,
+    "weight": 1.0
+  },
+  "business_004.jpg": {
+    "ai_generated": true,
+    "brightness": 0.197,
+    "content_density": 0.219,
+    "contrast": 0.135,
+    "dominant_color": "charcoal and gold",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "business",
+      "job",
+      "achievement"
+    ],
+    "visual_complexity": 0.039,
+    "weight": 1.0
+  },
   "business_01.jpg": {
     "brightness": 0.179,
     "content_density": 0.0,

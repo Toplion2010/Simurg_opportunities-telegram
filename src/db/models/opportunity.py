@@ -1,6 +1,8 @@
+import json
 from datetime import datetime
 
-from sqlalchemy import ARRAY, ForeignKey, Index, String, Text
+from sqlalchemy import ForeignKey, Index, String, Text, TypeDecorator
+from sqlalchemy.dialects.postgresql import ARRAY as PgArray
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -11,6 +13,28 @@ from src.db.base import Base
 # Reference existing DB enums without auto-creating them
 _category_type = PgEnum(Category, name="category", create_type=False)
 _status_type = PgEnum(OpportunityStatus, name="opportunitystatus", create_type=False)
+
+
+class StringList(TypeDecorator):
+    """list[str] stored as a native ARRAY on Postgres, JSON text elsewhere (e.g. SQLite)."""
+
+    impl = Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(PgArray(String))
+        return dialect.type_descriptor(Text())
+
+    def process_bind_param(self, value, dialect):
+        if dialect.name == "postgresql":
+            return value
+        return json.dumps(value or [])
+
+    def process_result_value(self, value, dialect):
+        if dialect.name == "postgresql":
+            return value
+        return json.loads(value) if value else []
 
 
 class Opportunity(Base):
@@ -40,6 +64,21 @@ class Opportunity(Base):
     description: Mapped[str | None] = mapped_column(Text)
     rewritten_text: Mapped[str | None] = mapped_column(Text)
 
+    # Short, AI-written text purpose-built for the card image (see ADR-006 follow-up:
+    # avoids blindly slicing long field values, which left "…" on the rendered card).
+    card_summary: Mapped[str | None] = mapped_column(Text)
+    card_eligibility: Mapped[str | None] = mapped_column(Text)
+    card_rewards: Mapped[str | None] = mapped_column(Text)
+    # Facts that don't fit a dedicated column (acceptance rate, contact email, etc.)
+    # and links beyond apply_link — both exist so splitting a bundled message into
+    # multiple opportunities never silently drops information.
+    extra_notes: Mapped[str | None] = mapped_column(Text)
+    additional_links: Mapped[list[str]] = mapped_column(StringList(), default=list, nullable=False)
+    # Verbatim excerpt of just this opportunity from the raw message, used as
+    # live_background.py's image-prompt context instead of the whole (possibly
+    # multi-opportunity) raw text.
+    source_excerpt: Mapped[str | None] = mapped_column(Text)
+
     # Meta
     media_path: Mapped[str | None] = mapped_column(Text)
     similarity_hash: Mapped[str | None] = mapped_column(String(64))
@@ -48,12 +87,12 @@ class Opportunity(Base):
         default=OpportunityStatus.pending,
         nullable=False,
     )
-    hooks: Mapped[list[str]] = mapped_column(ARRAY(String), default=list, nullable=False)
+    hooks: Mapped[list[str]] = mapped_column(StringList(), default=list, nullable=False)
     scheduled_at: Mapped[datetime | None]
     published_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    raw_message: Mapped["RawMessage | None"] = relationship(back_populates="opportunity")
+    raw_message: Mapped["RawMessage | None"] = relationship(back_populates="opportunities")
     tags: Mapped[list["Tag"]] = relationship(  # noqa: F821
         secondary="opportunity_tags", back_populates="opportunities"
     )

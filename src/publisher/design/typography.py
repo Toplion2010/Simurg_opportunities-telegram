@@ -54,6 +54,11 @@ class TypeScale:
     hook_weight: int = 700
     hook_letter_spacing: str = "0.5px"
 
+    # Summary (optional description line, between the title divider and meta rows)
+    summary_size: int = 22
+    summary_weight: int = 500
+    summary_line_height: float = 1.4
+
     # Meta rows
     meta_label_size: int = 18
     meta_label_weight: int = 700
@@ -84,6 +89,7 @@ class CompactTypeScale(TypeScale):
 
     title_size: int = 38
     badge_size: int = 11
+    summary_size: int = 19
     meta_label_size: int = 16
     meta_value_size: int = 17
     meta_row_size: int = 18

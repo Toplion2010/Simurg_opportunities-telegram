@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_EMBED_MODEL: str = "text-embedding-3-small"
 
+    # Gemini — live per-post card background generation (image_gen.py)
+    GEMINI_API_KEY: str = ""
+    GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+
     # Database
     DATABASE_URL: str
     DATABASE_POOL_SIZE: int = 10

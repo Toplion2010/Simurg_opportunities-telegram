@@ -1,4 +1,39 @@
 {
+  "exchange_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.277,
+    "content_density": 0.219,
+    "contrast": 0.241,
+    "dominant_color": "deep navy and cyan",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "exchange",
+      "exchange",
+      "discovery"
+    ],
+    "visual_complexity": 0.033,
+    "weight": 1.0
+  },
+  "exchange_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.162,
+    "dominant_color": "charcoal and gold",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "exchange",
+      "exchange",
+      "innovation"
+    ],
+    "weight": 1.0
+  },
   "exchange_01.jpg": {
     "brightness": 0.598,
     "content_density": 0.0,

@@ -18,18 +18,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("""
-        CREATE TYPE category AS ENUM (
-            'Internship','Scholarship','Fellowship','Research','Competition',
-            'Olympiad','Hackathon','Startup','Accelerator','Incubator',
-            'Grant','Conference','SummerProgram','Exchange','Volunteer','Job'
-        )
-    """)
-    op.execute("""
-        CREATE TYPE opportunitystatus AS ENUM (
-            'pending','approved','rejected','published'
-        )
-    """)
+    # Only create ENUMs for PostgreSQL
+    if op.get_bind().dialect.name == 'postgresql':
+        op.execute("""
+            CREATE TYPE category AS ENUM (
+                'Internship','Scholarship','Fellowship','Research','Competition',
+                'Olympiad','Hackathon','Startup','Accelerator','Incubator',
+                'Grant','Conference','SummerProgram','Exchange','Volunteer','Job'
+            )
+        """)
+        op.execute("""
+            CREATE TYPE opportunitystatus AS ENUM (
+                'pending','approved','rejected','published'
+            )
+        """)
 
     op.create_table(
         "source_channels",
@@ -55,7 +57,7 @@ def upgrade() -> None:
         sa.Column(
             "received_at",
             sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.Column("processed", sa.Boolean, nullable=False, server_default="false"),
     )
@@ -70,7 +72,7 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.Column("title", sa.String(500)),
-        sa.Column("category", postgresql.ENUM(name="category", create_type=False), nullable=True),
+        sa.Column("category", sa.String(100) if op.get_bind().dialect.name == 'sqlite' else postgresql.ENUM(name="category", create_type=False), nullable=True),
         sa.Column("deadline", sa.String(200)),
         sa.Column("eligibility", sa.Text),
         sa.Column("location", sa.String(300)),
@@ -81,25 +83,26 @@ def upgrade() -> None:
         sa.Column("apply_link", sa.Text),
         sa.Column("description", sa.Text),
         sa.Column("rewritten_text", sa.Text),
+        sa.Column("media_path", sa.Text),
         sa.Column("similarity_hash", sa.String(64)),
         sa.Column(
             "status",
-            postgresql.ENUM(name="opportunitystatus", create_type=False),
+            sa.String(50) if op.get_bind().dialect.name == 'sqlite' else postgresql.ENUM(name="opportunitystatus", create_type=False),
             nullable=False,
             server_default="pending",
         ),
         sa.Column(
             "hooks",
-            postgresql.ARRAY(sa.String),
+            sa.Text if op.get_bind().dialect.name == 'sqlite' else postgresql.ARRAY(sa.String),
             nullable=False,
-            server_default="{}",
+            server_default="",
         ),
         sa.Column("scheduled_at", sa.TIMESTAMP(timezone=True)),
         sa.Column("published_at", sa.TIMESTAMP(timezone=True)),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
         ),
     )
 
@@ -139,5 +142,8 @@ def downgrade() -> None:
     op.drop_table("opportunities")
     op.drop_table("raw_messages")
     op.drop_table("source_channels")
-    op.execute("DROP TYPE IF EXISTS opportunitystatus")
-    op.execute("DROP TYPE IF EXISTS category")
+    
+    # Only drop types for PostgreSQL
+    if op.get_bind().dialect.name == 'postgresql':
+        op.execute("DROP TYPE IF EXISTS opportunitystatus")
+        op.execute("DROP TYPE IF EXISTS category")

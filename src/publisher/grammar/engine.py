@@ -14,7 +14,13 @@ from typing import TYPE_CHECKING
 
 from src.publisher.grammar.layout import Layout, select_layout
 from src.publisher.grammar.priority import resolve_priority
-from src.publisher.grammar.responsive import ResponsiveConfig, compute_responsive, truncate
+from src.publisher.grammar.responsive import (
+    META_SUMMARY_MAX,
+    META_VALUE_MAX,
+    ResponsiveConfig,
+    compute_responsive,
+    truncate,
+)
 from src.publisher.grammar.visibility import (
     VisibilityResult,
     compute_visibility,
@@ -24,6 +30,7 @@ from src.publisher.grammar.visibility import (
 if TYPE_CHECKING:
     from src.db.models.opportunity import Opportunity
     from src.publisher.background_manager import ImageEntry
+    from src.publisher.live_background import LiveBackground
 
 
 @dataclass(frozen=True)
@@ -59,6 +66,8 @@ class CardGrammar:
         category: Category name for badge.
         hook_display: Hook badge display value, if any.
         has_hook: Whether a hook badge should be shown.
+        summary: Short truncated description line, if the opportunity has one.
+            Rendered between the title divider and the meta rows.
     """
 
     layout: Layout
@@ -69,6 +78,7 @@ class CardGrammar:
     category: str
     hook_display: str | None = None
     has_hook: bool = False
+    summary: str | None = None
 
 
 # Human-readable labels for meta fields.
@@ -94,7 +104,7 @@ _FIELD_ICONS: dict[str, str] = {
 }
 
 
-def resolve(opp: "Opportunity", bg_entry: "ImageEntry | None" = None) -> CardGrammar:
+def resolve(opp: "Opportunity", bg_entry: "ImageEntry | LiveBackground | None" = None) -> CardGrammar:
     """Resolve the complete grammar for one card.
 
     This is the single entry point for the Rendering Pipeline.
@@ -118,7 +128,7 @@ def resolve(opp: "Opportunity", bg_entry: "ImageEntry | None" = None) -> CardGra
     priority = resolve_priority(category)
 
     # --- Gather raw values ---
-    prize = opp.rewards or opp.cost
+    prize = opp.card_rewards or opp.rewards or opp.cost
     available = get_available_fields(
         deadline=opp.deadline,
         location=opp.location,
@@ -168,7 +178,7 @@ def resolve(opp: "Opportunity", bg_entry: "ImageEntry | None" = None) -> CardGra
         elif field_name == "duration":
             raw = opp.duration
         elif field_name == "eligibility":
-            raw = opp.eligibility
+            raw = opp.card_eligibility or opp.eligibility
         elif field_name == "apply_link":
             raw = opp.apply_link
         else:
@@ -177,7 +187,7 @@ def resolve(opp: "Opportunity", bg_entry: "ImageEntry | None" = None) -> CardGra
         if raw is None:
             continue
 
-        max_chars = truncation.get(field_name, 55)
+        max_chars = truncation.get(field_name, META_VALUE_MAX)
         value = truncate(raw, max_chars)
 
         meta_fields.append(MetaField(name=field_name, label=label, value=value, icon=icon))
@@ -192,6 +202,10 @@ def resolve(opp: "Opportunity", bg_entry: "ImageEntry | None" = None) -> CardGra
     # --- Title (always present — Core Invariant) ---
     title_escaped = _html.escape(title_text)
 
+    # --- Summary (fills the space between the divider and the meta rows) ---
+    summary_source = opp.card_summary or opp.description
+    summary = truncate(summary_source, META_SUMMARY_MAX) if summary_source else None
+
     return CardGrammar(
         layout=layout,
         responsive=responsive,
@@ -201,4 +215,5 @@ def resolve(opp: "Opportunity", bg_entry: "ImageEntry | None" = None) -> CardGra
         category=category or "",
         hook_display=hook_display_value,
         has_hook=hook_display_value is not None,
+        summary=summary,
     )

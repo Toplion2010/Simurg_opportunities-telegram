@@ -1,4 +1,48 @@
 {
+  "research_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.086,
+    "content_density": 0.219,
+    "contrast": 0.106,
+    "dominant_color": "deep purple and violet",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "research",
+      "research",
+      "innovation"
+    ],
+    "visual_complexity": 0.028,
+    "weight": 1.0
+  },
+  "research_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.04,
+    "content_density": 0.156,
+    "contrast": 0.076,
+    "dominant_color": "forest green and emerald",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "research",
+      "research",
+      "prestige"
+    ],
+    "visual_complexity": 0.014,
+    "weight": 1.0
+  },
   "research_01.jpg": {
     "brightness": 0.215,
     "content_density": 0.0,

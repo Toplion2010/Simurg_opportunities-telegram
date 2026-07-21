@@ -1,4 +1,39 @@
 {
+  "volunteer_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.268,
+    "content_density": 0.406,
+    "contrast": 0.152,
+    "dominant_color": "charcoal and gold",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "volunteer",
+      "volunteer",
+      "achievement"
+    ],
+    "visual_complexity": 0.063,
+    "weight": 1.0
+  },
+  "volunteer_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.462,
+    "dominant_color": "charcoal and gold",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "volunteer",
+      "volunteer",
+      "discovery"
+    ],
+    "weight": 1.0
+  },
   "volunteer_01.jpg": {
     "brightness": 0.25,
     "content_density": 0.0,

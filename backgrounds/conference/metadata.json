@@ -1,4 +1,39 @@
 {
+  "conference_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.286,
+    "content_density": 0.312,
+    "contrast": 0.196,
+    "dominant_color": "burgundy and warm cream",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "conference",
+      "conference",
+      "innovation"
+    ],
+    "visual_complexity": 0.049,
+    "weight": 1.0
+  },
+  "conference_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.141,
+    "dominant_color": "deep navy and cyan",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "conference",
+      "conference",
+      "innovation"
+    ],
+    "weight": 1.0
+  },
   "conference_01.jpg": {
     "brightness": 0.211,
     "content_density": 0.062,

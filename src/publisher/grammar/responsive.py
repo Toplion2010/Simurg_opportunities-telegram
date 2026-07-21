@@ -15,8 +15,13 @@ TITLE_NORMAL_MAX = 70
 TITLE_LONG_MAX = 120
 
 # Truncation limits for meta values.
-META_VALUE_MAX = 55
-META_ORGANIZER_MAX = 40
+META_VALUE_MAX = 90
+META_ORGANIZER_MAX = 60
+META_ELIGIBILITY_MAX = 100
+
+# Truncation limit for the optional description "summary" line (fills the
+# space between the title divider and the meta rows).
+META_SUMMARY_MAX = 140
 
 # Density thresholds (number of non-empty meta fields).
 DENSITY_COMPACT_AT = 5
@@ -79,7 +84,7 @@ def compute_responsive(
         "prize": META_VALUE_MAX,
         "organizer": META_ORGANIZER_MAX,
         "deadline": META_VALUE_MAX,
-        "eligibility": 60,
+        "eligibility": META_ELIGIBILITY_MAX,
     }
 
     return ResponsiveConfig(

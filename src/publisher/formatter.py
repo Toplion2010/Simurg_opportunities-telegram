@@ -59,24 +59,10 @@ def format_opportunity(opp: Opportunity) -> str:
     parts.append(_bold(f"✨ {title}"))
     parts.append("")
 
-    # Key facts block
-    facts: list[str] = []
-    if opp.category:
-        facts.append(f"🏷 {_bold('Category:')} {opp.category.value}")
-    if opp.location and _v(opp.location) != "Unknown":
-        facts.append(f"🌍 {_bold('Location:')} {opp.location}")
-    if opp.organizer and _v(opp.organizer) != "Unknown":
-        facts.append(f"🏢 {_bold('Organizer:')} {opp.organizer}")
-    if opp.duration and _v(opp.duration) != "Unknown":
-        facts.append(f"⏱ {_bold('Duration:')} {opp.duration}")
-    if facts:
-        parts.extend(facts)
-        parts.append("")
-
-    # Deadline
-    if opp.deadline and _v(opp.deadline) != "Unknown":
-        parts.append(f"📅 {_bold('Deadline:')} {opp.deadline}")
-        parts.append("")
+    # Category/Location/Organizer/Duration/Deadline are intentionally omitted here —
+    # they're short values that always fit untruncated in the card image's meta rows,
+    # so repeating them in the caption is pure duplication. Eligibility and Prize/Funding
+    # stay below because the image truncates those; the caption gives the full text.
 
     parts.append("<b>·  ·  ·</b>")
     parts.append("")
@@ -94,6 +80,13 @@ def format_opportunity(opp: Opportunity) -> str:
         parts.append(prize)
         parts.append("")
 
+    # Additional info — catch-all facts an AI split/extraction couldn't fit a
+    # dedicated field (acceptance rate, contact email, sub-track specifics, etc.)
+    if opp.extra_notes and _v(opp.extra_notes) != "Unknown":
+        parts.append(f"ℹ️ {_bold('Additional info:')}")
+        parts.append(opp.extra_notes)
+        parts.append("")
+
     # Description
     if opp.description and _v(opp.description) != "Unknown":
         parts.append(f"📝 {_bold('About:')}")
@@ -105,6 +98,15 @@ def format_opportunity(opp: Opportunity) -> str:
     apply = _v(opp.apply_link, "")
     if apply:
         parts.append(f'🔗 {_bold("Apply Now →")} <a href="{apply}">{apply}</a>')
+        parts.append("")
+
+    # Additional links — e.g. an Instagram page or secondary info page that isn't
+    # the primary application link but was mentioned in the source text.
+    if opp.additional_links:
+        links_line = "  ".join(
+            f'<a href="{link}">{link}</a>' for link in opp.additional_links
+        )
+        parts.append(f"🔗 {_bold('Also see:')} {links_line}")
         parts.append("")
 
     # Tags footer

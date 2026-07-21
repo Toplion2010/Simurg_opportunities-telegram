@@ -4,10 +4,16 @@ The Rendering Pipeline reads design tokens from ``src.publisher.design``;
 it never mutates them (ADR-003 invariant).  All visual values come from
 the Design System, not from hardcoded CSS.
 
-Runtime flow (ARCHITECTURE.md):
-    BackgroundManager → Grammar Engine → Design System → HTML/CSS → Chromium → JPEG
+Runtime flow:
+    live_background (Gemini, per-post) → Grammar Engine → Design System → HTML/CSS → Chromium → JPEG
 
-This module performs **no image analysis** and makes **no network requests**.
+Background generation is live and per-post (``src.publisher.live_background``) —
+there is no pre-built library fallback; a failed generation raises and the
+publish attempt fails (see ``src/bot/routers/queue.py``, where the admin can
+just re-approve to retry). All factual text (title, dates, prize, CTA) is
+rendered here as HTML/CSS from the database, never by the image model.
+
+This module makes **no network requests** itself — ``live_background`` does.
 """
 import base64
 import html
@@ -16,45 +22,13 @@ from typing import TYPE_CHECKING
 
 from src.core.enums import HookLabel
 from src.core.logging import get_logger
-from src.publisher.background_map import build_descriptor
 
 if TYPE_CHECKING:
     from src.db.models.opportunity import Opportunity
-    from src.publisher.background_manager import BackgroundManager, ImageEntry
+    from src.publisher.background_manager import ImageEntry
+    from src.publisher.live_background import LiveBackground
 
 logger = get_logger(__name__)
-
-_bg_manager: "BackgroundManager | None" = None
-
-
-def get_background_manager() -> "BackgroundManager | None":
-    """Lazily build the shared BackgroundManager. Returns None if it can't be set up
-    (e.g. Redis not initialised), so the caller falls back to the procedural background."""
-    global _bg_manager
-    if _bg_manager is not None:
-        return _bg_manager
-    try:
-        from src.core.config import Settings
-        from src.core.redis_client import get_redis
-        from src.publisher.background_manager import BackgroundManager
-
-        settings = Settings()
-        try:
-            redis = get_redis()
-        except RuntimeError:
-            redis = None  # not initialised (tests / standalone) — usage tracking disabled
-        mgr = BackgroundManager(
-            root=settings.BACKGROUNDS_DIR,
-            redis=redis,
-            refresh_interval=settings.BACKGROUND_REFRESH_SECONDS,
-            history_size=settings.BACKGROUND_HISTORY_SIZE,
-        )
-        mgr.scan()
-        _bg_manager = mgr
-    except Exception as e:  # noqa: BLE001 — never block card generation on bg setup
-        logger.warning("background_manager_init_failed", error=str(e))
-        return None
-    return _bg_manager
 
 
 # ------------------------------------------------------------------ hooks
@@ -69,16 +43,22 @@ def _e(text: str | None) -> str:
     return html.escape(text or "")
 
 
-def _image_data_uri(entry: "ImageEntry") -> str:
-    mime = mimetypes.guess_type(entry.path.name)[0] or "image/jpeg"
-    data = base64.b64encode(entry.path.read_bytes()).decode("ascii")
+def _image_data_uri(entry: "ImageEntry | LiveBackground") -> str:
+    path = getattr(entry, "path", None)
+    if path is not None:
+        mime = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+        raw = path.read_bytes()
+    else:
+        mime = "image/jpeg"
+        raw = entry.data
+    data = base64.b64encode(raw).decode("ascii")
     return f"data:{mime};base64,{data}"
 
 
 # ------------------------------------------------------------------ backgrounds
 
 
-def _photo_bg(entry: "ImageEntry") -> tuple[str, str]:
+def _photo_bg(entry: "ImageEntry | LiveBackground") -> tuple[str, str]:
     """CSS + markup for a real photo background with a smart legibility scrim.
 
     Scrim strength is derived from precomputed image metrics
@@ -180,7 +160,7 @@ def _procedural_bg(accent: str, glow: str) -> tuple[str, str]:
 
 def _build_css(
     accent: str,
-    bg_entry: "ImageEntry | None",
+    bg_entry: "ImageEntry | LiveBackground | None",
     font_style: str = "editorial",
     density: str = "comfortable",
 ) -> str:
@@ -363,6 +343,17 @@ def _build_css(
         f"    box-shadow: 0 0 10px {accent};\n"
         f"  }}\n"
         f"\n"
+        f"  .summary {{\n"
+        f"    font-size: {ts.summary_size}px;\n"
+        f"    font-weight: {ts.summary_weight};\n"
+        f"    line-height: {ts.summary_line_height};\n"
+        f"    color: {TEXT_SECONDARY};\n"
+        f"    display: -webkit-box;\n"
+        f"    -webkit-line-clamp: 3;\n"
+        f"    -webkit-box-orient: vertical;\n"
+        f"    overflow: hidden;\n"
+        f"  }}\n"
+        f"\n"
         f"  .meta {{\n"
         f"    display: flex;\n"
         f"    flex-direction: column;\n"
@@ -394,6 +385,12 @@ def _build_css(
         f"    color: {TEXT_SECONDARY};\n"
         f"    font-weight: {ts.meta_value_weight};\n"
         f"    font-size: {ts.meta_value_size}px;\n"
+        f"    flex: 1 1 auto;\n"
+        f"    min-width: 0;\n"
+        f"    display: -webkit-box;\n"
+        f"    -webkit-line-clamp: 2;\n"
+        f"    -webkit-box-orient: vertical;\n"
+        f"    overflow: hidden;\n"
         f"  }}\n"
         f"\n"
         f"  .footer {{\n"
@@ -426,7 +423,7 @@ def _build_css(
     )
 
 
-def _build_html(opp: "Opportunity", bg_entry: "ImageEntry | None") -> str:
+def _build_html(opp: "Opportunity", bg_entry: "ImageEntry | LiveBackground | None") -> str:
     """Build the full HTML document for a card.
 
     Behaviour comes from the Grammar Engine (layout, priority, responsive,
@@ -466,6 +463,12 @@ def _build_html(opp: "Opportunity", bg_entry: "ImageEntry | None") -> str:
         )
     meta_html = "\n".join(meta_rows)
 
+    # Summary — optional description line, fills the space between the divider
+    # and the meta rows (skipped cleanly when there's no description).
+    summary_html = (
+        f'<div class="summary">{_e(grammar.summary)}</div>' if grammar.summary else ""
+    )
+
     css = _build_css(tokens.accent, bg_entry, density=grammar.responsive.density)
 
     bg_markup = ""
@@ -497,6 +500,8 @@ def _build_html(opp: "Opportunity", bg_entry: "ImageEntry | None") -> str:
       <div class="divider"></div>
     </div>
 
+    {summary_html}
+
     <div class="meta">
       {meta_html}
     </div>
@@ -526,18 +531,9 @@ async def _render_html(html_content: str) -> bytes:
         return img_bytes
 
 
-async def _select_background(opp: "Opportunity") -> "ImageEntry | None":
-    mgr = get_background_manager()
-    if mgr is None:
-        return None
-    try:
-        return await mgr.get_background(build_descriptor(opp))
-    except Exception as e:  # noqa: BLE001 — fall back to procedural on any error
-        logger.warning("background_select_failed", opp_id=getattr(opp, "id", None), error=str(e))
-        return None
-
-
 async def generate_card(opp: "Opportunity") -> bytes:
-    bg_entry = await _select_background(opp)
+    from src.publisher.live_background import generate_live_background
+
+    bg_entry = await generate_live_background(opp)
     html_content = _build_html(opp, bg_entry)
     return await _render_html(html_content)

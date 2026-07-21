@@ -1,4 +1,184 @@
 {
+  "academic_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.096,
+    "content_density": 0.438,
+    "contrast": 0.119,
+    "dominant_color": "obsidian and electric blue",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "scholarship",
+      "prestige"
+    ],
+    "visual_complexity": 0.057,
+    "weight": 1.0
+  },
+  "academic_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.195,
+    "content_density": 0.344,
+    "contrast": 0.117,
+    "dominant_color": "forest green and emerald",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "scholarship",
+      "prestige"
+    ],
+    "visual_complexity": 0.051,
+    "weight": 1.0
+  },
+  "academic_003.jpg": {
+    "ai_generated": true,
+    "brightness": 0.21,
+    "dominant_color": "dark slate and teal",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "scholarship",
+      "prestige"
+    ],
+    "weight": 1.0
+  },
+  "academic_004.jpg": {
+    "ai_generated": true,
+    "brightness": 0.211,
+    "content_density": 0.375,
+    "contrast": 0.105,
+    "dominant_color": "deep purple and violet",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "scholarship",
+      "prestige"
+    ],
+    "visual_complexity": 0.042,
+    "weight": 1.0
+  },
+  "academic_005.jpg": {
+    "ai_generated": true,
+    "brightness": 0.112,
+    "content_density": 0.188,
+    "contrast": 0.105,
+    "dominant_color": "forest green and emerald",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "fellowship",
+      "prestige"
+    ],
+    "visual_complexity": 0.024,
+    "weight": 1.0
+  },
+  "academic_006.jpg": {
+    "ai_generated": true,
+    "brightness": 0.191,
+    "dominant_color": "deep indigo and lavender",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "fellowship",
+      "prestige"
+    ],
+    "weight": 1.0
+  },
+  "academic_007.jpg": {
+    "ai_generated": true,
+    "brightness": 0.219,
+    "content_density": 0.594,
+    "contrast": 0.183,
+    "dominant_color": "deep indigo and lavender",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "competition",
+      "achievement"
+    ],
+    "visual_complexity": 0.08,
+    "weight": 1.0
+  },
+  "academic_008.jpg": {
+    "ai_generated": true,
+    "brightness": 0.378,
+    "content_density": 0.281,
+    "contrast": 0.118,
+    "dominant_color": "deep purple and violet",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "competition",
+      "competition"
+    ],
+    "visual_complexity": 0.046,
+    "weight": 1.0
+  },
+  "academic_009.jpg": {
+    "ai_generated": true,
+    "brightness": 0.224,
+    "content_density": 0.375,
+    "contrast": 0.258,
+    "dominant_color": "midnight blue and silver",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "olympiad",
+      "prestige"
+    ],
+    "visual_complexity": 0.034,
+    "weight": 1.0
+  },
   "academic_01.jpg": {
     "brightness": 0.206,
     "content_density": 0.0,
@@ -19,6 +199,72 @@
     ],
     "visual_complexity": 0.014,
     "weight": 1
+  },
+  "academic_010.jpg": {
+    "ai_generated": true,
+    "brightness": 0.45,
+    "content_density": 0.594,
+    "contrast": 0.087,
+    "dominant_color": "dark olive and sage",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "olympiad",
+      "achievement"
+    ],
+    "visual_complexity": 0.064,
+    "weight": 1.0
+  },
+  "academic_011.jpg": {
+    "ai_generated": true,
+    "brightness": 0.428,
+    "content_density": 0.188,
+    "contrast": 0.081,
+    "dominant_color": "dark olive and sage",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "summerprogram",
+      "innovation"
+    ],
+    "visual_complexity": 0.032,
+    "weight": 1.0
+  },
+  "academic_012.jpg": {
+    "ai_generated": true,
+    "brightness": 0.106,
+    "content_density": 0.219,
+    "contrast": 0.094,
+    "dominant_color": "obsidian and electric blue",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "academic",
+      "summerprogram",
+      "innovation"
+    ],
+    "visual_complexity": 0.04,
+    "weight": 1.0
   },
   "academic_02.jpg": {
     "brightness": 0.217,

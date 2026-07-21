@@ -1,4 +1,118 @@
 {
+  "startup_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.145,
+    "content_density": 0.406,
+    "contrast": 0.234,
+    "dominant_color": "burgundy and warm cream",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "startup",
+      "startup",
+      "competition"
+    ],
+    "visual_complexity": 0.054,
+    "weight": 1.0
+  },
+  "startup_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.271,
+    "content_density": 0.469,
+    "contrast": 0.158,
+    "dominant_color": "dark olive and sage",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "startup",
+      "startup",
+      "competition"
+    ],
+    "visual_complexity": 0.051,
+    "weight": 1.0
+  },
+  "startup_003.jpg": {
+    "ai_generated": true,
+    "brightness": 0.206,
+    "content_density": 0.156,
+    "contrast": 0.046,
+    "dominant_color": "dark slate and teal",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "startup",
+      "accelerator",
+      "competition"
+    ],
+    "visual_complexity": 0.033,
+    "weight": 1.0
+  },
+  "startup_004.jpg": {
+    "ai_generated": true,
+    "brightness": 0.493,
+    "dominant_color": "burgundy and warm cream",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "startup",
+      "accelerator",
+      "innovation"
+    ],
+    "weight": 1.0
+  },
+  "startup_005.jpg": {
+    "ai_generated": true,
+    "brightness": 0.114,
+    "dominant_color": "charcoal and gold",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "startup",
+      "incubator",
+      "innovation"
+    ],
+    "weight": 1.0
+  },
+  "startup_006.jpg": {
+    "ai_generated": true,
+    "brightness": 0.204,
+    "content_density": 0.156,
+    "contrast": 0.115,
+    "dominant_color": "deep navy and cyan",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "startup",
+      "incubator",
+      "innovation"
+    ],
+    "visual_complexity": 0.025,
+    "weight": 1.0
+  },
   "startup_01.jpg": {
     "brightness": 0.209,
     "content_density": 0.0,

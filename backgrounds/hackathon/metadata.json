@@ -1,4 +1,74 @@
 {
+  "hackathon_001.jpg": {
+    "ai_generated": true,
+    "brightness": 0.363,
+    "dominant_color": "burgundy and warm cream",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "hackathon",
+      "hackathon",
+      "innovation"
+    ],
+    "weight": 1.0
+  },
+  "hackathon_002.jpg": {
+    "ai_generated": true,
+    "brightness": 0.157,
+    "content_density": 0.344,
+    "contrast": 0.12,
+    "dominant_color": "dark slate and teal",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.72,
+      "w": 0.46,
+      "x": 0.08,
+      "y": 0.12
+    },
+    "quality": 3.0,
+    "tags": [
+      "hackathon",
+      "hackathon",
+      "achievement"
+    ],
+    "visual_complexity": 0.033,
+    "weight": 1.0
+  },
+  "hackathon_003.jpg": {
+    "ai_generated": true,
+    "brightness": 0.373,
+    "dominant_color": "deep indigo and lavender",
+    "generated": true,
+    "quality": 3.0,
+    "tags": [
+      "hackathon",
+      "hackathon",
+      "achievement"
+    ],
+    "weight": 1.0
+  },
+  "hackathon_004.jpg": {
+    "ai_generated": true,
+    "brightness": 0.196,
+    "content_density": 0.375,
+    "contrast": 0.244,
+    "dominant_color": "dark slate and teal",
+    "generated": true,
+    "primary_safe_area": {
+      "h": 0.75,
+      "w": 0.4,
+      "x": 0.06,
+      "y": 0.1
+    },
+    "quality": 3.0,
+    "tags": [
+      "hackathon",
+      "hackathon",
+      "innovation"
+    ],
+    "visual_complexity": 0.081,
+    "weight": 1.0
+  },
   "hackathon_01.jpg": {
     "brightness": 0.22,
     "content_density": 0.0,

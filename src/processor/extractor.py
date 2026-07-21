@@ -17,9 +17,18 @@ _CATEGORIES = ", ".join(c.value for c in Category)
 
 _SYSTEM_PROMPT = f"""You are an opportunity parser for a Telegram channel aggregator.
 
-Given raw Telegram message text, extract structured fields and return ONLY a JSON object.
+Given raw Telegram message text, extract structured fields and return ONLY a JSON object
+shaped as {{"opportunities": [ ... ]}}, a list of one or more opportunity objects.
 
-Fields to extract:
+A single message USUALLY describes exactly one opportunity — in that case return a
+list with exactly one object. Only split into multiple objects when the message
+clearly bundles 2+ genuinely independent programs, each with its own distinct name,
+application link/process, and organizer or eligibility (e.g. two unrelated scholarships
+from two different universities posted back-to-back). Do NOT split a single program
+just because it has multiple tracks, deadlines, or sub-details — those stay one object.
+When in doubt, keep it as one object.
+
+Each opportunity object has these fields:
 - is_opportunity: true if this is a real, actionable opportunity (scholarship, internship, grant, competition, job, hackathon, fellowship, conference, program, etc.) that a person can apply to or participate in. Set to false for: channel ads, promotional posts, congratulation messages, general news updates, bot announcements, forwarded memes, or anything with no clear application or participation action.
 - title: Short, clear title of the opportunity
 - category: One of: {_CATEGORIES}
@@ -33,15 +42,40 @@ Fields to extract:
 - apply_link: Direct application URL
 - description: Clean, professional 2-4 sentence summary of the opportunity
 - rewritten_text: Full rewritten post in professional, concise English
+- card_summary: One complete, self-contained sentence describing the opportunity,
+  written to fit in a small image card — MUST be under 130 characters. Never truncate
+  mid-word; write it short enough from the start.
+- card_eligibility: Short, complete phrase for who can apply, for the same image card —
+  MUST be under 90 characters. Prioritize the single most important eligibility fact.
+- card_rewards: Short, complete phrase for the prize/reward, for the same image card —
+  MUST be under 90 characters.
+- additional_links: A list of any http(s) web page URLs mentioned for this opportunity
+  beyond its primary apply_link (e.g. an Instagram page, a secondary info page). Never
+  drop a link — if a web URL doesn't belong in apply_link, put it here. Do NOT put
+  email addresses or phone numbers in this list — those go in extra_notes instead.
+- extra_notes: Any other concrete fact about this opportunity that doesn't fit the
+  fields above — including contact email addresses and phone numbers (write them as
+  plain text, not as links), acceptance rate, sub-track specifics, or caveats
+  mentioned in the text. Null if there's nothing left over.
+- source_excerpt: A short verbatim quote (1-3 sentences) copied directly from the
+  original message text that describes just this opportunity specifically — used later
+  as image-generation context. If the message describes only one opportunity, this can
+  be a short excerpt of the whole thing.
 
 Rules:
 - Use null for any field you cannot find in the text
 - NEVER invent or guess factual data (deadlines, eligibility, rewards)
 - Remove marketing hype, emojis that don't add value, and repetitive content
-- Keep all important links
+- Keep all important links — every web URL in the source text must end up in exactly
+  one opportunity's apply_link or additional_links; every email/phone must end up in
+  some opportunity's extra_notes
 - description must be factual and based only on provided text
 - rewritten_text must be professional, concise, and contain only verified information
-- If is_opportunity is false, all other fields may be null
+- card_summary/card_eligibility/card_rewards must be factual, based only on provided
+  text, and respect their character limits — write a short sentence, don't truncate a
+  long one
+- If is_opportunity is false, all other fields may be null except this still counts
+  as one item in the opportunities list
 """
 
 
@@ -70,6 +104,16 @@ class OpportunityDTO(BaseModel):
     apply_link: str | None = None
     description: str | None = None
     rewritten_text: str | None = None
+    card_summary: str | None = None
+    card_eligibility: str | None = None
+    card_rewards: str | None = None
+    additional_links: list[str] = []
+    extra_notes: str | None = None
+    source_excerpt: str | None = None
+
+
+class ExtractionResult(BaseModel):
+    opportunities: list[OpportunityDTO] = []
 
 
 class FieldExtractor:
@@ -94,7 +138,7 @@ class FieldExtractor:
         wait=wait_exponential(multiplier=1, min=2, max=30),
         reraise=True,
     )
-    async def extract(self, text: str) -> OpportunityDTO:
+    async def extract(self, text: str) -> list[OpportunityDTO]:
         try:
             response = await self._llm_client.chat.completions.create(
                 model=self._llm_model,
@@ -104,11 +148,11 @@ class FieldExtractor:
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.1,
-                max_tokens=1500,
+                max_tokens=2500,
             )
             raw = response.choices[0].message.content or "{}"
             data = json.loads(raw)
-            return OpportunityDTO.model_validate(data)
+            return ExtractionResult.model_validate(data).opportunities
         except (openai.RateLimitError, openai.APIError):
             raise
         except Exception as e:
