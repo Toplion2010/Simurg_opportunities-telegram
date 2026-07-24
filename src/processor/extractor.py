@@ -111,6 +111,11 @@ class OpportunityDTO(BaseModel):
     extra_notes: str | None = None
     source_excerpt: str | None = None
 
+    @field_validator("additional_links", mode="before")
+    @classmethod
+    def coerce_additional_links(cls, v: object) -> object:
+        return [] if v is None else v
+
 
 class ExtractionResult(BaseModel):
     opportunities: list[OpportunityDTO] = []
