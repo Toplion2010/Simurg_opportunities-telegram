@@ -3,10 +3,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bot.callbacks.data import FieldSelect, OpportunityAction
-from src.bot.keyboards.edit import back_to_item_keyboard, field_select_keyboard
+from src.bot.callbacks.data import AudienceChoice, FieldSelect, OpportunityAction
+from src.bot.keyboards.edit import (
+    audience_choice_keyboard,
+    back_to_item_keyboard,
+    field_select_keyboard,
+)
 from src.bot.states.forms import EditForm
-from src.core.enums import Category
+from src.core.enums import Audience, Category
 from src.db.repositories.opportunity import OpportunityRepository
 
 router = Router(name="edit")
@@ -14,6 +18,7 @@ router = Router(name="edit")
 _FIELD_LABELS = {
     "title": "Title",
     "category": "Category",
+    "audience": "Audience",
     "deadline": "Deadline",
     "eligibility": "Eligibility",
     "location": "Location",
@@ -47,6 +52,16 @@ async def choose_field(
     callback_data: FieldSelect,
     state: FSMContext,
 ) -> None:
+    # Audience is a fixed 3-value enum — pick it from buttons, no free-text state.
+    if callback_data.field == "audience":
+        await call.message.edit_text(
+            "Choose the target <b>Audience</b>:",
+            parse_mode="HTML",
+            reply_markup=audience_choice_keyboard(callback_data.opp_id),
+        )
+        await call.answer()
+        return
+
     await state.set_state(EditForm.waiting_value)
     await state.update_data(opp_id=callback_data.opp_id, field=callback_data.field)
     label = _FIELD_LABELS.get(callback_data.field, callback_data.field)
@@ -102,3 +117,30 @@ async def receive_new_value(
         parse_mode="HTML",
         reply_markup=back_to_item_keyboard(opp_id),
     )
+
+
+@router.callback_query(AudienceChoice.filter())
+async def set_audience(
+    call: CallbackQuery,
+    callback_data: AudienceChoice,
+    session: AsyncSession,
+    state: FSMContext,
+) -> None:
+    repo = OpportunityRepository(session)
+    opp = await repo.get(callback_data.opp_id)
+    if not opp:
+        await state.clear()
+        await call.answer("Not found.", show_alert=True)
+        return
+
+    # Every button value is a valid Audience member by construction (no 'none' button),
+    # so there is no invalid-value case to guard against here.
+    opp.audience = Audience(callback_data.value)
+    await session.commit()
+    await state.clear()
+    await call.message.edit_text(
+        "✅ <b>Audience</b> updated successfully.",
+        parse_mode="HTML",
+        reply_markup=back_to_item_keyboard(callback_data.opp_id),
+    )
+    await call.answer()

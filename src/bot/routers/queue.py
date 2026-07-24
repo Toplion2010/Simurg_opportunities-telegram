@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.bot.callbacks.data import OpportunityAction, QueuePage
 from src.bot.keyboards.queue import opportunity_actions_keyboard, pagination_keyboard
 from src.core.config import Settings
-from src.core.enums import OpportunityStatus
+from src.core.enums import Audience, OpportunityStatus
+from src.db.models.opportunity import Opportunity
 from src.db.repositories.opportunity import OpportunityRepository
 from src.publisher.formatter import format_opportunity
 from src.publisher.sender import OpportunitySender
@@ -16,6 +17,16 @@ from src.publisher.sender import OpportunitySender
 router = Router(name="queue")
 
 PAGE_SIZE = 5
+
+_AUDIENCE_LABELS = {
+    Audience.school: "🏫 School",
+    Audience.university: "🎓 University",
+    Audience.both: "🏫 School + 🎓 University",
+}
+
+
+def _routing_line(opp: Opportunity) -> str:
+    return f"📍 Will post to: {_AUDIENCE_LABELS[opp.audience]}"
 
 
 async def _send_opportunity_card(
@@ -34,7 +45,7 @@ async def _send_opportunity_card(
     preview = format_opportunity(opp)
     preview_short = preview[:1000] + ("..." if len(preview) > 1000 else "")
     status_label = opp.status.value.upper()
-    text = f"[{status_label}] {preview_short}"
+    text = f"[{status_label}] {preview_short}\n\n{_routing_line(opp)}"
     kb = opportunity_actions_keyboard(opp.id, page)
 
     if edit:
@@ -82,7 +93,9 @@ async def _show_queue_page(
     for opp in items:
         title = opp.title or "Untitled"
         cat = opp.category.value if opp.category else "Unknown"
-        card = f"📌 <b>{title}</b>\n🏷 {cat}\n📅 {opp.deadline or 'Unknown'}"
+        card = (
+            f"📌 <b>{title}</b>\n🏷 {cat}\n📅 {opp.deadline or 'Unknown'}\n{_routing_line(opp)}"
+        )
         kb = opportunity_actions_keyboard(opp.id, page)
         if edit and opp == items[0]:
             await message.edit_text(card, parse_mode="HTML", reply_markup=kb)
@@ -135,10 +148,20 @@ async def approve_opportunity(
 
     sender = OpportunitySender(settings)
     try:
-        await sender.publish(opp, bot)
+        result = await sender.publish(opp, bot)
         await session.commit()
-        await call.answer("✅ Published successfully!")
-        await call.message.edit_text(f"✅ Published: {opp.title}")
+        if result.failed:
+            failed_ids = ", ".join(str(c) for c, _ in result.failed)
+            await call.answer(
+                f"⚠️ Partial publish — failed on: {failed_ids}", show_alert=True
+            )
+            await call.message.edit_text(
+                f"⚠️ Partially published: {opp.title}\n"
+                f"Failed channel(s): {failed_ids}"
+            )
+        else:
+            await call.answer("✅ Published successfully!")
+            await call.message.edit_text(f"✅ Published: {opp.title}")
     except Exception as e:
         await call.answer(f"❌ Failed: {e}", show_alert=True)
 

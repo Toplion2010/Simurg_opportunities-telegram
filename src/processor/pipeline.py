@@ -1,4 +1,4 @@
-from src.core.enums import OpportunityStatus
+from src.core.enums import Audience, OpportunityStatus, RawAudience
 from src.core.exceptions import ProcessingError
 from src.core.logging import get_logger
 from src.db.models.opportunity import Opportunity
@@ -46,6 +46,13 @@ class ProcessingPipeline:
 
                 dto.category = self._classifier.classify(dto, clean_text)
 
+                # null/invalid -> both. No keyword guessing: "students" alone is too
+                # ambiguous (school vs university) to classify by keyword.
+                audience = dto.audience or RawAudience.both
+                if audience == RawAudience.none:
+                    logger.info("audience_none_skipped", raw_id=raw.id)
+                    continue
+
                 if await self._deduplicator.check(dto):
                     continue
 
@@ -54,6 +61,7 @@ class ProcessingPipeline:
                     raw_message_id=raw.id,
                     title=dto.title,
                     category=dto.category,
+                    audience=Audience(audience.value),  # safe: 'none' already filtered out above
                     deadline=dto.deadline,
                     eligibility=dto.eligibility,
                     location=dto.location,

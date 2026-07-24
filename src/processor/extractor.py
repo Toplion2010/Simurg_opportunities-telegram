@@ -7,7 +7,7 @@ from pydantic import BaseModel, field_validator
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.core.config import Settings
-from src.core.enums import Category
+from src.core.enums import Category, RawAudience
 from src.core.exceptions import ProcessingError
 from src.core.logging import get_logger
 
@@ -32,6 +32,23 @@ Each opportunity object has these fields:
 - is_opportunity: true if this is a real, actionable opportunity (scholarship, internship, grant, competition, job, hackathon, fellowship, conference, program, etc.) that a person can apply to or participate in. Set to false for: channel ads, promotional posts, congratulation messages, general news updates, bot announcements, forwarded memes, or anything with no clear application or participation action.
 - title: Short, clear title of the opportunity
 - category: One of: {_CATEGORIES}
+- audience: Target audience for this opportunity. One of exactly: school, university, both, none.
+    school = for school pupils only, i.e. grades 1-12 / K-12 (school olympiads, high-school
+      competitions, programs restricted to schoolchildren).
+    university = ONLY when the text uses an explicit university-level qualifier —
+      "university"/"college"/"undergraduate"/"graduate"/"Master's"/"PhD"/"recent graduate"/
+      "early-career", or a clearly university-only context (a specific university's program).
+      Anchor this strictly on "university student / graduate / early-career" — do NOT widen
+      it to open-ended career level. A phrase like "for students and young professionals" is
+      still university (students are eligible), NOT none.
+    both = broad or ambiguous eligibility, OR eligibility that is simply not stated. In
+      particular, an UNQUALIFIED word like "students", "youth", "learners", or "young people"
+      — with no school-only or university-only qualifier attached — is ambiguous and MUST be
+      both, never university. When you are unsure, choose both — never guess narrowly.
+    none = the text EXPLICITLY restricts eligibility away from students entirely (e.g. a
+      grant only for established professionals/companies, or a program with a stated
+      minimum that excludes all students). "none" means actively excluded, not merely
+      "eligibility unstated" — if it's just unstated, use both.
 - deadline: Application deadline (date string or description, e.g. "March 20, 2025" or "Rolling")
 - eligibility: Who can apply (brief description)
 - location: Country/city or "Remote" or "Online"
@@ -64,6 +81,9 @@ Each opportunity object has these fields:
 
 Rules:
 - Use null for any field you cannot find in the text
+- For audience, when eligibility is broad, unclear, or unstated, default to "both" — only
+  narrow to school/university when the text clearly restricts to that group, and only use
+  none when students are explicitly excluded
 - NEVER invent or guess factual data (deadlines, eligibility, rewards)
 - Remove marketing hype, emojis that don't add value, and repetitive content
 - Keep all important links — every web URL in the source text must end up in exactly
@@ -83,6 +103,7 @@ class OpportunityDTO(BaseModel):
     is_opportunity: bool = True
     title: str | None = None
     category: Category | None = None
+    audience: RawAudience | None = None
 
     @field_validator("category", mode="before")
     @classmethod
@@ -91,6 +112,17 @@ class OpportunityDTO(BaseModel):
             return None
         try:
             Category(v)
+            return v
+        except ValueError:
+            return None
+
+    @field_validator("audience", mode="before")
+    @classmethod
+    def coerce_audience(cls, v: object) -> object:
+        if v is None:
+            return None
+        try:
+            RawAudience(v)
             return v
         except ValueError:
             return None

@@ -1,10 +1,11 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from src.bot.callbacks.data import FieldSelect, OpportunityAction
+from src.bot.callbacks.data import AudienceChoice, FieldSelect, OpportunityAction
 
 EDITABLE_FIELDS: list[tuple[str, str]] = [
     ("title", "Title"),
     ("category", "Category"),
+    ("audience", "Audience"),
     ("deadline", "Deadline"),
     ("eligibility", "Eligibility"),
     ("location", "Location"),
@@ -15,6 +16,24 @@ EDITABLE_FIELDS: list[tuple[str, str]] = [
     ("apply_link", "Apply Link"),
     ("description", "Description"),
 ]
+
+
+def audience_choice_keyboard(opp_id: int) -> InlineKeyboardMarkup:
+    buttons = [
+        InlineKeyboardButton(
+            text="🏫 School",
+            callback_data=AudienceChoice(opp_id=opp_id, value="school").pack(),
+        ),
+        InlineKeyboardButton(
+            text="🎓 University",
+            callback_data=AudienceChoice(opp_id=opp_id, value="university").pack(),
+        ),
+        InlineKeyboardButton(
+            text="🌍 Both",
+            callback_data=AudienceChoice(opp_id=opp_id, value="both").pack(),
+        ),
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=[buttons])
 
 
 def field_select_keyboard(opp_id: int) -> InlineKeyboardMarkup:

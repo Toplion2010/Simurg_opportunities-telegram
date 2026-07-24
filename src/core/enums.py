@@ -20,6 +20,23 @@ class Category(str, Enum):
     Job = "Job"
 
 
+class Audience(str, Enum):
+    """DB-persisted target audience. Rows with audience=none never exist, so
+    none isn't a member here — the drop signal lives only in RawAudience."""
+    school = "school"
+    university = "university"
+    both = "both"
+
+
+class RawAudience(str, Enum):
+    """LLM-facing only. 'none' is the drop signal, filtered out in the pipeline
+    before an Opportunity row is ever built — it never reaches the DB enum above."""
+    school = "school"
+    university = "university"
+    both = "both"
+    none = "none"
+
+
 class OpportunityStatus(str, Enum):
     pending = "pending"
     approved = "approved"

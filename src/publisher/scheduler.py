@@ -29,8 +29,14 @@ async def publish_scheduled(
         logger.info("publishing_due_opportunities", count=len(due))
         for opp in due:
             try:
-                await sender.publish(opp, bot)
+                result = await sender.publish(opp, bot)
                 await session.commit()
+                if result.failed:
+                    logger.warning(
+                        "scheduled_partial_publish",
+                        opp_id=opp.id,
+                        failed=[c for c, _ in result.failed],
+                    )
             except Exception:
                 logger.exception("scheduled_publish_error", opp_id=opp.id)
                 await session.rollback()

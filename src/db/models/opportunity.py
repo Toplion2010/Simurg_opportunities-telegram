@@ -7,12 +7,13 @@ from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from src.core.enums import Category, OpportunityStatus
+from src.core.enums import Audience, Category, OpportunityStatus
 from src.db.base import Base
 
 # Reference existing DB enums without auto-creating them
 _category_type = PgEnum(Category, name="category", create_type=False)
 _status_type = PgEnum(OpportunityStatus, name="opportunitystatus", create_type=False)
+_audience_type = PgEnum(Audience, name="audience", create_type=False)
 
 
 class StringList(TypeDecorator):
@@ -53,6 +54,14 @@ class Opportunity(Base):
     # Extracted fields
     title: Mapped[str | None] = mapped_column(String(500))
     category: Mapped[Category | None] = mapped_column(_category_type)
+    # Target audience — routes publishing to the school and/or university channel.
+    # Deliberately orthogonal to category (kept a clean, independent column so future
+    # specialized channels can combine audience- and category-based routing later).
+    audience: Mapped[Audience] = mapped_column(
+        _audience_type,
+        default=Audience.both,
+        nullable=False,
+    )
     deadline: Mapped[str | None] = mapped_column(String(200))
     eligibility: Mapped[str | None] = mapped_column(Text)
     location: Mapped[str | None] = mapped_column(String(300))

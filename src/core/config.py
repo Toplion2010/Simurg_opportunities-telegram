@@ -14,8 +14,9 @@ class Settings(BaseSettings):
     TELETHON_API_HASH: str
     TELETHON_SESSION: str = "simurg"
 
-    # Destination channel
-    DEST_CHANNEL_ID: int
+    # Destination channels — audience-based routing (school vs university)
+    DEST_CHANNEL_ID_SCHOOL: int
+    DEST_CHANNEL_ID_UNIVERSITY: int
 
     # LLM — Groq (primary) or OpenAI-compatible
     GROQ_API_KEY: str = ""

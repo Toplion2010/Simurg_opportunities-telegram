@@ -1,5 +1,5 @@
 from aiogram import Bot, Router
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 
 from src.core.config import Settings
@@ -84,13 +84,27 @@ Every opportunity is AI-curated, standardized, and summarized to help you find t
 """
 
 
-@router.message(Command("setup_channel"))
-async def setup_channel(message: Message, bot: Bot, settings: Settings) -> None:
-    chat_id = settings.DEST_CHANNEL_ID
+@router.message(Command("setup"))
+async def setup_channel(
+    message: Message, command: CommandObject, bot: Bot, settings: Settings
+) -> None:
+    target = (command.args or "").strip().lower()
+    channels = {
+        "school": settings.DEST_CHANNEL_ID_SCHOOL,
+        "university": settings.DEST_CHANNEL_ID_UNIVERSITY,
+    }
+    if target not in channels:
+        await message.answer(
+            "Usage: <code>/setup school</code> or <code>/setup university</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    chat_id = channels[target]
     await bot.send_message(chat_id=chat_id, text=_WELCOME, parse_mode="HTML")
     await bot.send_message(chat_id=chat_id, text=_HOOKS, parse_mode="HTML")
     await message.answer(
-        "✅ Channel messages sent.\n\n"
+        f"✅ Channel messages sent to the <b>{target}</b> channel.\n\n"
         "📋 <b>Channel description to copy-paste manually:</b>\n\n"
         + _BIO,
         parse_mode="HTML",

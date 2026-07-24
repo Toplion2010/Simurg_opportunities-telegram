@@ -20,6 +20,11 @@ class HookToggle(CallbackData, prefix="ht"):
     hook_key: str
 
 
+class AudienceChoice(CallbackData, prefix="ac"):
+    opp_id: int
+    value: str  # school | university | both
+
+
 class SearchPage(CallbackData, prefix="sp"):
     query: str
     page: int
