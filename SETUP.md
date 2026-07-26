@@ -84,6 +84,86 @@ Start-ScheduledTask -TaskName "SimurgOpportunitiesBot"     # start
 Disable-ScheduledTask -TaskName "SimurgOpportunitiesBot"   # disable (keeps config)
 ```
 
+## Running 24/7 (Railway — no laptop required)
+
+The Windows Task Scheduler setup above only runs while *your machine is on*. To keep
+collecting and processing with the laptop shut, deploy to Railway instead.
+
+The repo is already prepared for this: `railway.json` (Dockerfile build + `alembic
+upgrade head` as a pre-deploy step), `DATABASE_URL` auto-rewrites `postgresql://` →
+`postgresql+asyncpg://`, and the Telegram session can travel as an env var.
+
+### 1. Export the Telethon session
+
+Railway's filesystem is **ephemeral** — `telethon_session/simurg.session` would be wiped
+on every redeploy, and a headless container can't answer a login-code prompt. So export
+the session to a string first (locally, on the machine that's already authorized):
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.export_session_string
+```
+
+Copy the printed `TELETHON_SESSION_STRING=...` value. **Treat it like a password** —
+it grants full access to the Telegram account.
+
+### 2. Create the Railway project
+
+1. https://railway.app → **New Project** → **Deploy from GitHub repo** → pick
+   `Simurg_opportunities-telegram`.
+2. In the same project: **+ New** → **Database** → **Add PostgreSQL**.
+3. **+ New** → **Database** → **Add Redis**.
+
+### 3. Set environment variables
+
+On the **app service** → *Variables*. Reference the databases with Railway's variable
+syntax so they stay correct if credentials rotate:
+
+```
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}
+LOCAL_DEV=false
+ENVIRONMENT=production
+TELETHON_SESSION_STRING=<from step 1>
+```
+
+Then copy the rest from your local `.env`: `BOT_TOKEN`, `ADMIN_IDS`,
+`TELETHON_API_ID`, `TELETHON_API_HASH`, `DEST_CHANNEL_ID_SCHOOL`,
+`DEST_CHANNEL_ID_UNIVERSITY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, and
+`PROCESSOR_CRON_HOURS`.
+
+> `LOCAL_DEV=false` matters: when true the app uses **in-memory fakeredis**, so the
+> queue would be lost on every restart — and with batches only running 5×/day, that
+> can mean losing hours of collected posts.
+
+### 4. Seed the source channels
+
+Once deployed, run this against the new (empty) Postgres — otherwise the userbot logs
+`no_active_channels_configured` and collects nothing:
+
+```
+python -m scripts.seed_channels
+```
+
+Use Railway's service shell, or a one-off command on the service.
+
+### 5. Stop the laptop instance ⚠️
+
+Two instances must **never** run at once — same bot token and same Telegram session
+means conflicting `getUpdates` polling and possible session revocation:
+
+```powershell
+Disable-ScheduledTask -TaskName "SimurgOpportunitiesBot"
+Stop-ScheduledTask -TaskName "SimurgOpportunitiesBot"
+```
+
+### 6. Verify
+
+In Railway's **Deploy Logs**, confirm: `starting_simurg` → `scheduler_started` →
+`telethon_connected` → `monitoring_channels count=N` → `all_services_started`.
+Then post to a monitored channel and check the admin bot's queue after the next
+scheduled batch hour. You should also get a Telegram summary message from the bot
+after each run ("Batch run complete: N new opportunities ready for review").
+
 ### What can actually "expire"
 
 Every API key here (`BOT_TOKEN`, `GROQ_API_KEY`, `GEMINI_API_KEY`,

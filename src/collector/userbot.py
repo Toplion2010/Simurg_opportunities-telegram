@@ -1,6 +1,7 @@
 import redis.asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 
 from src.collector.channel_manager import load_active_channel_ids
 from src.collector.handlers import make_message_handler
@@ -15,14 +16,27 @@ async def start_userbot(
     redis: aioredis.Redis,
     session_factory: async_sessionmaker[AsyncSession],
 ) -> TelegramClient:
-    session_path = f"telethon_session/{settings.TELETHON_SESSION}"
+    if settings.TELETHON_SESSION_STRING:
+        session = StringSession(settings.TELETHON_SESSION_STRING)
+    else:
+        session = f"telethon_session/{settings.TELETHON_SESSION}"
+
     client = TelegramClient(
-        session_path,
+        session,
         settings.TELETHON_API_ID,
         settings.TELETHON_API_HASH,
     )
 
-    await client.start()
+    await client.connect()
+    if not await client.is_user_authorized():
+        # start() would drop into an interactive phone/code prompt, which on a headless
+        # host blocks startup indefinitely instead of failing. Raise so main.py logs
+        # userbot_skipped and the rest of the bot keeps running.
+        await client.disconnect()
+        raise RuntimeError(
+            "Telethon session is not authorized. Run auth_telethon.py locally, then "
+            "set TELETHON_SESSION_STRING (see scripts/export_session_string.py)."
+        )
     logger.info("telethon_connected")
 
     channel_ids = await load_active_channel_ids(session_factory)

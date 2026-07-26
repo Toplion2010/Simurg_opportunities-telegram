@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     TELETHON_API_ID: int
     TELETHON_API_HASH: str
     TELETHON_SESSION: str = "simurg"
+    # Portable session for hosts with an ephemeral filesystem (Railway et al.), where
+    # the .session file would be wiped on redeploy and startup would then block forever
+    # waiting for a login code. Takes precedence over the file when set.
+    # Generate with: python -m scripts.export_session_string
+    TELETHON_SESSION_STRING: str = ""
 
     # Destination channels — audience-based routing (school vs university)
     DEST_CHANNEL_ID_SCHOOL: int
@@ -68,3 +73,15 @@ class Settings(BaseSettings):
             return v
         import json
         return json.loads(v)
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def force_async_driver(cls, v: str) -> str:
+        # Managed hosts (Railway, Heroku) inject a plain postgresql:// URL, which
+        # SQLAlchemy resolves to the sync psycopg2 driver and then rejects under
+        # create_async_engine.
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+asyncpg://", 1)
+        return v
