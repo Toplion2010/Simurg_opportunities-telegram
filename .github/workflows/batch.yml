@@ -17,7 +17,9 @@ concurrency:
 jobs:
   batch:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Steady-state runs are minutes, but the very first run for a channel has no
+    # cursor and pulls a seed batch, so 40 channels x ~9s/message needs headroom.
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
