@@ -29,7 +29,9 @@ def upgrade() -> None:
             "additional_links",
             sa.Text if op.get_bind().dialect.name == "sqlite" else postgresql.ARRAY(sa.String),
             nullable=False,
-            server_default="",
+            # '{}' is the empty-array literal Postgres requires; "" is only valid
+            # for the SQLite Text fallback.
+            server_default="" if op.get_bind().dialect.name == "sqlite" else "{}",
         ),
     )
 

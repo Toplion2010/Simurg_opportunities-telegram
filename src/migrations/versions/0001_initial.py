@@ -95,7 +95,9 @@ def upgrade() -> None:
             "hooks",
             sa.Text if op.get_bind().dialect.name == 'sqlite' else postgresql.ARRAY(sa.String),
             nullable=False,
-            server_default="",
+            # Postgres needs the empty-array literal '{}' here; "" is only valid
+            # for the SQLite Text fallback and errors as a malformed array literal.
+            server_default="" if op.get_bind().dialect.name == 'sqlite' else "{}",
         ),
         sa.Column("scheduled_at", sa.TIMESTAMP(timezone=True)),
         sa.Column("published_at", sa.TIMESTAMP(timezone=True)),
