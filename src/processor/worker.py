@@ -6,6 +6,7 @@ from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.core.logging import get_logger
+from src.core.notify import notify_admins
 from src.core.redis_client import dequeue_batch
 from src.db.repositories.opportunity import OpportunityRepository
 from src.db.repositories.raw_message import RawMessageRepository
@@ -122,11 +123,7 @@ async def _notify_admins(
         + (f", {error_count} errors" if error_count else "")
         + f", {duration_seconds}s)"
     )
-    for admin_id in admin_ids:
-        try:
-            await bot.send_message(admin_id, text)
-        except Exception:
-            logger.exception("admin_notify_failed", admin_id=admin_id)
+    await notify_admins(bot, admin_ids, text)
 
 
 async def _resolve_channel_id(session: AsyncSession, telegram_id: int) -> int | None:

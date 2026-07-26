@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 from src.bot.bootstrap import build_dispatcher
 from src.core.config import Settings
 from src.core.logging import get_logger, setup_logging
+from src.core.notify import notify_admins
 from src.core.redis_client import init_redis
 from src.db.base import create_engine
 from src.db.session import create_session_factory
@@ -54,24 +55,14 @@ async def run_async() -> None:
     scheduler.start()
     logger.info("scheduler_started")
 
-    # Telethon userbot — optional, skipped if session file not yet created. Run as
-    # its own task, independent of dp.start_polling() below, so a dead/revoked user
-    # session never takes down the admin bot or scheduled publishing with it — only
-    # new-message collection pauses until someone re-authenticates.
+    # Telethon userbot — optional, skipped if no API id configured. Runs as its own
+    # supervised task, independent of dp.start_polling() below, so a dead user session
+    # never takes down the admin bot or scheduled publishing with it.
     userbot_task: asyncio.Task | None = None
     if settings.TELETHON_API_ID:
-        try:
-            from src.collector.userbot import start_userbot
-            userbot = await start_userbot(settings, redis, session_factory)
-            userbot_task = asyncio.create_task(userbot.run_until_disconnected())
-            userbot_task.add_done_callback(_log_userbot_exit)
-            logger.info("userbot_started")
-        except Exception as e:
-            logger.warning(
-                "userbot_skipped",
-                reason=str(e),
-                hint="Run auth_telethon.py to authorize Telethon session",
-            )
+        userbot_task = asyncio.create_task(
+            _run_userbot_supervised(settings, redis, session_factory, bot)
+        )
     else:
         logger.info("userbot_disabled", hint="Set TELETHON_API_ID to enable message collection")
 
@@ -83,7 +74,6 @@ async def run_async() -> None:
         raise
     finally:
         if userbot_task is not None:
-            userbot_task.remove_done_callback(_log_userbot_exit)
             userbot_task.cancel()
         scheduler.shutdown(wait=False)
         await bot.session.close()
@@ -91,18 +81,73 @@ async def run_async() -> None:
         logger.info("shutdown_complete")
 
 
-def _log_userbot_exit(task: asyncio.Task) -> None:
-    if task.cancelled():
-        return
-    error = task.exception()
-    if error is not None:
-        logger.error(
-            "telethon_session_invalid",
-            error=str(error),
-            hint="Run `python auth_telethon.py` to re-authenticate the Telethon session",
-        )
-    else:
-        logger.warning("userbot_disconnected", hint="run_until_disconnected() returned unexpectedly")
+# Reconnect backoff for the collector. A transient network blip (wifi drop, laptop
+# sleep) used to kill collection permanently — the process stayed alive polling
+# Telegram for admin commands, so nothing external noticed the userbot was gone.
+_USERBOT_MIN_BACKOFF = 10
+_USERBOT_MAX_BACKOFF = 300
+_USERBOT_ALERT_AFTER = 3
+
+
+async def _run_userbot_supervised(
+    settings, redis, session_factory, bot: Bot
+) -> None:
+    """Keep the collector connected, reconnecting with backoff, and tell the admins
+    when collection is actually down rather than failing silently."""
+    from src.collector.userbot import start_userbot
+
+    backoff = _USERBOT_MIN_BACKOFF
+    failures = 0
+    outage_alerted = False
+
+    while True:
+        client = None
+        try:
+            client = await start_userbot(settings, redis, session_factory)
+            logger.info("userbot_started")
+
+            if outage_alerted:
+                await notify_admins(
+                    bot,
+                    settings.ADMIN_IDS,
+                    "✅ Message collection recovered — the userbot is connected again.",
+                )
+                outage_alerted = False
+            failures = 0
+            backoff = _USERBOT_MIN_BACKOFF
+
+            await client.run_until_disconnected()
+            failures += 1
+            logger.warning("userbot_disconnected", hint="reconnecting")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            failures += 1
+            logger.error(
+                "userbot_connection_failed",
+                error=str(e),
+                consecutive_failures=failures,
+            )
+            if client is not None:
+                try:
+                    await client.disconnect()
+                except Exception:
+                    logger.debug("userbot_disconnect_failed")
+
+        if failures >= _USERBOT_ALERT_AFTER and not outage_alerted:
+            await notify_admins(
+                bot,
+                settings.ADMIN_IDS,
+                f"⚠️ Message collection is DOWN — {failures} failed reconnect "
+                f"attempts. New posts are not being collected.\n\n"
+                f"Still retrying every {_USERBOT_MAX_BACKOFF // 60} min. If this persists, "
+                f"the Telegram session may need re-authorizing (`python auth_telethon.py`).",
+            )
+            outage_alerted = True
+
+        logger.info("userbot_reconnect_scheduled", seconds=backoff)
+        await asyncio.sleep(backoff)
+        backoff = min(backoff * 2, _USERBOT_MAX_BACKOFF)
 
 
 def main() -> None:
