@@ -34,10 +34,6 @@ logger = get_logger(__name__)
 # ~24h, so approvals made while nothing was running arrive as soon as we poll.
 APPROVAL_WINDOW_SECONDS = 90
 
-# Upper bound per run. Guards against a huge first-time backlog burning the whole
-# job (and the LLM's daily quota) in one go; the remainder is picked up next run.
-MAX_MESSAGES_PER_RUN = 60
-
 
 async def run() -> int:
     settings = Settings()
@@ -73,11 +69,13 @@ async def run() -> int:
             # Oldest first, so a capped run leaves the newest for next time and the
             # per-channel cursor stays contiguous.
             payloads.sort(key=lambda p: (p["channel_id"], p["telegram_msg_id"]))
-            if len(payloads) > MAX_MESSAGES_PER_RUN:
+            if len(payloads) > settings.MAX_MESSAGES_PER_RUN:
                 logger.warning(
-                    "batch_capped", fetched=len(payloads), cap=MAX_MESSAGES_PER_RUN
+                    "batch_capped",
+                    fetched=len(payloads),
+                    cap=settings.MAX_MESSAGES_PER_RUN,
                 )
-                payloads = payloads[:MAX_MESSAGES_PER_RUN]
+                payloads = payloads[: settings.MAX_MESSAGES_PER_RUN]
 
             # No Redis: this run owns the messages it just fetched.
             factory = build_pipeline(settings, None, session_factory)

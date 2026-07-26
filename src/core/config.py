@@ -53,7 +53,13 @@ class Settings(BaseSettings):
     PROCESSOR_CRON_HOURS: str = "1,5,9,13,17"
     # Pause between messages so a backlog doesn't exhaust the LLM provider's rate
     # limit — Groq's free tier 429s long before the extractor's own retry can help.
-    LLM_THROTTLE_SECONDS: float = 2.5
+    # Groq free tier caps tokens-per-minute at 12k; one extraction costs ~2.5k, so
+    # anything under ~13s/message starts hitting 429s mid-run.
+    LLM_THROTTLE_SECONDS: float = 15.0
+    # Messages processed per run. The real ceiling is Groq's free-tier 100k
+    # tokens/day: at ~2.5k tokens per extraction that is only ~40 messages/day
+    # across all 5 runs. Raise this if the Groq plan is upgraded.
+    MAX_MESSAGES_PER_RUN: int = 7
     PUBLISHER_POLL_SECONDS: int = 60
 
     # Background library
