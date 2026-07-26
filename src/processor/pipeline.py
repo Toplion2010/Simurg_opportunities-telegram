@@ -1,4 +1,4 @@
-from src.core.enums import Audience, OpportunityStatus, RawAudience
+from src.core.enums import Audience, Category, OpportunityStatus, RawAudience
 from src.core.exceptions import ProcessingError
 from src.core.logging import get_logger
 from src.db.models.opportunity import Opportunity
@@ -9,6 +9,7 @@ from src.processor.classifier import CategoryClassifier
 from src.processor.cleaner import TextCleaner
 from src.processor.deduplicator import Deduplicator
 from src.processor.extractor import FieldExtractor
+from src.processor.vision import ImageReader
 
 logger = get_logger(__name__)
 
@@ -22,6 +23,7 @@ class ProcessingPipeline:
         deduplicator: Deduplicator,
         opp_repo: OpportunityRepository,
         raw_repo: RawMessageRepository,
+        image_reader: ImageReader,
     ) -> None:
         self._cleaner = cleaner
         self._extractor = extractor
@@ -29,6 +31,7 @@ class ProcessingPipeline:
         self._deduplicator = deduplicator
         self._opp_repo = opp_repo
         self._raw_repo = raw_repo
+        self._image_reader = image_reader
 
     async def run(self, raw: RawMessage, media_path: str | None = None) -> list[Opportunity]:
         if not raw.text:
@@ -37,14 +40,35 @@ class ProcessingPipeline:
         results: list[Opportunity] = []
         try:
             clean_text = self._cleaner.clean(raw.text)
-            dtos = await self._extractor.extract(clean_text)
+
+            # Read any attached poster image so facts shown only on the image
+            # (prize amounts, deadlines, eligibility) reach the extractor too.
+            extraction_input = clean_text
+            if media_path:
+                image_text = await self._image_reader.read(media_path)
+                if image_text:
+                    extraction_input = (
+                        f"{clean_text}\n\n"
+                        "[Text and details read from the post's attached poster image "
+                        "(treat these as facts too — the caption may omit them):]\n"
+                        f"{image_text}"
+                    )
+                    logger.info("image_text_extracted", raw_id=raw.id, chars=len(image_text))
+
+            dtos = await self._extractor.extract(extraction_input)
 
             for dto in dtos:
                 if not dto.is_opportunity:
                     logger.info("not_an_opportunity_skipped", raw_id=raw.id)
                     continue
 
-                dto.category = self._classifier.classify(dto, clean_text)
+                dto.category = self._classifier.classify(dto, extraction_input)
+
+                # Regular job vacancies (not student internships) are out of scope for
+                # this students' channel — drop them before a row is ever created.
+                if dto.category == Category.Job:
+                    logger.info("job_skipped", raw_id=raw.id, title=dto.title)
+                    continue
 
                 # null/invalid -> both. No keyword guessing: "students" alone is too
                 # ambiguous (school vs university) to classify by keyword.

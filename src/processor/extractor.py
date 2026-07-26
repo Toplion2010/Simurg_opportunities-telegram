@@ -84,6 +84,11 @@ Rules:
 - For audience, when eligibility is broad, unclear, or unstated, default to "both" — only
   narrow to school/university when the text clearly restricts to that group, and only use
   none when students are explicitly excluded
+- Category "Job" means a regular paid employment position or vacancy aimed at working
+  professionals or general hiring (e.g. "we are hiring a Senior Engineer", "open vacancy",
+  "full-time position, 3+ years experience"). Category "Internship" means a student or
+  early-career internship, traineeship, or apprenticeship. Distinguish them carefully and
+  never label a professional vacancy as an Internship.
 - NEVER invent or guess factual data (deadlines, eligibility, rewards)
 - Remove marketing hype, emojis that don't add value, and repetitive content
 - Keep all important links — every web URL in the source text must end up in exactly

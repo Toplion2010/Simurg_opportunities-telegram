@@ -3,6 +3,7 @@ import functools
 
 from aiogram import Bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from src.bot.bootstrap import build_dispatcher
 from src.core.config import Settings
@@ -33,12 +34,14 @@ async def run_async() -> None:
 
     scheduler = AsyncIOScheduler(timezone="UTC")
     scheduler.add_job(
-        functools.partial(process_batch, factory),
-        trigger="interval",
-        seconds=settings.PROCESSOR_INTERVAL_SECONDS,
+        functools.partial(process_batch, factory, bot=bot, admin_ids=settings.ADMIN_IDS),
+        trigger=CronTrigger(hour=settings.PROCESSOR_CRON_HOURS, minute=0),
         id="process_batch",
         max_instances=1,
-        misfire_grace_time=30,
+        # Wide grace window: unlike the old 30s interval (where a missed tick was
+        # free), missing one of only 5 daily fires means a ~4h delay unless a
+        # restart/redeploy near the scheduled minute can still catch up.
+        misfire_grace_time=1800,
     )
     scheduler.add_job(
         functools.partial(publish_scheduled, settings, session_factory, bot),

@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # Gemini — live per-post card background generation (image_gen.py)
     GEMINI_API_KEY: str = ""
     GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+    # Gemini vision — reads text/details out of a post's attached poster image so
+    # facts shown only on the image (e.g. a prize amount) reach the extractor.
+    GEMINI_VISION_MODEL: str = "gemini-flash-latest"
+    ENABLE_IMAGE_ANALYSIS: bool = True
 
     # Database
     DATABASE_URL: str
@@ -39,8 +43,9 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     DEDUP_TTL_SECONDS: int = 2_592_000  # 30 days
 
-    # Processing
-    PROCESSOR_INTERVAL_SECONDS: int = 30
+    # Processing — batch runs 5x/day. Value is UTC hours (comma-separated, apscheduler
+    # cron field syntax). Default below = 6,10,14,18,22 Astana time (GMT+5) converted to UTC.
+    PROCESSOR_CRON_HOURS: str = "1,5,9,13,17"
     PUBLISHER_POLL_SECONDS: int = 60
 
     # Background library
