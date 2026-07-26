@@ -68,14 +68,60 @@ async def fetch_new_messages(
                 continue
 
             payloads.extend(fetched)
-            channel.last_seen_msg_id = max(p["telegram_msg_id"] for p in fetched)
 
-        # Cursors advance only after every channel has been attempted, so a crash
-        # mid-loop re-fetches rather than silently skipping messages.
-        await session.commit()
-
+    # Cursors are deliberately NOT advanced here. A message whose extraction later
+    # fails (LLM rate limit, transient API error) must stay re-fetchable, so the
+    # caller advances each cursor only past messages it actually processed —
+    # see advance_cursors().
     logger.info("history_fetch_complete", messages=len(payloads))
     return payloads
+
+
+async def advance_cursors(session_factory, safe_ids: dict[int, int]) -> None:
+    """Record how far each channel was successfully processed.
+
+    ``safe_ids`` maps telegram channel id -> highest message id that completed.
+    Anything above it is left for the next run to retry.
+    """
+    if not safe_ids:
+        return
+
+    async with session_factory() as session:
+        repo = SourceChannelRepository(session)
+        for channel in await repo.get_active():
+            new_id = safe_ids.get(channel.telegram_id)
+            if new_id is None:
+                continue
+            if channel.last_seen_msg_id is None or new_id > channel.last_seen_msg_id:
+                channel.last_seen_msg_id = new_id
+        await session.commit()
+
+    logger.info("cursors_advanced", channels=len(safe_ids))
+
+
+def compute_safe_cursors(
+    payloads: list[dict[str, Any]], failed: set[tuple[int, int]]
+) -> dict[int, int]:
+    """Highest message id per channel that is safe to skip next time.
+
+    Stops at the first failure in each channel so a rate-limited message is
+    retried on the next run instead of being silently dropped. Messages after it
+    get re-fetched too; the deduplicator absorbs the ones that did succeed.
+    """
+    by_channel: dict[int, list[int]] = {}
+    for p in payloads:
+        by_channel.setdefault(p["channel_id"], []).append(p["telegram_msg_id"])
+
+    safe: dict[int, int] = {}
+    for channel_id, msg_ids in by_channel.items():
+        highest: int | None = None
+        for msg_id in sorted(msg_ids):
+            if (channel_id, msg_id) in failed:
+                break
+            highest = msg_id
+        if highest is not None:
+            safe[channel_id] = highest
+    return safe
 
 
 async def _fetch_channel(

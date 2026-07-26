@@ -1,3 +1,4 @@
+import asyncio
 import time
 from datetime import datetime, timezone
 
@@ -55,22 +56,31 @@ class PipelineFactory:
 async def process_payloads(
     factory: PipelineFactory,
     payloads: list[dict],
-) -> tuple[int, int, int]:
+    throttle_seconds: float = 0.0,
+) -> tuple[int, int, int, set[tuple[int, int]]]:
     """Run raw message payloads through the pipeline.
 
-    Returns (processed, created, errors). A failing item is logged and skipped so
-    one bad message never costs the rest of the run.
+    Returns (processed, created, errors, failed) where ``failed`` holds
+    (channel_id, telegram_msg_id) pairs so the caller can avoid marking them as
+    seen. A failing item is logged and skipped so one bad message never costs the
+    rest of the run.
+
+    ``throttle_seconds`` paces LLM calls: the extractor's own retry cannot rescue
+    a run that is exhausting a provider rate limit on every request.
     """
     processed = created_count = error_count = 0
+    failed: set[tuple[int, int]] = set()
 
     if not payloads:
-        return (0, 0, 0)
+        return (0, 0, 0, failed)
 
     async with factory._session_factory() as session:
         raw_repo = RawMessageRepository(session)
         pipeline = factory.make_pipeline(session)
 
-        for payload in payloads:
+        for index, payload in enumerate(payloads):
+            if throttle_seconds and index:
+                await asyncio.sleep(throttle_seconds)
             try:
                 received_at = datetime.fromisoformat(payload["received_at"]).replace(tzinfo=None)
                 source_channel_id = await _resolve_channel_id(
@@ -90,8 +100,9 @@ async def process_payloads(
                 logger.exception("batch_item_error", payload=payload)
                 await session.rollback()
                 error_count += 1
+                failed.add((payload["channel_id"], payload["telegram_msg_id"]))
 
-    return (processed, created_count, error_count)
+    return (processed, created_count, error_count, failed)
 
 
 async def process_batch(
@@ -112,7 +123,7 @@ async def process_batch(
             break
 
         logger.info("processing_chunk", count=len(payloads))
-        processed, created, errors = await process_payloads(factory, payloads)
+        processed, created, errors, _ = await process_payloads(factory, payloads)
         drained_count += processed
         created_count += created
         error_count += errors

@@ -19,7 +19,7 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 
 from src.bot.bootstrap import build_dispatcher
-from src.collector.fetcher import fetch_new_messages
+from src.collector.fetcher import advance_cursors, compute_safe_cursors, fetch_new_messages
 from src.core.config import Settings
 from src.core.logging import get_logger, setup_logging
 from src.core.notify import notify_admins
@@ -33,6 +33,10 @@ logger = get_logger(__name__)
 # How long to listen for admin button presses. Telegram retains bot updates for
 # ~24h, so approvals made while nothing was running arrive as soon as we poll.
 APPROVAL_WINDOW_SECONDS = 90
+
+# Upper bound per run. Guards against a huge first-time backlog burning the whole
+# job (and the LLM's daily quota) in one go; the remainder is picked up next run.
+MAX_MESSAGES_PER_RUN = 60
 
 
 async def run() -> int:
@@ -66,9 +70,23 @@ async def run() -> int:
             await client.disconnect()
 
         if payloads:
+            # Oldest first, so a capped run leaves the newest for next time and the
+            # per-channel cursor stays contiguous.
+            payloads.sort(key=lambda p: (p["channel_id"], p["telegram_msg_id"]))
+            if len(payloads) > MAX_MESSAGES_PER_RUN:
+                logger.warning(
+                    "batch_capped", fetched=len(payloads), cap=MAX_MESSAGES_PER_RUN
+                )
+                payloads = payloads[:MAX_MESSAGES_PER_RUN]
+
             # No Redis: this run owns the messages it just fetched.
             factory = build_pipeline(settings, None, session_factory)
-            processed, created, errors = await process_payloads(factory, payloads)
+            processed, created, errors, failed = await process_payloads(
+                factory, payloads, throttle_seconds=settings.LLM_THROTTLE_SECONDS
+            )
+            # Only skip messages that actually made it through; a rate-limited one
+            # must come back on the next run rather than vanish.
+            await advance_cursors(session_factory, compute_safe_cursors(payloads, failed))
 
         # --- 3: apply approvals made since the last run ----------------------
         await _drain_admin_updates(settings, session_factory, bot)

@@ -176,8 +176,10 @@ class FieldExtractor:
 
     @retry(
         retry=retry_if_exception_type((openai.RateLimitError, openai.APIError)),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=30),
+        # Groq's free tier rate-limits for a full minute at a time, so 3 tries
+        # capped at 30s gave up while the window was still open.
+        stop=stop_after_attempt(6),
+        wait=wait_exponential(multiplier=2, min=4, max=90),
         reraise=True,
     )
     async def extract(self, text: str) -> list[OpportunityDTO]:

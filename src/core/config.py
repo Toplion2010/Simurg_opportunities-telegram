@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # Processing — batch runs 5x/day. Value is UTC hours (comma-separated, apscheduler
     # cron field syntax). Default below = 6,10,14,18,22 Astana time (GMT+5) converted to UTC.
     PROCESSOR_CRON_HOURS: str = "1,5,9,13,17"
+    # Pause between messages so a backlog doesn't exhaust the LLM provider's rate
+    # limit — Groq's free tier 429s long before the extractor's own retry can help.
+    LLM_THROTTLE_SECONDS: float = 2.5
     PUBLISHER_POLL_SECONDS: int = 60
 
     # Background library
