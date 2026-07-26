@@ -52,48 +52,70 @@ class PipelineFactory:
         )
 
 
+async def process_payloads(
+    factory: PipelineFactory,
+    payloads: list[dict],
+) -> tuple[int, int, int]:
+    """Run raw message payloads through the pipeline.
+
+    Returns (processed, created, errors). A failing item is logged and skipped so
+    one bad message never costs the rest of the run.
+    """
+    processed = created_count = error_count = 0
+
+    if not payloads:
+        return (0, 0, 0)
+
+    async with factory._session_factory() as session:
+        raw_repo = RawMessageRepository(session)
+        pipeline = factory.make_pipeline(session)
+
+        for payload in payloads:
+            try:
+                received_at = datetime.fromisoformat(payload["received_at"]).replace(tzinfo=None)
+                source_channel_id = await _resolve_channel_id(
+                    session, payload["channel_id"]
+                )
+                raw = await raw_repo.create(
+                    source_channel_id=source_channel_id,
+                    telegram_msg_id=payload["telegram_msg_id"],
+                    text=payload.get("text"),
+                    received_at=received_at,
+                )
+                created = await pipeline.run(raw, media_path=payload.get("media_path"))
+                await session.commit()
+                processed += 1
+                created_count += len(created)
+            except Exception:
+                logger.exception("batch_item_error", payload=payload)
+                await session.rollback()
+                error_count += 1
+
+    return (processed, created_count, error_count)
+
+
 async def process_batch(
     factory: PipelineFactory,
     batch_size: int = 20,
     bot: Bot | None = None,
     admin_ids: list[int] | None = None,
 ) -> None:
+    """Drain the Redis queue completely (live/always-on mode)."""
     started_at = time.monotonic()
     drained_count = 0
     created_count = 0
     error_count = 0
 
-    async with factory._session_factory() as session:
-        raw_repo = RawMessageRepository(session)
-        pipeline = factory.make_pipeline(session)
+    while True:
+        payloads = await dequeue_batch(factory._redis, batch_size)
+        if not payloads:
+            break
 
-        while True:
-            payloads = await dequeue_batch(factory._redis, batch_size)
-            if not payloads:
-                break
-
-            logger.info("processing_chunk", count=len(payloads))
-
-            for payload in payloads:
-                try:
-                    received_at = datetime.fromisoformat(payload["received_at"]).replace(tzinfo=None)
-                    source_channel_id = await _resolve_channel_id(
-                        session, payload["channel_id"]
-                    )
-                    raw = await raw_repo.create(
-                        source_channel_id=source_channel_id,
-                        telegram_msg_id=payload["telegram_msg_id"],
-                        text=payload.get("text"),
-                        received_at=received_at,
-                    )
-                    created = await pipeline.run(raw, media_path=payload.get("media_path"))
-                    await session.commit()
-                    drained_count += 1
-                    created_count += len(created)
-                except Exception:
-                    logger.exception("batch_item_error", payload=payload)
-                    await session.rollback()
-                    error_count += 1
+        logger.info("processing_chunk", count=len(payloads))
+        processed, created, errors = await process_payloads(factory, payloads)
+        drained_count += processed
+        created_count += created
+        error_count += errors
 
     duration_seconds = round(time.monotonic() - started_at, 2)
     logger.info(

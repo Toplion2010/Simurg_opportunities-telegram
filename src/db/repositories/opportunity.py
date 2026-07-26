@@ -48,6 +48,29 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self._session.execute(stmt)
         return result.scalar_one()
 
+    async def exists_by_hash(self, similarity_hash: str, within_seconds: int) -> bool:
+        """Has an equivalent opportunity been seen recently?
+
+        Replaces the old Redis SET-NX dedup key. ``within_seconds`` mirrors the
+        previous DEDUP_TTL_SECONDS window so a reposted opportunity is allowed
+        through again once it has aged out.
+        """
+        from datetime import timedelta
+
+        cutoff = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(
+            seconds=within_seconds
+        )
+        stmt = (
+            select(Opportunity.id)
+            .where(
+                Opportunity.similarity_hash == similarity_hash,
+                Opportunity.created_at >= cutoff,
+            )
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
     async def get_due_for_publish(self, now: datetime | None = None) -> list[Opportunity]:
         now = (now or datetime.now(tz=timezone.utc)).replace(tzinfo=None)
         stmt = (

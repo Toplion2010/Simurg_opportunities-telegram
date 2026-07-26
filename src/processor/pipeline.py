@@ -77,7 +77,7 @@ class ProcessingPipeline:
                     logger.info("audience_none_skipped", raw_id=raw.id)
                     continue
 
-                if await self._deduplicator.check(dto):
+                if await self._deduplicator.check(dto, self._opp_repo):
                     continue
 
                 hash_key = self._deduplicator.make_hash(dto)

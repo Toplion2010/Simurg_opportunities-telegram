@@ -13,6 +13,10 @@ class SourceChannel(Base):
     username: Mapped[str | None] = mapped_column(String(255))
     category_hint: Mapped[str | None] = mapped_column(Text)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Highest Telegram message id already pulled from this channel. Lets a scheduled
+    # run fetch only what was posted since last time, instead of needing a process
+    # listening live for new-message events.
+    last_seen_msg_id: Mapped[int | None] = mapped_column(BigInteger)
 
     raw_messages: Mapped[list["RawMessage"]] = relationship(  # noqa: F821
         back_populates="source_channel"

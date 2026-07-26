@@ -1,0 +1,65 @@
+name: Batch process opportunities
+
+on:
+  schedule:
+    # 5x/day. Cron is UTC; these are 06:00, 10:00, 14:00, 18:00, 22:00 Astana (UTC+5).
+    # Off-the-hour minute because GitHub queues scheduled runs at low priority and
+    # :00 is the most congested slot — expect runs to start late regardless.
+    - cron: "7 1,5,9,13,17 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  # Never let a slow run overlap the next scheduled one: two runs would fetch the
+  # same channel history twice and double-process it.
+  group: simurg-batch
+  cancel-in-progress: false
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install Chromium for card rendering
+        run: playwright install --with-deps chromium
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+        run: alembic upgrade head
+
+      - name: Run batch
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ENVIRONMENT: production
+          LOCAL_DEV: "false"
+          SIMURG_MEDIA_DIR: ${{ runner.temp }}/simurg_media
+        run: python -m src.routines.batch_processor

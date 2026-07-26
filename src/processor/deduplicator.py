@@ -8,10 +8,9 @@ from src.core.exceptions import DuplicateError
 from src.core.logging import get_logger
 from src.core.redis_client import (
     get_embedding_vectors,
-    is_duplicate,
     store_embedding_vector,
-    store_hash,
 )
+from src.db.repositories.opportunity import OpportunityRepository
 from src.processor.extractor import FieldExtractor, OpportunityDTO
 
 logger = get_logger(__name__)
@@ -24,9 +23,18 @@ def _normalize(text: str | None) -> str:
 
 
 class Deduplicator:
+    """Hash dedup lives in Postgres (``opportunities.similarity_hash``), not Redis.
+
+    The old Redis SET-NX key was lost on every restart under fakeredis, and would
+    not survive at all in a scheduled run that starts a fresh process each time.
+    The opportunity row already carries the hash, so the database is the natural
+    home for it. ``redis`` stays optional purely for the off-by-default embedding
+    path, which keeps a rolling vector list.
+    """
+
     def __init__(
         self,
-        redis: aioredis.Redis,
+        redis: aioredis.Redis | None,
         settings: Settings,
         extractor: FieldExtractor,
     ) -> None:
@@ -38,14 +46,18 @@ class Deduplicator:
         raw = (_normalize(dto.title) + _normalize(dto.apply_link)).encode()
         return hashlib.sha256(raw).hexdigest()
 
-    async def check(self, dto: OpportunityDTO) -> bool:
+    async def check(self, dto: OpportunityDTO, opp_repo: OpportunityRepository) -> bool:
         """Returns True if this is a duplicate."""
         hash_key = self.make_hash(dto)
-        if await is_duplicate(self._redis, hash_key, self._settings.DEDUP_TTL_SECONDS):
+        if await opp_repo.exists_by_hash(hash_key, self._settings.DEDUP_TTL_SECONDS):
             logger.info("duplicate_detected_hash", title=dto.title)
             return True
 
-        if self._settings.ENABLE_EMBEDDING_DEDUP and dto.rewritten_text:
+        if (
+            self._settings.ENABLE_EMBEDDING_DEDUP
+            and dto.rewritten_text
+            and self._redis is not None
+        ):
             try:
                 if await self._embedding_check(dto.rewritten_text):
                     logger.info("duplicate_detected_embedding", title=dto.title)
@@ -56,10 +68,13 @@ class Deduplicator:
         return False
 
     async def store(self, dto: OpportunityDTO) -> None:
-        hash_key = self.make_hash(dto)
-        await store_hash(self._redis, hash_key, self._settings.DEDUP_TTL_SECONDS)
-
-        if self._settings.ENABLE_EMBEDDING_DEDUP and dto.rewritten_text:
+        # The hash is persisted as part of the Opportunity row itself, so only the
+        # optional embedding vector needs storing here.
+        if (
+            self._settings.ENABLE_EMBEDDING_DEDUP
+            and dto.rewritten_text
+            and self._redis is not None
+        ):
             try:
                 vector = await self._extractor.get_embedding(
                     dto.rewritten_text, self._settings.OPENAI_EMBED_MODEL

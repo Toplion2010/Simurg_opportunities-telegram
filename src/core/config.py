@@ -77,11 +77,32 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def force_async_driver(cls, v: str) -> str:
-        # Managed hosts (Railway, Heroku) inject a plain postgresql:// URL, which
-        # SQLAlchemy resolves to the sync psycopg2 driver and then rejects under
-        # create_async_engine.
-        if v.startswith("postgresql://"):
-            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # Managed hosts (Neon, Supabase, Railway, Heroku) inject a plain
+        # postgresql:// URL, which SQLAlchemy resolves to the sync psycopg2 driver
+        # and then rejects under create_async_engine.
         if v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql+asyncpg://", 1)
-        return v
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://"):
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        if "+asyncpg" not in v or "?" not in v:
+            return v
+
+        # asyncpg takes none of libpq's query params: sslmode=require (Neon's
+        # default) raises TypeError at connect time. Translate it to the driver's
+        # own `ssl` arg and drop the rest.
+        base, _, query = v.partition("?")
+        keep: list[str] = []
+        for part in query.split("&"):
+            if not part:
+                continue
+            key, _, value = part.partition("=")
+            if key == "sslmode":
+                if value not in ("disable", "allow"):
+                    keep.append("ssl=require")
+            elif key in ("channel_binding", "options", "target_session_attrs"):
+                continue  # libpq-only, unsupported by asyncpg
+            else:
+                keep.append(part)
+
+        return f"{base}?{'&'.join(keep)}" if keep else base
