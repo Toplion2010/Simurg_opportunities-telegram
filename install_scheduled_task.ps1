@@ -53,9 +53,13 @@ $action = New-ScheduledTaskAction -Execute "powershell.exe" `
     -WorkingDirectory $RepoRoot
 
 # --- Triggers ---
-# 1) Fire once at boot (short delay so networking is up).
+# 1) Fire once at boot (delay so networking/DNS and the Postgres/Redis services are
+#    actually up - 1 minute was too short after a full reboot and caused Telethon's
+#    is_user_authorized() to fail on unreachable network, misreported as "not
+#    authorized" and triggering a restart-loop race with Task Scheduler's own
+#    RestartCount/RestartInterval below).
 $triggerAtStartup = New-ScheduledTaskTrigger -AtStartup
-$triggerAtStartup.Delay = "PT1M"
+$triggerAtStartup.Delay = "PT1M30S"
 
 # 2) Keep-alive: re-fire every 5 minutes forever. Combined with the
 #    "IgnoreNew" multiple-instances policy below, this is a no-op while the bot
