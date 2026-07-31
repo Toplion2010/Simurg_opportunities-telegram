@@ -43,31 +43,36 @@ async def fetch_new_messages(
     # cache for this connection; without it every channel fetch fails.
     await client.get_dialogs(limit=None)
 
+    # Only read the channel list from the DB, then close the session before the
+    # Telegram loop below. That loop can run for many minutes (flood waits, a slow
+    # or flaky network path to Telegram), and a hosted Postgres (Neon's free tier
+    # in particular) will drop an idle connection well before that — holding the
+    # session open for the whole loop turned a slow run into a crashed one.
     async with session_factory() as session:
         repo = SourceChannelRepository(session)
         channels = await repo.get_active()
 
-        if not channels:
-            logger.warning("no_active_channels_configured")
-            return []
+    if not channels:
+        logger.warning("no_active_channels_configured")
+        return []
 
-        for channel in channels:
-            try:
-                fetched = await _fetch_channel(
-                    client, channel, download_media=download_media
-                )
-            except Exception:
-                # One unreachable channel (left, banned, deleted) must not abort
-                # collection for the other 39.
-                logger.exception(
-                    "channel_fetch_failed", telegram_id=channel.telegram_id
-                )
-                continue
+    for channel in channels:
+        try:
+            fetched = await _fetch_channel(
+                client, channel, download_media=download_media
+            )
+        except Exception:
+            # One unreachable channel (left, banned, deleted) must not abort
+            # collection for the other 39.
+            logger.exception(
+                "channel_fetch_failed", telegram_id=channel.telegram_id
+            )
+            continue
 
-            if not fetched:
-                continue
+        if not fetched:
+            continue
 
-            payloads.extend(fetched)
+        payloads.extend(fetched)
 
     # Cursors are deliberately NOT advanced here. A message whose extraction later
     # fails (LLM rate limit, transient API error) must stay re-fetchable, so the
