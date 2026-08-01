@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.middlewares.auth import AdminAuthMiddleware
 from src.bot.middlewares.db_session import DbSessionMiddleware
-from src.bot.routers import edit, hooks, queue, schedule, search, setup, start
+from src.bot.routers import edit, hooks, queue, schedule, search, setup, start, stats
 from src.core.config import Settings
 
 
@@ -29,5 +29,6 @@ def build_dispatcher(
     dp.include_router(schedule.router)
     dp.include_router(hooks.router)
     dp.include_router(search.router)
+    dp.include_router(stats.router)
 
     return dp

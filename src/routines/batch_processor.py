@@ -33,6 +33,11 @@ logger = get_logger(__name__)
 # How long to listen for admin button presses. Telegram retains bot updates for
 # ~24h, so approvals made while nothing was running arrive as soon as we poll.
 APPROVAL_WINDOW_SECONDS = 90
+# Grace period, once the window above closes, to let an update whose handler is
+# already running (e.g. an Approve tap delivered right as the window closed)
+# finish its DB commit and message edit before bot/engine teardown below pulls
+# the rug out from under it. See _drain_admin_updates.
+IN_FLIGHT_HANDLER_GRACE_SECONDS = 15
 
 
 async def run() -> int:
@@ -157,11 +162,28 @@ async def _drain_admin_updates(settings, session_factory, bot: Bot) -> None:
     except Exception:
         logger.exception("approval_polling_failed")
     finally:
+        # aiogram dispatches each update as its own asyncio.create_task() (see
+        # Dispatcher._polling); cancelling `polling` only unwinds start_polling()'s
+        # own coroutine and does NOT cascade to those already-spawned handler
+        # tasks. Left alone, a tap still mid-handler when the window above closes
+        # (e.g. between session.commit() and message.edit_text()) keeps running
+        # orphaned and gets killed mid-write the moment bot.session.close() /
+        # engine.dispose() run at the end of this routine — silently losing the
+        # tap with no error surfaced anywhere. Wait for it here instead.
+        in_flight = [t for t in dp._handle_update_tasks if not t.done()]
         polling.cancel()
         try:
             await polling
         except (asyncio.CancelledError, Exception):
             pass
+        if in_flight:
+            logger.info("waiting_for_in_flight_admin_updates", count=len(in_flight))
+            _, still_pending = await asyncio.wait(
+                in_flight, timeout=IN_FLIGHT_HANDLER_GRACE_SECONDS
+            )
+            for task in still_pending:
+                logger.warning("admin_update_handler_timed_out")
+                task.cancel()
 
 
 def main() -> None:

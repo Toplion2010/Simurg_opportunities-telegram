@@ -85,6 +85,32 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def count_by_status(self) -> dict[OpportunityStatus, int]:
+        from sqlalchemy import func
+
+        stmt = select(Opportunity.status, func.count()).group_by(Opportunity.status)
+        result = await self._session.execute(stmt)
+        return dict(result.all())
+
+    async def count_by_category(self) -> dict[str | None, int]:
+        from sqlalchemy import func
+
+        stmt = select(Opportunity.category, func.count()).group_by(Opportunity.category)
+        result = await self._session.execute(stmt)
+        return {(cat.value if cat else None): count for cat, count in result.all()}
+
+    async def get_recently_published(self, since: datetime) -> list[Opportunity]:
+        stmt = (
+            select(Opportunity)
+            .where(
+                Opportunity.status == OpportunityStatus.published,
+                Opportunity.published_at >= since,
+            )
+            .order_by(Opportunity.published_at.desc())
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def search(self, query: str, limit: int = 20) -> list[Opportunity]:
         stmt = (
             select(Opportunity)
