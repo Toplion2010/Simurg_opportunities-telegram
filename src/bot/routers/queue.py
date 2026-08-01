@@ -1,18 +1,16 @@
 import math
 
-from aiogram import Bot, F, Router
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.bot.callbacks.data import OpportunityAction, QueuePage
 from src.bot.keyboards.queue import opportunity_actions_keyboard, pagination_keyboard
-from src.core.config import Settings
 from src.core.enums import Audience, OpportunityStatus
 from src.db.models.opportunity import Opportunity
 from src.db.repositories.opportunity import OpportunityRepository
 from src.publisher.formatter import format_opportunity
-from src.publisher.sender import OpportunitySender
 
 router = Router(name="queue")
 
@@ -137,33 +135,25 @@ async def approve_opportunity(
     call: CallbackQuery,
     callback_data: OpportunityAction,
     session: AsyncSession,
-    bot: Bot,
-    settings: Settings,
 ) -> None:
+    # Only flip the status here — do NOT call OpportunitySender.publish() (image
+    # generation + Playwright render + upload) directly in this handler. This
+    # runs inside the scheduled routine's short, cancellable admin-polling
+    # window (see batch_processor._drain_admin_updates); a slow publish that's
+    # still in flight when that window closes gets forcibly cancelled mid-send
+    # with no error surfaced. publish_scheduled() already runs right after that
+    # window closes, with no such time limit, and already picks up anything
+    # approved — same as the "Schedule" flow in schedule.py.
     repo = OpportunityRepository(session)
-    opp = await repo.get_with_raw_message(callback_data.opp_id)
+    opp = await repo.get(callback_data.opp_id)
     if not opp:
         await call.answer("Not found.", show_alert=True)
         return
 
-    sender = OpportunitySender(settings)
-    try:
-        result = await sender.publish(opp, bot)
-        await session.commit()
-        if result.failed:
-            failed_ids = ", ".join(str(c) for c, _ in result.failed)
-            await call.answer(
-                f"⚠️ Partial publish — failed on: {failed_ids}", show_alert=True
-            )
-            await call.message.edit_text(
-                f"⚠️ Partially published: {opp.title}\n"
-                f"Failed channel(s): {failed_ids}"
-            )
-        else:
-            await call.answer("✅ Published successfully!")
-            await call.message.edit_text(f"✅ Published: {opp.title}")
-    except Exception as e:
-        await call.answer(f"❌ Failed: {e}", show_alert=True)
+    opp.status = OpportunityStatus.approved
+    await session.commit()
+    await call.answer("✅ Approved — publishing shortly")
+    await call.message.edit_text(f"✅ Approved: {opp.title or 'Untitled'} — publishing shortly")
 
 
 @router.callback_query(OpportunityAction.filter(F.action == "reject"))
