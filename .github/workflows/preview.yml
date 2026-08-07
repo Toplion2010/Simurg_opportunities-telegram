@@ -1,0 +1,54 @@
+name: Render card previews
+
+# Manual only. Renders real opportunity cards and uploads them as artifacts,
+# so card appearance and the Gemini fallback chain can be checked without
+# publishing anything to a channel.
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "How many cards to render"
+        required: false
+        default: "3"
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install Chromium for card rendering
+        run: playwright install --with-deps chromium
+
+      - name: Render previews
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          ENVIRONMENT: production
+          LOCAL_DEV: "false"
+        run: python -m scripts.render_preview "${{ inputs.count }}" previews
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: card-previews
+          path: previews/
+          if-no-files-found: warn
