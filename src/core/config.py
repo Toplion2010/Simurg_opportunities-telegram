@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # Gemini — live per-post card background generation (image_gen.py)
     GEMINI_API_KEY: str = ""
     GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+    # Tried in order when the primary returns 503/429. Congestion is per-model,
+    # so a sibling usually answers instantly while the primary is saturated.
+    GEMINI_IMAGE_FALLBACK_MODELS: str = (
+        "gemini-3.1-flash-image,gemini-3.1-flash-lite-image,gemini-3-pro-image"
+    )
     # Gemini vision — reads text/details out of a post's attached poster image so
     # facts shown only on the image (e.g. a prize amount) reach the extractor.
     GEMINI_VISION_MODEL: str = "gemini-flash-latest"

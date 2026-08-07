@@ -38,8 +38,19 @@ TARGET_HEIGHT = 628
 
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
-_MAX_ATTEMPTS = 3
 _RAW_TEXT_EXCERPT_LEN = 400
+
+# Seconds to wait before each attempt. A 503 ("high demand") is a capacity spike
+# that outlasts a couple of seconds, so the old 5s/10s schedule almost always
+# gave up while the model was still busy. Each attempt also rotates to the next
+# model in the chain, because congestion is per-model — when 2.5-flash-image is
+# saturated a sibling model usually answers immediately.
+_RETRY_SCHEDULE = (0, 4, 10, 25, 45)
+
+_TRANSIENT_MARKERS = (
+    "rate", "429", "resource_exhausted", "quota", "500", "502", "503", "504",
+    "unavailable", "timeout", "overloaded", "internal",
+)
 
 _STYLES = [
     "colorful minimalist",
@@ -223,6 +234,20 @@ def _compute_metrics(jpeg_bytes: bytes) -> tuple[float, float]:
     return brightness, contrast
 
 
+def _model_chain(settings) -> list[str]:
+    """Primary image model first, then configured siblings, de-duplicated.
+
+    Order matters: the primary is the model whose look the channel is tuned to,
+    so siblings are only ever reached when it is unreachable.
+    """
+    chain = [settings.GEMINI_IMAGE_MODEL]
+    for name in settings.GEMINI_IMAGE_FALLBACK_MODELS.split(","):
+        name = name.strip()
+        if name and name not in chain:
+            chain.append(name)
+    return chain
+
+
 async def _call_gemini(prompt: str, api_key: str, model: str) -> bytes:
     import httpx
 
@@ -271,32 +296,37 @@ async def generate_live_background(opp: "Opportunity") -> LiveBackground:
         raise RuntimeError("GEMINI_API_KEY is not configured")
 
     prompt = _compose_prompt(opp)
+    models = _model_chain(settings)
+    opp_id = getattr(opp, "id", None)
 
     last_error: Exception | None = None
     attempt = 0
-    for attempt in range(1, _MAX_ATTEMPTS + 1):
+    for attempt, delay in enumerate(_RETRY_SCHEDULE, start=1):
+        model = models[(attempt - 1) % len(models)]
+        if delay:
+            # Jitter so several posts in one batch don't retry in lockstep and
+            # hammer the same model at the same instant.
+            await asyncio.sleep(delay + random.uniform(0, 2))
         try:
-            raw = await _call_gemini(prompt, api_key, settings.GEMINI_IMAGE_MODEL)
+            raw = await _call_gemini(prompt, api_key, model)
             jpeg_bytes = _crop_resize_to_card(raw)
             brightness, contrast = _compute_metrics(jpeg_bytes)
-            logger.info("live_background_generated", opp_id=getattr(opp, "id", None), attempt=attempt)
+            logger.info(
+                "live_background_generated", opp_id=opp_id, attempt=attempt, model=model
+            )
             return LiveBackground(data=jpeg_bytes, brightness=brightness, contrast=contrast)
         except Exception as e:  # noqa: BLE001
             last_error = e
             logger.warning(
                 "live_background_attempt_failed",
-                opp_id=getattr(opp, "id", None),
+                opp_id=opp_id,
                 attempt=attempt,
+                model=model,
                 error=str(e),
             )
             msg = str(e).lower()
-            transient = any(
-                s in msg for s in ("rate", "429", "resource_exhausted", "quota", "503", "timeout")
-            )
-            if attempt < _MAX_ATTEMPTS and transient:
-                await asyncio.sleep(5 * attempt)
-                continue
-            break
+            if not any(s in msg for s in _TRANSIENT_MARKERS):
+                break  # a bad key or blocked prompt won't fix itself on retry
 
     raise RuntimeError(
         f"Live background generation failed after {attempt} attempt(s): {last_error}"
