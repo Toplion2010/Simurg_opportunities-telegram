@@ -12,6 +12,7 @@ a live Telethon listener plus two APScheduler jobs:
 Run with:  python -m src.routines.batch_processor
 """
 import asyncio
+import os
 import time
 
 from aiogram import Bot
@@ -32,7 +33,9 @@ logger = get_logger(__name__)
 
 # How long to listen for admin button presses. Telegram retains bot updates for
 # ~24h, so approvals made while nothing was running arrive as soon as we poll.
-APPROVAL_WINDOW_SECONDS = 90
+# Overridable so the manual drain workflow can hold the window open long enough
+# to tap buttons live while it watches.
+APPROVAL_WINDOW_SECONDS = int(os.environ.get("SIMURG_APPROVAL_WINDOW_SECONDS") or 90)
 # Grace period, once the window above closes, to let an update whose handler is
 # already running (e.g. an Approve tap delivered right as the window closed)
 # finish its DB commit and message edit before bot/engine teardown below pulls

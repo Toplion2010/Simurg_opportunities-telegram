@@ -1,0 +1,50 @@
+name: Drain approvals and publish
+
+# Manual only. Runs just the "collect admin taps + publish what's approved" half
+# of the batch job, skipping the slow Telethon fetch — so an approval can be
+# tested in ~2 minutes instead of waiting for the next 4-hourly cron.
+on:
+  workflow_dispatch:
+    inputs:
+      window_seconds:
+        description: "How long to listen for button presses"
+        required: false
+        default: "90"
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install Chromium for card rendering
+        run: playwright install --with-deps chromium
+
+      - name: Drain and publish
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          ENVIRONMENT: production
+          LOCAL_DEV: "false"
+          SIMURG_APPROVAL_WINDOW_SECONDS: ${{ inputs.window_seconds }}
+          SIMURG_MEDIA_DIR: ${{ runner.temp }}/simurg_media
+        run: python -m scripts.drain_and_publish

@@ -1,6 +1,7 @@
 import math
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,9 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.bot.callbacks.data import OpportunityAction, QueuePage
 from src.bot.keyboards.queue import opportunity_actions_keyboard, pagination_keyboard
 from src.core.enums import Audience, OpportunityStatus
+from src.core.logging import get_logger
 from src.db.models.opportunity import Opportunity
 from src.db.repositories.opportunity import OpportunityRepository
 from src.publisher.formatter import format_opportunity
+
+logger = get_logger(__name__)
 
 router = Router(name="queue")
 
@@ -152,8 +156,19 @@ async def approve_opportunity(
 
     opp.status = OpportunityStatus.approved
     await session.commit()
-    await call.answer("✅ Approved — publishing shortly")
-    await call.message.edit_text(f"✅ Approved: {opp.title or 'Untitled'} — publishing shortly")
+    logger.info("approval_recorded", opp_id=opp.id, title=opp.title)
+
+    # Everything past this point is cosmetic. A tap made while the batch job was
+    # offline arrives hours later, by which time Telegram rejects both calls
+    # ("query is too old"); letting that bubble would make a committed approval
+    # look like a failure and hide the real state in the logs.
+    try:
+        await call.answer("✅ Approved — publishing shortly")
+        await call.message.edit_text(
+            f"✅ Approved: {opp.title or 'Untitled'} — publishing shortly"
+        )
+    except TelegramBadRequest as e:
+        logger.info("stale_callback_ack_skipped", opp_id=opp.id, error=str(e))
 
 
 @router.callback_query(OpportunityAction.filter(F.action == "reject"))
@@ -170,5 +185,10 @@ async def reject_opportunity(
 
     opp.status = OpportunityStatus.rejected
     await session.commit()
-    await call.answer("❌ Rejected.")
-    await call.message.edit_text(f"❌ Rejected: {opp.title or 'Untitled'}")
+    logger.info("rejection_recorded", opp_id=opp.id, title=opp.title)
+
+    try:
+        await call.answer("❌ Rejected.")
+        await call.message.edit_text(f"❌ Rejected: {opp.title or 'Untitled'}")
+    except TelegramBadRequest as e:
+        logger.info("stale_callback_ack_skipped", opp_id=opp.id, error=str(e))
