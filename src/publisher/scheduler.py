@@ -32,19 +32,24 @@ async def publish_scheduled(
 
         failures: list[str] = []
         for opp in due:
+            # Read identity up front: rollback() expires every object in the
+            # session, so touching opp.title afterwards triggers a lazy reload
+            # and raises MissingGreenlet — which would abort the loop and skip
+            # every remaining opportunity, not just the one that failed.
+            opp_id, title = opp.id, opp.title or "Untitled"
             try:
                 result = await sender.publish(opp, bot)
                 await session.commit()
                 if result.failed:
                     logger.warning(
                         "scheduled_partial_publish",
-                        opp_id=opp.id,
+                        opp_id=opp_id,
                         failed=[c for c, _ in result.failed],
                     )
             except Exception as e:
-                logger.exception("scheduled_publish_error", opp_id=opp.id)
+                logger.exception("scheduled_publish_error", opp_id=opp_id)
                 await session.rollback()
-                failures.append(f"#{opp.id} {opp.title or 'Untitled'}: {type(e).__name__}: {e}")
+                failures.append(f"#{opp_id} {title}: {type(e).__name__}: {e}")
 
         # An approved post that never reaches the channel is the one failure the
         # admin must not have to read CI logs to discover.
