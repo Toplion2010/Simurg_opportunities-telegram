@@ -7,11 +7,12 @@ the Design System, not from hardcoded CSS.
 Runtime flow:
     live_background (Gemini, per-post) → Grammar Engine → Design System → HTML/CSS → Chromium → JPEG
 
-Background generation is live and per-post (``src.publisher.live_background``) —
-there is no pre-built library fallback; a failed generation raises and the
-publish attempt fails (see ``src/bot/routers/queue.py``, where the admin can
-just re-approve to retry). All factual text (title, dates, prize, CTA) is
-rendered here as HTML/CSS from the database, never by the image model.
+Background generation is live and per-post (``src.publisher.live_background``).
+When it fails — Gemini's image model returns 503 whenever it is under load —
+``generate_card`` falls back to the procedural background rather than failing
+the publish, because a post that never ships is worse than a plainer one. All
+factual text (title, dates, prize, CTA) is rendered here as HTML/CSS from the
+database, never by the image model, so the fallback loses only decoration.
 
 This module makes **no network requests** itself — ``live_background`` does.
 """
@@ -534,6 +535,22 @@ async def _render_html(html_content: str) -> bytes:
 async def generate_card(opp: "Opportunity") -> bytes:
     from src.publisher.live_background import generate_live_background
 
-    bg_entry = await generate_live_background(opp)
+    # Degrade to the procedural background rather than failing the publish.
+    # Gemini's image model returns 503 UNAVAILABLE whenever it's under load, and
+    # that outage lasts far longer than the bounded retries inside
+    # generate_live_background — so treating it as fatal meant an approved post
+    # never reached the channel at all, with the admin seeing only silence.
+    # Every factual element (title, deadline, prize, CTA) is HTML/CSS rendered
+    # from the database, so a procedural background costs nothing but flair.
+    try:
+        bg_entry = await generate_live_background(opp)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            "live_background_unavailable_using_procedural",
+            opp_id=getattr(opp, "id", None),
+            error=str(e),
+        )
+        bg_entry = None
+
     html_content = _build_html(opp, bg_entry)
     return await _render_html(html_content)

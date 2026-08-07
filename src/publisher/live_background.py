@@ -2,9 +2,12 @@
 
 A deliberate runtime generation path: every approved opportunity gets a freshly
 generated, opportunity-specific illustration built from its actual title, category,
-organizer, location and original source-channel text. There is no pre-built library
-fallback — a failed generation raises, so ``sender.publish()`` surfaces the failure
-and the admin can just re-approve to retry (see ``src/bot/routers/queue.py``).
+organizer, location and original source-channel text.
+
+This module still raises on failure after its bounded retries. The recovery lives
+one level up: ``image_gen.generate_card`` catches it and renders the procedural
+background instead, so a Gemini outage degrades the card's look rather than
+blocking the post entirely.
 
 The image is required to contain **zero text** (see ``NEGATIVE_PROMPT``). Image
 models are unreliable at rendering exact dates, numbers, currency and URLs, so none
@@ -254,9 +257,9 @@ async def _call_gemini(prompt: str, api_key: str, model: str) -> bytes:
 async def generate_live_background(opp: "Opportunity") -> LiveBackground:
     """Generate a fresh, opportunity-specific background.
 
-    No fallback: raises after a few bounded retries on transient errors, so the
-    caller (the publish flow) surfaces the failure rather than silently
-    substituting a generic image.
+    Raises after a few bounded retries on transient errors. The caller
+    (``image_gen.generate_card``) decides what that means — it degrades to the
+    procedural background so the post still ships.
     """
     import asyncio
 
