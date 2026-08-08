@@ -1,15 +1,27 @@
 name: Drain approvals and publish
 
-# Manual only. Runs just the "collect admin taps + publish what's approved" half
-# of the batch job, skipping the slow Telethon fetch — so an approval can be
-# tested in ~2 minutes instead of waiting for the next 4-hourly cron.
+# Runs just the "apply admin taps + publish what's approved" half of the batch
+# job, skipping the slow Telethon fetch and all LLM calls. This is the ONLY
+# workflow that talks to getUpdates (batch.yml sets SIMURG_SKIP_DRAIN), so
+# approvals land here rather than waiting hours for the 4-hourly collection run.
 on:
+  schedule:
+    # Every 10 minutes. GitHub throttles and delays frequent crons on free
+    # runners, so treat this as "roughly every 10-25 minutes", not a guarantee.
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       window_seconds:
-        description: "How long to listen for button presses"
+        description: "Max seconds to spend draining (it stops early once empty)"
         required: false
-        default: "90"
+        default: "120"
+
+# Shared with batch.yml: only one job may hold the Telegram connection at a
+# time, otherwise concurrent getUpdates calls 409 and two publishers could
+# double-post the same opportunity.
+concurrency:
+  group: simurg-runtime
+  cancel-in-progress: false
 
 jobs:
   drain:
@@ -45,6 +57,9 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           ENVIRONMENT: production
           LOCAL_DEV: "false"
+          # Empty on a scheduled run (no inputs), which falls back to the
+          # module default — the drain exits as soon as the queue is empty
+          # regardless, so this is only ever an upper bound.
           SIMURG_APPROVAL_WINDOW_SECONDS: ${{ inputs.window_seconds }}
           SIMURG_MEDIA_DIR: ${{ runner.temp }}/simurg_media
         run: python -m scripts.drain_and_publish

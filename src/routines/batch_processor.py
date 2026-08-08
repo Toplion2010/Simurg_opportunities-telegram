@@ -31,16 +31,16 @@ from src.publisher.scheduler import publish_scheduled
 
 logger = get_logger(__name__)
 
-# How long to listen for admin button presses. Telegram retains bot updates for
-# ~24h, so approvals made while nothing was running arrive as soon as we poll.
-# Overridable so the manual drain workflow can hold the window open long enough
-# to tap buttons live while it watches.
-APPROVAL_WINDOW_SECONDS = int(os.environ.get("SIMURG_APPROVAL_WINDOW_SECONDS") or 90)
-# Grace period, once the window above closes, to let an update whose handler is
-# already running (e.g. an Approve tap delivered right as the window closed)
-# finish its DB commit and message edit before bot/engine teardown below pulls
-# the rug out from under it. See _drain_admin_updates.
-IN_FLIGHT_HANDLER_GRACE_SECONDS = 15
+# Upper bound on the drain, not a fixed duration: the drain normally returns as
+# soon as Telegram reports an empty queue, which is typically within a second or
+# two. This only stops a pathological backlog from running the job forever.
+APPROVAL_WINDOW_SECONDS = int(os.environ.get("SIMURG_APPROVAL_WINDOW_SECONDS") or 120)
+# Long-poll seconds per getUpdates call. Keep it short: with the deterministic
+# drain there is nothing to gain from holding the connection open, and a short
+# timeout makes the "queue is empty, stop now" decision quick.
+_GET_UPDATES_TIMEOUT = 3
+# Telegram's per-call maximum.
+_GET_UPDATES_LIMIT = 100
 
 
 async def run() -> int:
@@ -95,7 +95,13 @@ async def run() -> int:
             await advance_cursors(session_factory, compute_safe_cursors(payloads, failed))
 
         # --- 3: apply approvals made since the last run ----------------------
-        await _drain_admin_updates(settings, session_factory, bot)
+        # Skipped in the scheduled workflow: the dedicated drain job runs every
+        # 10 minutes and is the sole getUpdates consumer. Two pollers would race
+        # for the same updates and get 409 Conflict from Telegram.
+        if os.environ.get("SIMURG_SKIP_DRAIN", "").lower() in ("1", "true", "yes"):
+            logger.info("drain_skipped", reason="SIMURG_SKIP_DRAIN")
+        else:
+            await _drain_admin_updates(settings, session_factory, bot)
 
         # --- 4: publish whatever is approved and due -------------------------
         try:
@@ -149,44 +155,67 @@ def _build_telethon_client(settings: Settings) -> TelegramClient:
 
 
 async def _drain_admin_updates(settings, session_factory, bot: Bot) -> None:
-    """Poll briefly so approve/reject presses made between runs take effect."""
+    """Apply every admin button press waiting in Telegram's update queue.
+
+    Deliberately does NOT use ``dp.start_polling()``. That advances the Telegram
+    ``offset`` as soon as updates are *fetched* while running each handler as a
+    detached ``asyncio`` task, so closing the window killed handlers whose updates
+    Telegram already considered delivered — the tap was gone for good, and it
+    logged nothing because the handlers only log after their commit. That is the
+    bug that made approvals silently vanish for days.
+
+    Here the offset is only advanced past an update once its handler has actually
+    finished, and the advanced offset isn't sent to Telegram until the next
+    ``getUpdates`` call — so an interrupted run leaves the tap queued for the next
+    one instead of destroying it. Returns as soon as the queue is empty.
+    """
+    from aiogram.methods import GetUpdates
+
     dp = build_dispatcher(settings, session_factory, bot)
-    polling = asyncio.create_task(
-        dp.start_polling(
-            bot,
-            handle_signals=False,
-            allowed_updates=dp.resolve_used_update_types(),
-        )
-    )
-    try:
-        await asyncio.wait_for(asyncio.shield(polling), timeout=APPROVAL_WINDOW_SECONDS)
-    except asyncio.TimeoutError:
-        logger.info("approval_window_elapsed", seconds=APPROVAL_WINDOW_SECONDS)
-    except Exception:
-        logger.exception("approval_polling_failed")
-    finally:
-        # aiogram dispatches each update as its own asyncio.create_task() (see
-        # Dispatcher._polling); cancelling `polling` only unwinds start_polling()'s
-        # own coroutine and does NOT cascade to those already-spawned handler
-        # tasks. Left alone, a tap still mid-handler when the window above closes
-        # (e.g. between session.commit() and message.edit_text()) keeps running
-        # orphaned and gets killed mid-write the moment bot.session.close() /
-        # engine.dispose() run at the end of this routine — silently losing the
-        # tap with no error surfaced anywhere. Wait for it here instead.
-        in_flight = [t for t in dp._handle_update_tasks if not t.done()]
-        polling.cancel()
+    allowed = dp.resolve_used_update_types()
+    deadline = time.monotonic() + APPROVAL_WINDOW_SECONDS
+
+    offset: int | None = None
+    handled = 0
+
+    while True:
+        if time.monotonic() >= deadline:
+            logger.warning("drain_deadline_reached", handled=handled)
+            break
         try:
-            await polling
-        except (asyncio.CancelledError, Exception):
-            pass
-        if in_flight:
-            logger.info("waiting_for_in_flight_admin_updates", count=len(in_flight))
-            _, still_pending = await asyncio.wait(
-                in_flight, timeout=IN_FLIGHT_HANDLER_GRACE_SECONDS
+            updates = await bot(
+                GetUpdates(
+                    offset=offset,
+                    limit=_GET_UPDATES_LIMIT,
+                    timeout=_GET_UPDATES_TIMEOUT,
+                    allowed_updates=allowed,
+                )
             )
-            for task in still_pending:
-                logger.warning("admin_update_handler_timed_out")
-                task.cancel()
+        except Exception:
+            logger.exception("get_updates_failed", handled=handled)
+            break
+
+        if not updates:
+            break
+
+        for update in updates:
+            try:
+                await dp.feed_update(bot, update)
+            except Exception:
+                # Skip past a poison update rather than letting it wedge the
+                # queue forever — every later tap sits behind this offset.
+                logger.exception("admin_update_handler_failed", update_id=update.update_id)
+            offset = update.update_id + 1
+            handled += 1
+
+    if handled:
+        # Flush the final offset so the taps just applied aren't replayed next run.
+        try:
+            await bot(GetUpdates(offset=offset, limit=1, timeout=0, allowed_updates=allowed))
+        except Exception:
+            logger.warning("final_offset_flush_failed", offset=offset)
+
+    logger.info("admin_updates_drained", handled=handled)
 
 
 def main() -> None:

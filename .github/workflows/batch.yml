@@ -10,8 +10,10 @@ on:
 
 concurrency:
   # Never let a slow run overlap the next scheduled one: two runs would fetch the
-  # same channel history twice and double-process it.
-  group: simurg-batch
+  # same channel history twice and double-process it. Shared with drain.yml so a
+  # 10-minute drain never runs alongside a batch — concurrent getUpdates calls
+  # would 409, and two publishers could double-post the same opportunity.
+  group: simurg-runtime
   cancel-in-progress: false
 
 jobs:
@@ -63,5 +65,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ENVIRONMENT: production
           LOCAL_DEV: "false"
+          # drain.yml owns the Telegram connection and runs every 10 minutes;
+          # a second getUpdates consumer here would 409 against it.
+          SIMURG_SKIP_DRAIN: "true"
           SIMURG_MEDIA_DIR: ${{ runner.temp }}/simurg_media
         run: python -m src.routines.batch_processor
