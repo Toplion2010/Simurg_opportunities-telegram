@@ -28,7 +28,7 @@ jobs:
         run: docker build -f Dockerfile.bot -t simurg-bot .
 
       - name: Report image size (Koyeb free tier caps disk at 2GB)
-        run: docker image inspect simurg-bot --format 'size: {{.Size}} bytes'
+        run: docker image inspect simurg-bot --format 'size_bytes={{.Size}}'
 
       - name: Smoke test - app constructs, routes registered, no heavy deps
         run: |
