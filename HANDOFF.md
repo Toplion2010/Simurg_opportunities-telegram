@@ -165,6 +165,17 @@ Expected outcome: buttons respond in **seconds**; posts still appear within
 | Mode switch | `_drain_admin_updates` in `src/routines/batch_processor.py` | done |
 | CI proof it builds/imports | `.github/workflows/botcheck.yml` | done |
 
+Verified on Actions (not assumed), run `31296034168`:
+`Dockerfile.bot` builds at **190 MB** (cap is 2GB), `build_app()` constructs
+inside the image, `/health` and `/tg/<secret>` both register, and
+playwright/telethon/numpy/Pillow/openai/apscheduler are all absent.
+Run `31296036298` confirms the new `getWebhookInfo` check did **not** disturb
+polling: with no webhook set it drained normally (`admin_updates_drained
+handled=1`) and never logged `webhook_info_failed`.
+
+Still unverified, because it needs the account: the webhook path itself
+(`set_webhook`, a real tap arriving over HTTPS, `delete_webhook` on shutdown).
+
 **Change from the original plan (step 3).** `drain.yml` was *not* rewired to
 publish-only. Instead `_drain_admin_updates` calls `getWebhookInfo` first and
 returns early (`drain_skipped_webhook_active`) when a webhook is set. Reasons:
@@ -218,8 +229,8 @@ Tap Approve → the bot should edit the message within seconds (not minutes) →
 - Branch `diagnose-approvals` is merged into `main` but still exists locally and
   on the remote; safe to delete.
 - Local repo has git identity set (`Toplion2010` / user's email) — repo-local only.
-- `HANDOFF.md` (this file) is untracked by default; commit it if you want it to
-  survive a fresh clone.
+- `HANDOFF.md` (this file) is now **committed** to `main`, so it survives a fresh
+  clone. Keep it updated in the same commit as the change it describes.
 
 ---
 
