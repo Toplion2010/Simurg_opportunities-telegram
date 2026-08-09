@@ -1,0 +1,64 @@
+name: Bot image check
+
+# The webhook bot cannot be run or built locally (no Docker, no local deps, no
+# Postgres -- see HANDOFF.md §1), so this is where Dockerfile.bot is actually
+# proven: it builds the slim image and asserts the app constructs inside it with
+# no Playwright, Telethon, numpy or Pillow present. Catches a missing dependency
+# here instead of as a Koyeb crash-loop.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Dockerfile.bot"
+      - "src/routines/bot_webhook.py"
+      - "src/bot/**"
+      - "src/db/**"
+      - "src/core/config.py"
+      - ".github/workflows/botcheck.yml"
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build slim bot image
+        run: docker build -f Dockerfile.bot -t simurg-bot .
+
+      - name: Report image size (Koyeb free tier caps disk at 2GB)
+        run: docker image inspect simurg-bot --format 'size: {{.Size}} bytes'
+
+      - name: Smoke test - app constructs, routes registered, no heavy deps
+        run: |
+          docker run --rm \
+            -e BOT_TOKEN='123456:AAFakeTokenForConstructionOnly_00000000000' \
+            -e ADMIN_IDS='[1]' \
+            -e DATABASE_URL='postgresql://u:p@localhost:5432/x' \
+            -e TELETHON_API_ID='1' \
+            -e TELETHON_API_HASH='x' \
+            -e DEST_CHANNEL_ID_SCHOOL='-1001' \
+            -e DEST_CHANNEL_ID_UNIVERSITY='-1002' \
+            -e SIMURG_WEBHOOK_BASE_URL='https://example.invalid' \
+            -e SIMURG_WEBHOOK_SECRET='smoketestsecret' \
+            simurg-bot python -c "
+          import importlib
+          from src.routines.bot_webhook import build_app
+
+          # No network here: create_async_engine is lazy and set_webhook only
+          # fires in on_startup, which run_app would trigger but this does not.
+          app = build_app()
+          paths = {r.resource.canonical for r in app.router.routes() if r.resource}
+          assert '/health' in paths, paths
+          assert any(p.startswith('/tg/') for p in paths), paths
+          print('routes ok:', sorted(paths))
+
+          for heavy in ('playwright', 'telethon', 'numpy', 'PIL', 'openai', 'apscheduler'):
+              try:
+                  importlib.import_module(heavy)
+              except ImportError:
+                  continue
+              raise SystemExit(f'{heavy} leaked into the slim bot image')
+          print('slim image confirmed')
+          "

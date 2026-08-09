@@ -169,7 +169,28 @@ async def _drain_admin_updates(settings, session_factory, bot: Bot) -> None:
     ``getUpdates`` call — so an interrupted run leaves the tap queued for the next
     one instead of destroying it. Returns as soon as the queue is empty.
     """
-    from aiogram.methods import GetUpdates
+    from aiogram.methods import GetUpdates, GetWebhookInfo
+
+    # A webhook and getUpdates are mutually exclusive: with a webhook set, every
+    # getUpdates call 409s. When the Koyeb bot is deployed it owns delivery, and
+    # this job's only remaining duty is publishing. Detecting that here (rather
+    # than hard-wiring drain.yml to publish-only) means the switch happens
+    # automatically in BOTH directions -- dropping the webhook restores polling
+    # with no workflow edit, so a stale webhook can never silently swallow taps.
+    # getWebhookInfo is a genuine read: unlike getUpdates it confirms nothing.
+    try:
+        info = await bot(GetWebhookInfo())
+    except Exception:
+        logger.warning("webhook_info_failed", hint="assuming polling mode")
+    else:
+        if info.url:
+            logger.info(
+                "drain_skipped_webhook_active",
+                url_host=info.url.split("/")[2] if "//" in info.url else "?",
+                pending=info.pending_update_count,
+                hint="the webhook bot applies taps in real time; this job only publishes",
+            )
+            return
 
     dp = build_dispatcher(settings, session_factory, bot)
     allowed = dp.resolve_used_update_types()
