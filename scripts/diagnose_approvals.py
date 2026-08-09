@@ -3,14 +3,17 @@
 Answers three questions the batch logs cannot:
 
     1. Is a webhook set on the bot? (a webhook makes getUpdates return 409 and
-       silently starves the admin-drain window)
-    2. Are the admin's button presses actually sitting in Telegram's update
-       queue, waiting to be collected?
+       silently starves the drain)
+    2. How many admin button presses are queued at Telegram, waiting to be
+       collected?
     3. What does the database think the status of every opportunity is?
 
-Deliberately does NOT pass an ``offset`` to getUpdates: per the Bot API,
-updates are confirmed (and therefore dropped) only when an offset is sent, so
-this inspects the pending queue without consuming the admin's real taps.
+**Never calls getUpdates.** An earlier version listed the queued updates with an
+offset-less getUpdates, believing that to be a non-destructive read. It is not:
+the next getUpdates confirms the previously delivered batch, so merely running
+this diagnostic destroyed six real admin taps (three approvals) before the drain
+could collect them. ``pending_update_count`` from getWebhookInfo answers the same
+question and touches nothing.
 """
 import asyncio
 import json
@@ -35,27 +38,15 @@ async def check_telegram(token: str) -> None:
         result = info.get("result") or {}
         if result.get("url"):
             print("\n!! A WEBHOOK IS SET -> getUpdates cannot work. This is the bug.")
-        print(f"\npending_update_count = {result.get('pending_update_count')}")
-
-        print("\n=== pending updates (not confirmed/consumed) ===")
-        upd = (
-            await client.get(
-                API.format(token=token, method="getUpdates"),
-                params={"timeout": 0, "limit": 100},
-            )
-        ).json()
-        if not upd.get("ok"):
-            print("getUpdates FAILED:", json.dumps(upd, indent=2, ensure_ascii=False))
-            return
-        updates = upd.get("result", [])
-        print(f"count = {len(updates)}")
-        for u in updates:
-            kind = next((k for k in u if k != "update_id"), "?")
-            payload = u.get("callback_query", {})
+        pending = result.get("pending_update_count")
+        print(f"\npending_update_count = {pending}")
+        if pending:
             print(
-                f"  update_id={u['update_id']} type={kind}"
-                + (f" data={payload.get('data')!r}" if payload else "")
+                f"  -> {pending} admin tap(s) queued and waiting. The next drain "
+                "will apply them."
             )
+        else:
+            print("  -> nothing waiting; taps made from now on will queue here.")
 
 
 async def check_db(settings: Settings) -> None:
