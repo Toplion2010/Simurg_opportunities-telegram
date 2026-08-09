@@ -31,7 +31,6 @@ Run:
 import os
 
 from aiogram import Bot
-from aiogram.client.default import DefaultBotProperties
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
@@ -69,7 +68,9 @@ def build_app() -> web.Application:
 
     engine = create_engine(settings)
     session_factory = create_session_factory(engine)
-    bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties())
+    # No default parse_mode, matching src/main.py -- every handler passes
+    # parse_mode="HTML" itself, so a default here would only add divergence.
+    bot = Bot(token=settings.BOT_TOKEN)
 
     # build_dispatcher() may only be called once per process: aiogram routers are
     # module-level singletons and a second call raises "Router is already
