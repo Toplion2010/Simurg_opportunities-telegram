@@ -129,9 +129,14 @@ Confirmed by workflow logs and the diagnostic, not assumed:
 - `batch.yml` correctly logs `drain_skipped`, so only `drain.yml` polls.
 - DB last seen: `pending 97 / rejected 164 / published 21 / approved 0`.
 
-**Not yet verified end-to-end:** a user tap → scheduled drain → post, with no
-manual intervention. Every attempt so far was spoiled by the user not tapping in
-time or (once) by the diagnostic eating the taps. *This is the one open test.*
+**VERIFIED END-TO-END 2026-08-10** on the Vercel webhook (run 31360621839):
+tap → `✅ Approved` edit in Telegram within ~1s → `drain_skipped_webhook_active`
+(the drain saw the live webhook and published without polling, no 409) →
+`publishing_due_opportunities count: 2` → both `opportunity_published` with real
+Gemini artwork on attempt 1. The webhook URL is the stable
+`simurg-opportunities-telegram-ten.vercel.app`, **not** a deployment-specific
+`-<hash>` host — the latter is pinned to one immutable deployment and would
+break on the next push.
 
 ---
 
