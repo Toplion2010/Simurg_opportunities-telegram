@@ -147,14 +147,59 @@ found Oracle Cloud signup too hard.
 
 ---
 
-## 8. Koyeb webhook bot — code is DONE, deployment blocked on the user
+## 8. Always-on bot — VERCEL is the live path; Koyeb is abandoned
 
-**Decision made:** run *only the bot* on Koyeb in webhook mode; leave collection
-and publishing on GitHub Actions (Actions publishes fine and Chromium will not
-run on 0.1 vCPU / 512MB).
+**Current plan: Vercel serverless webhook.** Koyeb was built and CI-verified
+first, but its console would not render for the user (empty sidebar, no
+navigation, possibly a deactivated org) and they gave up on it. The Koyeb files
+stay on `main`, dormant and harmless — nothing runs until a webhook is set.
+
+Vercel suits this better regardless: Telegram invokes the function per tap, so
+there is no sleeping instance, no keep-warm ping and no container.
+
+| | Vercel (live path) | Koyeb (abandoned) |
+|---|---|---|
+| Entrypoint | `api/telegram.py` | `src/routines/bot_webhook.py` |
+| Deps | `requirements.txt` | `Dockerfile.bot` |
+| CI proof | `vercelcheck.yml` ✅ | `botcheck.yml` ✅ |
+| Sleeps? | no | after 1 h |
+
+Both share the same mode switch: `_drain_admin_updates` checks `getWebhookInfo`
+and skips polling whenever a webhook is live, so Actions and the webhook can
+never fight over `getUpdates`, in either direction, with no workflow edit.
+
+### Vercel specifics worth knowing
+
+- **10 s max execution** on the free plan. A tap is ~2 DB round trips + 2
+  Telegram calls, normally under 2 s. A cold start plus a suspended Neon compute
+  could brush the limit; the handler returns 500 so Telegram redelivers, and the
+  retry hits a warm instance.
+- **Everything is built once at module scope**, and one event loop is kept for
+  the process. `build_dispatcher()` must never run twice per process, and the
+  Bot's aiohttp session and the SQLAlchemy engine bind to the loop that created
+  them — `asyncio.run()` per request would strand both.
+- **Use Neon's DIRECT URL**, not `-pooler`. Through PgBouncer transaction mode
+  asyncpg's prepared statements break and would need `statement_cache_size=0`.
+- **Import errors are captured, not raised.** A raise at import time shows on
+  Vercel as an opaque 500 with no body; `_init_error` is returned instead.
+- `setup_logging`'s file handler is best-effort — Vercel mounts the deployment
+  read-only apart from `/tmp`.
+
+### Deploying Vercel
+
+1. vercel.com → sign up with GitHub → **Add New Project** → import the repo.
+2. Framework preset **Other**. No build command. Do not set a root directory.
+3. Add env vars: `DATABASE_URL` (Neon direct), `BOT_TOKEN`, `ADMIN_IDS`,
+   `DEST_CHANNEL_ID_SCHOOL`, `DEST_CHANNEL_ID_UNIVERSITY`, `TELETHON_API_ID`,
+   `TELETHON_API_HASH`, `SIMURG_WEBHOOK_SECRET`, `ENVIRONMENT=production`.
+4. Deploy, then visit `https://<project>.vercel.app/api/setup?secret=<SECRET>`
+   once to register the webhook. `&action=info` inspects, `&action=delete` rolls
+   back to Actions polling.
 
 Expected outcome: buttons respond in **seconds**; posts still appear within
-~30–60 min via Actions.
+~30–60 min via Actions, since publishing needs Chromium and stays there.
+
+### Historical: the Koyeb plan (do not pursue unless Vercel fails)
 
 ### What is already built and on `main`
 
