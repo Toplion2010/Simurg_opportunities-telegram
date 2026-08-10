@@ -55,7 +55,7 @@ jobs:
           import importlib.util, json, threading, urllib.error, urllib.request
           from http.server import HTTPServer
 
-          spec = importlib.util.spec_from_file_location("tg", "api/telegram.py")
+          spec = importlib.util.spec_from_file_location("tg", "api/index.py")
           mod = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(mod)
 
@@ -68,8 +68,8 @@ jobs:
           threading.Thread(target=srv.serve_forever, daemon=True).start()
           base = f"http://127.0.0.1:{srv.server_address[1]}"
 
-          def call(method, body=None, secret=None):
-              req = urllib.request.Request(f"{base}/api/telegram", method=method)
+          def call(method, body=None, secret=None, path="/api/webhook"):
+              req = urllib.request.Request(f"{base}{path}", method=method)
               data = None
               if body is not None:
                   data = json.dumps(body).encode()
@@ -103,6 +103,13 @@ jobs:
           status, body = call("POST", update, secret="testsecret")
           assert status == 200, f"valid POST failed: {status} {body}"
           print("POST good secret:", status, body.strip())
+
+          # The setup route must not be usable by anyone who finds the URL --
+          # it can register or delete the webhook. Only the reject path is
+          # exercised here; the success path would call the real Telegram API.
+          status, body = call("GET", path="/api/setup?secret=wrong")
+          assert status == 403, f"setup must reject a bad secret: {status} {body}"
+          print("GET setup bad secret:", status)
 
           srv.shutdown()
 

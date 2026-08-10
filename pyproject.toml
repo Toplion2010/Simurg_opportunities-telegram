@@ -29,3 +29,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
+
+# Vercel's Python runtime resolves ONE top-level app/application/handler per
+# deployment. Without this it picks up src/main.py (the always-on entrypoint,
+# which exports no handler) and the build fails. api/index.py routes the
+# webhook and the setup endpoint internally.
+[tool.vercel]
+entrypoint = "api.index:handler"
