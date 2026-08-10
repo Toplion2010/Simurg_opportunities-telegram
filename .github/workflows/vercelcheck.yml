@@ -1,0 +1,116 @@
+name: Vercel function check
+
+# The webhook function cannot be run locally (no deps, no Postgres -- see
+# HANDOFF.md section 1), so this is where api/telegram.py is actually proven.
+# It installs ONLY requirements.txt (what Vercel installs), serves the handler
+# over real HTTP, and drives it the way Telegram will. Catches a missing
+# dependency or a broken handler here instead of as a dead webhook in
+# production, where the symptom is silently unapplied approvals.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "api/**"
+      - "requirements.txt"
+      - "vercel.json"
+      - "src/bot/**"
+      - "src/db/**"
+      - "src/core/**"
+      - ".github/workflows/vercelcheck.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ONLY what Vercel installs
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Drive the handler over HTTP
+        env:
+          # Not a real token: nothing here reaches Telegram. The dispatcher
+          # short-circuits in AdminAuthMiddleware before any API call, because
+          # the test update's user id is not in ADMIN_IDS.
+          BOT_TOKEN: "123456:AAFakeTokenForConstructionOnly_00000000000"
+          ADMIN_IDS: "[1]"
+          DATABASE_URL: "postgresql://u:p@localhost:5432/x"
+          TELETHON_API_ID: "1"
+          TELETHON_API_HASH: "x"
+          DEST_CHANNEL_ID_SCHOOL: "-1001"
+          DEST_CHANNEL_ID_UNIVERSITY: "-1002"
+          SIMURG_WEBHOOK_SECRET: "testsecret"
+          ENVIRONMENT: "production"
+        run: |
+          python - <<'PY'
+          import importlib.util, json, threading, urllib.error, urllib.request
+          from http.server import HTTPServer
+
+          spec = importlib.util.spec_from_file_location("tg", "api/telegram.py")
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+
+          # Import-time failures are captured rather than raised, so that a bad
+          # deploy returns a readable body instead of an opaque 500. Surface it.
+          assert mod._init_error is None, f"cold start failed:\n{mod._init_error}"
+          print("cold start ok")
+
+          srv = HTTPServer(("127.0.0.1", 0), mod.handler)
+          threading.Thread(target=srv.serve_forever, daemon=True).start()
+          base = f"http://127.0.0.1:{srv.server_address[1]}"
+
+          def call(method, body=None, secret=None):
+              req = urllib.request.Request(f"{base}/api/telegram", method=method)
+              data = None
+              if body is not None:
+                  data = json.dumps(body).encode()
+                  req.add_header("Content-Type", "application/json")
+              if secret:
+                  req.add_header("X-Telegram-Bot-Api-Secret-Token", secret)
+              try:
+                  with urllib.request.urlopen(req, data=data, timeout=30) as r:
+                      return r.status, r.read().decode()
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()
+
+          status, body = call("GET")
+          assert status == 200, (status, body)
+          print("GET health:", status, body.strip())
+
+          # A forged request must never be able to approve anything.
+          update = {
+              "update_id": 1,
+              "callback_query": {
+                  "id": "1",
+                  "chat_instance": "1",
+                  "from": {"id": 999, "is_bot": False, "first_name": "NotAnAdmin"},
+                  "data": "oa:1:approve",
+              },
+          }
+          status, body = call("POST", update, secret="wrong")
+          assert status == 403, f"unauthenticated POST must be rejected: {status} {body}"
+          print("POST bad secret:", status)
+
+          status, body = call("POST", update, secret="testsecret")
+          assert status == 200, f"valid POST failed: {status} {body}"
+          print("POST good secret:", status, body.strip())
+
+          srv.shutdown()
+
+          for heavy in ("playwright", "telethon", "numpy", "PIL", "openai", "apscheduler"):
+              try:
+                  importlib.import_module(heavy)
+              except ImportError:
+                  continue
+              raise SystemExit(f"{heavy} is not in requirements.txt but imported anyway")
+          print("slim dependency set confirmed")
+          PY

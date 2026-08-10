@@ -51,12 +51,20 @@ def setup_logging(environment: str = "production") -> None:
 
     # Also log to a rotating file — required when launched via pythonw.exe (Task
     # Scheduler), which has no console for stdout to go to.
-    _LOG_DIR.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.handlers.RotatingFileHandler(
-        _LOG_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    root_logger.addHandler(file_handler)
+    #
+    # Best-effort: serverless hosts (Vercel et al.) mount the deployment
+    # read-only apart from /tmp, so creating this would raise OSError and take
+    # down every request. stdout is already captured by every host we run on, so
+    # losing the file is harmless — losing the process is not.
+    try:
+        _LOG_DIR.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.handlers.RotatingFileHandler(
+            _LOG_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8"
+        )
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+    except OSError:
+        root_logger.debug("file_logging_unavailable", exc_info=True)
 
     # Silence noisy third-party loggers
     logging.getLogger("telethon").setLevel(logging.WARNING)

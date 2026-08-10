@@ -1,0 +1,15 @@
+# Dependencies for the Vercel serverless functions in api/ ONLY.
+#
+# Vercel installs this for every function, so it is deliberately the minimum
+# that src/bot/**, src/db/** and src/core/config.py import -- nothing more.
+# playwright, telethon, numpy, openai and Pillow are all absent on purpose:
+# the webhook only flips a row's status, and publishing stays on GitHub
+# Actions, which installs the full set from pyproject.toml.
+#
+# GitHub Actions does NOT read this file (it runs `pip install -e .`), so the
+# two dependency sets can diverge safely.
+aiogram>=3.7
+sqlalchemy[asyncio]>=2.0
+asyncpg>=0.29
+pydantic-settings>=2.3
+structlog>=24.1

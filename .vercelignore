@@ -1,0 +1,22 @@
+# Keep the function bundle small and make sure nothing sensitive is uploaded.
+#
+# Only non-src, genuinely heavy or irrelevant paths are listed. All of src/ is
+# kept deliberately: src/bot imports src.publisher.formatter, and trimming
+# individual src/ subfolders to save a few KB of .py files risks an ImportError
+# that only shows up at runtime, in production.
+.github/
+docs/
+logs/
+tools/
+scripts/
+baselines/
+backgrounds/
+telethon_session/
+Dockerfile
+Dockerfile.bot
+docker-compose.yml
+install_scheduled_task.ps1
+start_simurg.bat
+auth_telethon.py
+*.md
+.venv/
