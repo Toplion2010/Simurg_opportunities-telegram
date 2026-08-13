@@ -1,0 +1,43 @@
+name: Run database migrations
+
+# Manual only. Vercel deploys application code on every push to main, but
+# `alembic upgrade head` otherwise only runs inside batch.yml (5x/day). Pushing
+# code that expects new columns before this runs makes the webhook 500 on every
+# tap. Always dispatch this, confirm success, and only then push the app code.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  # Same group as batch.yml/drain.yml: a migration must not run while either
+  # is mid-transaction against the same database.
+  group: simurg-runtime
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+        run: alembic upgrade head

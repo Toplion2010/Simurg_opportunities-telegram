@@ -88,6 +88,15 @@ class Opportunity(Base):
     # multi-opportunity) raw text.
     source_excerpt: Mapped[str | None] = mapped_column(Text)
 
+    # Triage fields — sort/inform the admin queue, never auto-reject.
+    relevance: Mapped[int | None] = mapped_column()
+    relevance_reason: Mapped[str | None] = mapped_column(String(120))
+    min_age: Mapped[int | None] = mapped_column()
+    # Denormalized t.me/... permalink to the original post, computed once at
+    # insert (see src/processor/source_link.py) to avoid an eager-loaded join
+    # on every queue query.
+    source_url: Mapped[str | None] = mapped_column(Text)
+
     # Meta
     media_path: Mapped[str | None] = mapped_column(Text)
     similarity_hash: Mapped[str | None] = mapped_column(String(64))
