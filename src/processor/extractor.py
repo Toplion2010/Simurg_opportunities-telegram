@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 _CATEGORIES = ", ".join(c.value for c in Category)
 
-_SYSTEM_PROMPT = f"""You are an opportunity parser for a Telegram channel aggregator.
+_SYSTEM_PROMPT_TEMPLATE = """You are an opportunity parser for a Telegram channel aggregator.
 
 Given raw Telegram message text, extract structured fields and return ONLY a JSON object
 shaped as {{"opportunities": [ ... ]}}, a list of one or more opportunity objects.
@@ -31,7 +31,7 @@ When in doubt, keep it as one object.
 Each opportunity object has these fields:
 - is_opportunity: true if this is a real, actionable opportunity (scholarship, internship, grant, competition, job, hackathon, fellowship, conference, program, etc.) that a person can apply to or participate in. Set to false for: channel ads, promotional posts, congratulation messages, general news updates, bot announcements, forwarded memes, or anything with no clear application or participation action.
 - title: Short, clear title of the opportunity
-- category: One of: {_CATEGORIES}
+- category: One of: {categories}
 - audience: Target audience for this opportunity. One of exactly: school, university, both, none.
     school = for school pupils only, i.e. grades 1-12 / K-12 (school olympiads, high-school
       competitions, programs restricted to schoolchildren).
@@ -78,6 +78,12 @@ Each opportunity object has these fields:
   original message text that describes just this opportunity specifically — used later
   as image-generation context. If the message describes only one opportunity, this can
   be a short excerpt of the whole thing.
+- min_age: integer age floor, ONLY if explicitly stated ("18+", "ages 18-25"). Null
+  otherwise — never infer from education level.
+- relevance: 1-5 fit to profile ({relevance_profile}). 5=core fit, 4=adjacent
+  STEM/business, 3=general with real tech/business content, 2=little tech/business,
+  1=off-profile (art, sports, generic volunteering). Judge by content, not label.
+- relevance_reason: reason phrase, under 120 characters.
 
 Rules:
 - Use null for any field you cannot find in the text
@@ -147,11 +153,49 @@ class OpportunityDTO(BaseModel):
     additional_links: list[str] = []
     extra_notes: str | None = None
     source_excerpt: str | None = None
+    min_age: int | None = None
+    relevance: int | None = None
+    relevance_reason: str | None = None
 
     @field_validator("additional_links", mode="before")
     @classmethod
     def coerce_additional_links(cls, v: object) -> object:
         return [] if v is None else v
+
+    @field_validator("min_age", mode="before")
+    @classmethod
+    def validate_min_age(cls, v: object) -> object:
+        if v is None:
+            return None
+        try:
+            age = int(v)
+        except (TypeError, ValueError):
+            return None
+        if not (5 <= age <= 99):
+            logger.warning("min_age_out_of_range", value=v)
+            return None
+        return age
+
+    @field_validator("relevance", mode="before")
+    @classmethod
+    def validate_relevance(cls, v: object) -> object:
+        if v is None:
+            return None
+        try:
+            rating = int(v)
+        except (TypeError, ValueError):
+            return None
+        if not (1 <= rating <= 5):
+            logger.warning("relevance_out_of_range", value=v)
+            return None
+        return rating
+
+    @field_validator("relevance_reason", mode="before")
+    @classmethod
+    def truncate_relevance_reason(cls, v: object) -> object:
+        if v is None:
+            return None
+        return str(v)[:120]
 
 
 class ExtractionResult(BaseModel):
@@ -161,6 +205,10 @@ class ExtractionResult(BaseModel):
 class FieldExtractor:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._system_prompt = _SYSTEM_PROMPT_TEMPLATE.format(
+            categories=_CATEGORIES,
+            relevance_profile=settings.RELEVANCE_PROFILE,
+        )
 
         # Groq client (OpenAI-compatible)
         self._llm_client = openai.AsyncOpenAI(
@@ -187,7 +235,7 @@ class FieldExtractor:
             response = await self._llm_client.chat.completions.create(
                 model=self._llm_model,
                 messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "system", "content": self._system_prompt},
                     {"role": "user", "content": text},
                 ],
                 response_format={"type": "json_object"},

@@ -103,25 +103,102 @@ _PALETTES = [
 
 # Category name -> literal scene imagery, deliberately concrete (not abstract
 # blobs) to match a poster-illustration look rather than a plain gradient.
-_SCENE_HINTS: dict[str, str] = {
-    "Scholarship": "a graduation cap and glowing academic architecture, columns and light rays",
-    "Fellowship": "an open book radiating light beside classical academic architecture",
-    "Research": "a scientist's workspace with glowing data visualizations and lab equipment",
-    "Conference": "a modern stage with a glowing podium and an audience silhouette skyline",
-    "Hackathon": "a laptop glowing with lines of code against a futuristic city skyline",
-    "Competition": "a glowing trophy surrounded by dynamic light trails",
-    "Olympiad": "a medal and glowing geometric podium with light rays",
-    "Internship": "a modern glass office tower with glowing windows at dusk",
-    "Job": "a sleek modern workspace with a glowing city skyline backdrop",
-    "Startup": "a rocket launch silhouette with a glowing futuristic cityscape",
-    "Accelerator": "abstract upward-trending light trails over a city skyline",
-    "Incubator": "a glowing seedling/sprout motif rendered in a tech aesthetic",
-    "Grant": "a glowing coin or light-beam motif over abstract architecture",
-    "SummerProgram": "sunlit academic campus architecture with a bright, warm glow",
-    "Exchange": "a globe with glowing flight-path arcs connecting cities",
-    "Volunteer": "glowing hands forming a heart or circle over a soft cityscape",
+# Lists, not single strings: selection is deterministic on opp.id (see
+# _compose_prompt), so the list length is what actually creates variety.
+_SCENE_HINTS: dict[str, list[str]] = {
+    "Scholarship": [
+        "a graduation cap and glowing academic architecture, columns and light rays",
+        "a stack of books radiating light beneath a glowing archway",
+        "a scroll/diploma unfurling light rays over classical columns",
+        "a glowing mortarboard cap tossed above a sunlit campus quad",
+    ],
+    "Fellowship": [
+        "an open book radiating light beside classical academic architecture",
+        "a glowing quill and manuscript on an ornate wooden desk",
+        "a lit library reading room with tall glowing bookshelves",
+    ],
+    "Research": [
+        "a scientist's workspace with glowing data visualizations and lab equipment",
+        "a glowing microscope beside floating data charts",
+        "a wall of glowing molecular/DNA diagrams in a dark lab",
+        "a telescope silhouette against a glowing star field",
+    ],
+    "Conference": [
+        "a modern stage with a glowing podium and an audience silhouette skyline",
+        "rows of glowing conference seats facing a bright presentation screen",
+        "a glowing microphone on a stand against a stage backdrop",
+    ],
+    "Hackathon": [
+        "a laptop glowing with lines of code against a futuristic city skyline",
+        "a team hunched over glowing screens in a dark hall, no visible faces",
+        "a wall of sticky notes and diagrams under warm workshop light",
+        "a giant countdown clock glowing above an empty stage",
+        "server racks with streaking light trails in a dark data hall",
+        "an abstract circuit-board landscape glowing at dusk",
+        "a trophy resting on a glowing mechanical keyboard",
+        "a night-time open-plan office of glowing screens, seen from above",
+    ],
+    "Competition": [
+        "a glowing trophy surrounded by dynamic light trails",
+        "a podium with a glowing spotlight beam from above",
+        "a finish-line ribbon glowing under stadium lights",
+    ],
+    "Olympiad": [
+        "a medal and glowing geometric podium with light rays",
+        "a glowing laurel wreath over an abstract podium",
+        "a chalkboard covered in glowing equations and geometric shapes",
+    ],
+    "Internship": [
+        "a modern glass office tower with glowing windows at dusk",
+        "a glowing laptop and coffee cup on a minimalist desk",
+        "a bright open-plan office with glowing desks, seen from above",
+    ],
+    "Job": [
+        "a sleek modern workspace with a glowing city skyline backdrop",
+        "a glowing briefcase silhouette against a corporate skyline",
+        "a handshake silhouette rendered in glowing light trails",
+    ],
+    "Startup": [
+        "a rocket launch silhouette with a glowing futuristic cityscape",
+        "a glowing upward arrow breaking through abstract clouds",
+        "a lightbulb silhouette bursting into glowing light trails",
+    ],
+    "Accelerator": [
+        "abstract upward-trending light trails over a city skyline",
+        "a glowing speedometer/gauge motif with light streaks",
+        "concentric glowing rings expanding outward, like a launch pad",
+    ],
+    "Incubator": [
+        "a glowing seedling/sprout motif rendered in a tech aesthetic",
+        "a glowing egg/nest motif in a soft warm gradient",
+        "a glowing greenhouse silhouette with rising light particles",
+    ],
+    "Grant": [
+        "a glowing coin or light-beam motif over abstract architecture",
+        "a glowing envelope with light spilling out of it",
+        "an abstract fountain of glowing light particles rising upward",
+    ],
+    "SummerProgram": [
+        "sunlit academic campus architecture with a bright, warm glow",
+        "a glowing sun above a stylized campus skyline",
+        "a warm glowing beach/campus horizon line at golden hour",
+    ],
+    "Exchange": [
+        "a globe with glowing flight-path arcs connecting cities",
+        "two glowing passport/ticket silhouettes crossing paths",
+        "a glowing world map with pinned city markers",
+    ],
+    "Volunteer": [
+        "glowing hands forming a heart or circle over a soft cityscape",
+        "a glowing tree with light-particle leaves over a community silhouette",
+        "a circle of glowing silhouettes holding hands, no visible faces",
+    ],
 }
-_DEFAULT_SCENE_HINT = "an abstract symbol of achievement and opportunity"
+_DEFAULT_SCENE_HINT = [
+    "an abstract symbol of achievement and opportunity",
+    "a glowing upward staircase rendered in abstract light",
+    "an open glowing door silhouette against abstract light rays",
+]
 
 NEGATIVE_PROMPT = (
     "text, words, letters, numbers, typography, captions, subtitles, logos, "
@@ -150,13 +227,28 @@ class LiveBackground:
     primary_safe_area: SafeArea = field(default_factory=SafeArea)
 
 
+def _pick(items: list[str], opp_id: int | None, stride: int) -> str:
+    """Deterministic on opp_id (coprime stride so consecutive ids differ on
+    every axis), falling back to random for the rare case of an unflushed
+    opportunity with no id yet (e.g. scripts/render_preview.py)."""
+    if opp_id is None:
+        return random.choice(items)
+    return items[(opp_id * stride) % len(items)]
+
+
 def _compose_prompt(opp: "Opportunity") -> str:
     category_name = opp.category.value if opp.category else "opportunity"
-    scene = _SCENE_HINTS.get(category_name, _DEFAULT_SCENE_HINT)
+    scenes = _SCENE_HINTS.get(category_name, _DEFAULT_SCENE_HINT)
+    opp_id = getattr(opp, "id", None)
 
-    style = random.choice(_STYLES)
-    mood = random.choice(_MOODS)
-    palette = random.choice(_PALETTES)
+    # Strides are each coprime with every list length in play (16, 10, 13, and
+    # every scene-list length from 3 to 8), so consecutive ids differ on all
+    # four axes and the full tuple only repeats after lcm(16,10,13,len(scenes))
+    # posts — randomness was the collision source, not the feature.
+    style = _pick(_STYLES, opp_id, 7)
+    mood = _pick(_MOODS, opp_id, 3)
+    palette = _pick(_PALETTES, opp_id, 5)
+    scene = _pick(scenes, opp_id, 11)
 
     subject = (
         f'a {category_name.lower()} opportunity poster about "{opp.title}"'

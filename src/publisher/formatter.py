@@ -1,5 +1,6 @@
 import re
 
+from src.core.enums import Category
 from src.db.models.opportunity import Opportunity
 
 _CATEGORY_TAGS: dict[str, str] = {
@@ -44,7 +45,73 @@ def _split_paragraphs(text: str) -> list[str]:
     return paragraphs or [text]
 
 
+def _format_hackathon(opp: Opportunity) -> str:
+    """Hackathon readers want prize pool and registration deadline first, then
+    format (online/onsite) — a different priority order than the generic
+    layout. Reuses the same building blocks (hooks, bold, paragraphs, tag
+    footer) so it stays NULL-safe and dependency-free exactly like the
+    generic formatter below."""
+    parts: list[str] = []
+
+    if opp.hooks:
+        hook_labels = [_bold(h) for h in opp.hooks]
+        parts.append("  ".join(hook_labels))
+        parts.append("<b>——————————————</b>")
+        parts.append("")
+
+    title = _v(opp.title, "Opportunity")
+    parts.append(_bold(f"✨ {title}"))
+    parts.append("")
+
+    prize = opp.rewards or opp.cost
+    if prize and _v(prize) != "Unknown":
+        parts.append(f"💰 {_bold('Prize pool:')} {prize}")
+
+    if opp.deadline and _v(opp.deadline) != "Unknown":
+        parts.append(f"⏰ {_bold('Registration closes:')} {opp.deadline}")
+
+    format_bits = [b for b in (opp.location, opp.duration) if b and _v(b) != "Unknown"]
+    if format_bits:
+        parts.append(f"📍 {_bold('Format:')} {' · '.join(format_bits)}")
+
+    if parts and parts[-1] != "":
+        parts.append("")
+
+    if opp.eligibility and _v(opp.eligibility) != "Unknown":
+        parts.append(f"👤 {_bold('Who can enter:')}")
+        parts.append(opp.eligibility)
+        parts.append("")
+
+    if opp.description and _v(opp.description) != "Unknown":
+        parts.append(f"📝 {_bold('About:')}")
+        for para in _split_paragraphs(opp.description):
+            parts.append(para)
+            parts.append("")
+
+    apply = _v(opp.apply_link, "")
+    if apply:
+        parts.append(f'🔗 {_bold("Register →")} <a href="{apply}">{apply}</a>')
+        parts.append("")
+
+    if opp.additional_links:
+        links_line = "  ".join(
+            f'<a href="{link}">{link}</a>' for link in opp.additional_links
+        )
+        parts.append(f"🔗 {_bold('Also see:')} {links_line}")
+        parts.append("")
+
+    parts.append("——")
+    parts.append("<i>#Hackathon #SimurgOpportunities</i>")
+
+    text = "\n".join(parts).strip()
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text
+
+
 def format_opportunity(opp: Opportunity) -> str:
+    if opp.category == Category.Hackathon:
+        return _format_hackathon(opp)
+
     parts: list[str] = []
 
     # Hooks — already formatted display strings (e.g. "🔥 #PremiumOpportunity")

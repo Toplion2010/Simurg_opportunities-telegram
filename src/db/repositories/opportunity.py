@@ -30,10 +30,17 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         return result.scalar_one_or_none()
 
     async def get_pending(self, page: int = 0, page_size: int = 5) -> list[Opportunity]:
+        # Best profile fit first; NULL relevance (unrated, e.g. pre-migration rows)
+        # sorts last. Not NULLS LAST: this form is portable across SQLite and
+        # Postgres with no dialect branch. Never auto-rejects — sort only.
         stmt = (
             select(Opportunity)
             .where(Opportunity.status == OpportunityStatus.pending)
-            .order_by(Opportunity.created_at.asc())
+            .order_by(
+                Opportunity.relevance.is_(None).asc(),
+                Opportunity.relevance.desc(),
+                Opportunity.created_at.asc(),
+            )
             .offset(page * page_size)
             .limit(page_size)
         )

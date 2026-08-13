@@ -3,12 +3,15 @@ from src.core.exceptions import ProcessingError
 from src.core.logging import get_logger
 from src.db.models.opportunity import Opportunity
 from src.db.models.raw_message import RawMessage
+from src.db.models.source_channel import SourceChannel
 from src.db.repositories.opportunity import OpportunityRepository
 from src.db.repositories.raw_message import RawMessageRepository
+from src.processor.age import parse_min_age
 from src.processor.classifier import CategoryClassifier
 from src.processor.cleaner import TextCleaner
 from src.processor.deduplicator import Deduplicator
 from src.processor.extractor import FieldExtractor
+from src.processor.source_link import build_source_url
 from src.processor.vision import ImageReader
 
 logger = get_logger(__name__)
@@ -33,9 +36,16 @@ class ProcessingPipeline:
         self._raw_repo = raw_repo
         self._image_reader = image_reader
 
-    async def run(self, raw: RawMessage, media_path: str | None = None) -> list[Opportunity]:
+    async def run(
+        self,
+        raw: RawMessage,
+        media_path: str | None = None,
+        source_channel: SourceChannel | None = None,
+    ) -> list[Opportunity]:
         if not raw.text:
             return []
+
+        source_url = build_source_url(source_channel, raw.telegram_msg_id)
 
         results: list[Opportunity] = []
         try:
@@ -77,6 +87,33 @@ class ProcessingPipeline:
                     logger.info("audience_none_skipped", raw_id=raw.id)
                     continue
 
+                # Age gate: nothing 18+ may reach the school channel. Combine the
+                # LLM's explicit reading with a regex parser over the full source
+                # text — whichever is stricter (higher) wins.
+                age_sources = " ".join(
+                    filter(
+                        None,
+                        [dto.title, dto.description, dto.eligibility, extraction_input],
+                    )
+                )
+                parsed_min_age = parse_min_age(age_sources)
+                min_age = max(
+                    (age for age in (dto.min_age, parsed_min_age) if age is not None),
+                    default=None,
+                )
+                if min_age is not None and min_age >= 18 and audience in (
+                    RawAudience.both,
+                    RawAudience.school,
+                ):
+                    logger.info(
+                        "age_gate_applied",
+                        raw_id=raw.id,
+                        min_age=min_age,
+                        old_audience=audience.value,
+                        new_audience=RawAudience.university.value,
+                    )
+                    audience = RawAudience.university
+
                 if await self._deduplicator.check(dto, self._opp_repo):
                     continue
 
@@ -102,6 +139,10 @@ class ProcessingPipeline:
                     additional_links=dto.additional_links,
                     extra_notes=dto.extra_notes,
                     source_excerpt=dto.source_excerpt,
+                    min_age=min_age,
+                    relevance=dto.relevance,
+                    relevance_reason=dto.relevance_reason,
+                    source_url=source_url,
                     similarity_hash=hash_key,
                     media_path=media_path,
                     hooks=[],

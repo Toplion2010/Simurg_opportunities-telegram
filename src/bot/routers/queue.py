@@ -28,7 +28,45 @@ _AUDIENCE_LABELS = {
 
 
 def _routing_line(opp: Opportunity) -> str:
-    return f"📍 Will post to: {_AUDIENCE_LABELS[opp.audience]}"
+    return f"📍 {_AUDIENCE_LABELS[opp.audience]}"
+
+
+def _stars_line(opp: Opportunity) -> str | None:
+    # Omitted (not "0 stars") when unrated — NULL relevance is a missing rating,
+    # not a low one.
+    if opp.relevance is None:
+        return None
+    stars = "⭐" * opp.relevance + "☆" * (5 - opp.relevance)
+    reason = f" · {opp.relevance_reason}" if opp.relevance_reason else ""
+    return f"{stars} {opp.relevance}/5{reason}"
+
+
+def _tags_line(opp: Opportunity) -> str:
+    cat = opp.category.value if opp.category else "Unknown"
+    line = f"🏷 {cat}"
+    if opp.min_age is not None and opp.min_age >= 18:
+        line += " · 🔞 18+"
+    return line
+
+
+def _source_line(opp: Opportunity) -> str | None:
+    if not opp.source_url:
+        return None
+    return f'🔗 <a href="{opp.source_url}">Original post</a>'
+
+
+def _meta_lines(opp: Opportunity) -> str:
+    """Stars, tags/age, routing and source link — everything but the title."""
+    lines = [_stars_line(opp), _tags_line(opp), _routing_line(opp), _source_line(opp)]
+    return "\n".join(line for line in lines if line)
+
+
+def _card_text(opp: Opportunity) -> str:
+    title = opp.title or "Untitled"
+    lines = [_stars_line(opp), f"📌 <b>{title}</b>", _tags_line(opp), _routing_line(opp)]
+    lines.append(f"📅 {opp.deadline or 'Unknown'}")
+    lines.append(_source_line(opp))
+    return "\n".join(line for line in lines if line)
 
 
 async def _send_opportunity_card(
@@ -47,13 +85,13 @@ async def _send_opportunity_card(
     preview = format_opportunity(opp)
     preview_short = preview[:1000] + ("..." if len(preview) > 1000 else "")
     status_label = opp.status.value.upper()
-    text = f"[{status_label}] {preview_short}\n\n{_routing_line(opp)}"
+    text = f"[{status_label}] {preview_short}\n\n{_meta_lines(opp)}"
     kb = opportunity_actions_keyboard(opp.id, page)
 
     if edit:
-        await message.edit_text(text, reply_markup=kb)
+        await message.edit_text(text, parse_mode="HTML", reply_markup=kb)
     else:
-        await message.answer(text, reply_markup=kb)
+        await message.answer(text, parse_mode="HTML", reply_markup=kb)
 
 
 @router.message(F.text == "📋 View Queue")
@@ -93,11 +131,7 @@ async def _show_queue_page(
     items = await repo.get_pending(page=page, page_size=PAGE_SIZE)
 
     for opp in items:
-        title = opp.title or "Untitled"
-        cat = opp.category.value if opp.category else "Unknown"
-        card = (
-            f"📌 <b>{title}</b>\n🏷 {cat}\n📅 {opp.deadline or 'Unknown'}\n{_routing_line(opp)}"
-        )
+        card = _card_text(opp)
         kb = opportunity_actions_keyboard(opp.id, page)
         if edit and opp == items[0]:
             await message.edit_text(card, parse_mode="HTML", reply_markup=kb)
@@ -130,7 +164,7 @@ async def preview_opportunity(
         await call.answer("Not found.", show_alert=True)
         return
     text = format_opportunity(opp)
-    await call.message.answer(text[:4096])
+    await call.message.answer(text[:4096], parse_mode="HTML")
     await call.answer()
 
 

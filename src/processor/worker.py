@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from src.core.logging import get_logger
 from src.core.notify import notify_admins
 from src.core.redis_client import dequeue_batch
+from src.db.models.source_channel import SourceChannel
 from src.db.repositories.opportunity import OpportunityRepository
 from src.db.repositories.raw_message import RawMessageRepository
 from src.db.repositories.source_channel import SourceChannelRepository
@@ -83,16 +84,16 @@ async def process_payloads(
                 await asyncio.sleep(throttle_seconds)
             try:
                 received_at = datetime.fromisoformat(payload["received_at"]).replace(tzinfo=None)
-                source_channel_id = await _resolve_channel_id(
-                    session, payload["channel_id"]
-                )
+                source_channel = await _resolve_channel(session, payload["channel_id"])
                 raw = await raw_repo.create(
-                    source_channel_id=source_channel_id,
+                    source_channel_id=source_channel.id if source_channel else None,
                     telegram_msg_id=payload["telegram_msg_id"],
                     text=payload.get("text"),
                     received_at=received_at,
                 )
-                created = await pipeline.run(raw, media_path=payload.get("media_path"))
+                created = await pipeline.run(
+                    raw, media_path=payload.get("media_path"), source_channel=source_channel
+                )
                 await session.commit()
                 processed += 1
                 created_count += len(created)
@@ -159,7 +160,7 @@ async def _notify_admins(
     await notify_admins(bot, admin_ids, text)
 
 
-async def _resolve_channel_id(session: AsyncSession, telegram_id: int) -> int | None:
+async def _resolve_channel(session: AsyncSession, telegram_id: int) -> SourceChannel | None:
     repo = SourceChannelRepository(session)
     channels = await repo.list(telegram_id=telegram_id)
-    return channels[0].id if channels else None
+    return channels[0] if channels else None

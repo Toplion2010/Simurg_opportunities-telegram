@@ -67,6 +67,15 @@ class Settings(BaseSettings):
     MAX_MESSAGES_PER_RUN: int = 7
     PUBLISHER_POLL_SECONDS: int = 60
 
+    # Operator's profile for the extractor's relevance rating — tunable without
+    # touching extractor.py. Kept short: it lands in every extraction prompt and
+    # counts against the Groq free-tier token budget (see MAX_MESSAGES_PER_RUN).
+    RELEVANCE_PROFILE: str = (
+        "computer science, software engineering, AI/ML, data science, hackathons, "
+        "competitive programming, math and logic olympiads, robotics, "
+        "entrepreneurship, startups, business and product"
+    )
+
     # Background library
     BACKGROUNDS_DIR: str = "backgrounds"
     BACKGROUND_REFRESH_SECONDS: int = 300

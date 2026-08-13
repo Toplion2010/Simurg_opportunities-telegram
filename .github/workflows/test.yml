@@ -1,0 +1,31 @@
+name: Unit tests
+
+# Scoped to pure functions only -- no DB, no network, no secrets needed. Runs
+# on every push/PR so a regression in the triage logic (age gate, relevance,
+# source links, card variety, hackathon formatting) is caught before it ships.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Run pytest
+        run: pytest tests/ -v
