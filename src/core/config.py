@@ -25,7 +25,13 @@ class Settings(BaseSettings):
 
     # LLM — Groq (primary) or OpenAI-compatible
     GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    # Groq deprecated its Llama chat models outright (llama-3.3-70b-versatile
+    # 404s as of 2026-08-17 -- "does not exist or you do not have access to
+    # it"). openai/gpt-oss-120b is the closest available replacement: still
+    # supports json_mode/structured_outputs like the extractor needs, similar
+    # capability tier to a 70B model. Verified via GET /v1/models against the
+    # live key -- see run 32148224763.
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
 
     # OpenAI — used only for embeddings when ENABLE_EMBEDDING_DEDUP=true
