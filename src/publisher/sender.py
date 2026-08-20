@@ -13,6 +13,12 @@ from src.publisher.formatter import format_opportunity
 
 logger = get_logger(__name__)
 
+# Telegram's hard limit for a photo caption. Truncating the formatted HTML to
+# fit risks cutting inside a tag (e.g. an unclosed <a>), which trades this
+# error for a "can't parse entities" one. Sending the photo with a short
+# caption and the full text as a follow-up message loses nothing instead.
+_CAPTION_LIMIT = 1024
+
 
 @dataclass
 class PublishResult:
@@ -54,6 +60,9 @@ class OpportunitySender:
             logger.exception("publish_failed", opp_id=opp.id, error=str(e))
             raise PublishError(f"Failed to render card for opportunity {opp.id}: {e}") from e
 
+        overlong = len(caption) > _CAPTION_LIMIT
+        photo_caption = f"<b>✨ {opp.title or 'Opportunity'}</b>" if overlong else caption
+
         result = PublishResult()
         for chat_id in targets:
             try:
@@ -61,9 +70,11 @@ class OpportunitySender:
                 await bot.send_photo(
                     chat_id=chat_id,
                     photo=photo,
-                    caption=caption,
+                    caption=photo_caption,
                     parse_mode="HTML",
                 )
+                if overlong:
+                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
                 result.succeeded.append(chat_id)
             except Exception as e:
                 logger.exception(
