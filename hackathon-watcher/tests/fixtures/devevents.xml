@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Upcoming developer events</title>
+        <link>https://dev.events</link>
+        <description>Upcoming developer events</description>
+        <item>
+            <title><![CDATA[Test Hack Night]]></title>
+            <link>https://dev.events/conferences/test-hack-night</link>
+            <guid>test-hack-night</guid>
+            <pubDate>Tue, 18 Aug 2026 14:43:53 GMT</pubDate>
+            <description><![CDATA[Test Hack Night is happening on August 25, 2026, Online. More information: https://dev.events/conferences/test-hack-night]]></description>
+            <category>Artificial Intelligence (AI)</category>
+            <category>hackathon</category>
+        </item>
+        <item>
+            <title><![CDATA[Offline Build Sprint]]></title>
+            <link>https://dev.events/conferences/offline-build-sprint</link>
+            <guid>offline-build-sprint</guid>
+            <pubDate>Fri, 21 Aug 2026 04:03:26 GMT</pubDate>
+            <description><![CDATA[Offline Build Sprint is happening on October 30, 2026 in Basel, Switzerland, Europe. More information: https://dev.events/conferences/offline-build-sprint]]></description>
+            <category>Tech</category>
+            <category>hackathon</category>
+        </item>
+        <item>
+            <title><![CDATA[Not A Hackathon Meetup]]></title>
+            <link>https://dev.events/conferences/not-a-hackathon-meetup</link>
+            <guid>not-a-hackathon-meetup</guid>
+            <pubDate>Fri, 21 Aug 2026 04:00:00 GMT</pubDate>
+            <description><![CDATA[Not A Hackathon Meetup is happening on August 22, 2026, Online. More information: https://dev.events/conferences/not-a-hackathon-meetup]]></description>
+            <category>JavaScript</category>
+            <category>meetup</category>
+        </item>
+    </channel>
+</rss>

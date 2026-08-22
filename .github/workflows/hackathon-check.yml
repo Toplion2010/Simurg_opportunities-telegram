@@ -1,0 +1,46 @@
+name: Hackathon Watcher
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: hackathon-watcher
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: hackathon-watcher
+        run: pip install -r requirements.txt
+
+      - name: Run watcher
+        working-directory: hackathon-watcher
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.HACKATHON_WATCHER_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.HACKATHON_WATCHER_CHAT_ID }}
+        run: python main.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- hackathon-watcher/state/seen.json; then
+            echo "no state change, skipping commit"
+            exit 0
+          fi
+          git add hackathon-watcher/state/seen.json
+          git commit -m "hackathon-watcher: update seen.json [skip ci]"
+          git push

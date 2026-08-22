@@ -1,0 +1,42 @@
+{
+  "hackathons": [
+    {
+      "id": 12345,
+      "title": "Test Hackathon",
+      "url": "https://test-hack.devpost.com/",
+      "submission_period_dates": "Sep 01 - 15, 2026",
+      "open_state": "open",
+      "prize_amount": "<span class=\"first_place\">$1,000</span>",
+      "displayed_location": {
+        "location": "Online"
+      },
+      "themes": [
+        {
+          "name": "Machine Learning/AI"
+        },
+        {
+          "name": "Web"
+        }
+      ]
+    },
+    {
+      "id": 67890,
+      "title": "Campus Build Day",
+      "url": "https://campus-build.devpost.com/",
+      "submission_period_dates": "Oct 10, 2026",
+      "open_state": "open",
+      "prize_amount": "$500",
+      "displayed_location": {
+        "location": "Austin, TX"
+      },
+      "themes": [
+        {
+          "name": "Beginner Friendly"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "total_count": 2
+  }
+}
