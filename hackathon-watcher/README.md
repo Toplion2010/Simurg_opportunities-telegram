@@ -1,14 +1,18 @@
 # Hackathon Watcher
 
 A free, serverless hackathon watcher. It runs entirely on GitHub Actions
-cron — no persistent server, no paid services, no API keys other than a
-Telegram bot token, no LLM. It fetches listings from Devpost, dev.events,
-MLH, Devfolio, and reskilll, deduplicates them, filters for relevance, and
-posts new ones to a Telegram channel.
+cron — no persistent server, no paid services. It fetches listings from
+Devpost, dev.events, MLH, Devfolio, and reskilll, deduplicates them,
+filters for relevance, enriches Devpost items from their detail page
+(description, prize breakdown, eligibility, sponsors), and posts new ones
+to a Telegram channel. Posts that have no real cover image get one
+generated via Gemini (reusing Simurg's own image-generation approach) as a
+fallback — never blocking a post if generation fails.
 
 This bot and its channel are fully independent of anything else in this
-repo — it does not share state, secrets, or a channel with Simurg's own
-hackathon-related plans.
+repo — it does not share state, a channel, or Telegram secrets with
+Simurg's own hackathon-related plans. It does reuse the repo's existing
+`GEMINI_API_KEY` secret for the fallback image feature.
 
 ## Setup
 
@@ -57,7 +61,16 @@ git commit -m "hackathon-watcher: seed initial state"
 git push
 ```
 
-### 5. Enable the workflow
+### 5. (Optional) Fallback image generation
+
+Posts get a real cover image when the source has one. When it doesn't (or
+Devpost only has its generic placeholder), the bot falls back to generating
+one with Gemini — reusing the repo's existing `GEMINI_API_KEY` secret
+(already set for Simurg's own opportunity-card generator; no new secret to
+create). If that key isn't set, or generation fails, the post still goes
+out as plain text — nothing ever blocks on this.
+
+### 6. Enable the workflow
 
 The workflow (`.github/workflows/hackathon-check.yml`) runs every 3 hours
 and on manual dispatch. Nothing else to enable — it starts running once
@@ -74,6 +87,8 @@ python main.py [options]
 -l, --limit N                   cap items processed per source
 -f, --force                     ignore seen.json, re-process everything
     --seed                      populate seen.json without posting
+    --no-enrich                 skip the detail-page enrichment step
+    --no-image-gen              skip Gemini fallback image generation
 ```
 
 Examples:
@@ -101,7 +116,10 @@ list[Hackathon]` (see `sources/base.py`), then add one entry to
 
 All tunables live in `config.py`: filter thresholds (`ONLINE_ONLY`,
 `STILL_OPEN`, `MIN_PRIZE`, `EXCLUDE_THEMES`, `INCLUDE_THEMES`),
-`MAX_POSTS_PER_RUN`, per-source settings, and HTTP timeout/retry knobs.
+`MAX_POSTS_PER_RUN`, per-source settings, HTTP timeout/retry knobs,
+enrichment (`ENRICH_ENABLED`, `ENRICH_TIMEOUT_TOTAL`), and image
+generation (`IMAGE_GEN_ENABLED`, `GEMINI_IMAGE_MODEL`,
+`IMAGE_GEN_RETRY_SCHEDULE`).
 
 ## Tests
 

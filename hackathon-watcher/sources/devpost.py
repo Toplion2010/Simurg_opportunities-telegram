@@ -5,9 +5,12 @@ GET https://devpost.com/api/hackathons?status[]=open&order_by=recently-added&pag
 
 from __future__ import annotations
 
+import dataclasses
+import html as html_module
+import json
 import logging
 import re
-from datetime import date
+from datetime import date, datetime
 
 from bs4 import BeautifulSoup
 
@@ -18,6 +21,12 @@ from sources.http import get
 logger = logging.getLogger(__name__)
 
 API_URL = "https://devpost.com/api/hackathons"
+
+DESCRIPTION_MAX_CHARS = 400
+
+# Present on nearly every Devpost hackathon regardless of actual audience —
+# not a meaningful restriction, so excluded from the surfaced eligibility.
+_ELIGIBILITY_BOILERPLATE = ("legal age", "all countries")
 
 _MONTHS = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
@@ -85,10 +94,17 @@ def _organizer(name: str | None) -> str | None:
 
 
 def _absolute_url(url: str | None) -> str | None:
-    """devpost's thumbnail_url is sometimes protocol-relative ('//host/...')."""
-    if url and url.startswith("//"):
+    """devpost's thumbnail_url is sometimes protocol-relative ('//host/...'),
+    and when an organizer never uploaded a real thumbnail it's Devpost's own
+    generic gray icon-grid placeholder — not a real image, so treated as
+    none (the pipeline falls back to a generated image or text-only)."""
+    if not url:
+        return None
+    if "thumbnail-placeholder" in url:
+        return None
+    if url.startswith("//"):
         return f"https:{url}"
-    return url or None
+    return url
 
 
 def _strip_html(text: str | None) -> str | None:
@@ -100,6 +116,94 @@ def _strip_html(text: str | None) -> str | None:
     except Exception:
         logger.warning("devpost: failed to strip HTML from prize text", exc_info=True)
         return text
+
+
+def _parse_json_ld(soup: BeautifulSoup) -> dict | None:
+    tag = soup.select_one("#challenge-json-ld")
+    if tag is None or not tag.string:
+        return None
+    try:
+        return json.loads(tag.string)
+    except Exception:
+        logger.warning("devpost: enrich: failed to parse challenge-json-ld", exc_info=True)
+        return None
+
+
+def _extract_description(ld: dict) -> str | None:
+    try:
+        raw = ld.get("description")
+        if not raw:
+            return None
+        unescaped = html_module.unescape(raw)
+        text = BeautifulSoup(unescaped, "html.parser").get_text(" ", strip=True)
+        text = re.sub(r"\s+", " ", text).strip()
+        if not text:
+            return None
+        if len(text) <= DESCRIPTION_MAX_CHARS:
+            return text
+        truncated = text[:DESCRIPTION_MAX_CHARS].rsplit(" ", 1)[0]
+        return truncated + "…"
+    except Exception:
+        logger.warning("devpost: enrich: failed to extract description", exc_info=True)
+        return None
+
+
+def _extract_deadline(ld: dict) -> date | None:
+    try:
+        end_date = ld.get("endDate")
+        if not end_date:
+            return None
+        return datetime.fromisoformat(end_date).date()
+    except Exception:
+        logger.warning("devpost: enrich: failed to extract deadline", exc_info=True)
+        return None
+
+
+def _extract_prize_breakdown(soup: BeautifulSoup) -> list[str]:
+    try:
+        breakdown = []
+        for item in soup.select('div[id^="prize_"]'):
+            title_el = item.select_one(".prize-title")
+            value_el = item.select_one(".prize-value")
+            if title_el is None or value_el is None:
+                continue
+            title = title_el.get_text(" ", strip=True)
+            value = re.sub(r"\s+", " ", value_el.get_text(" ", strip=True)).strip()
+            value = re.sub(r"([$€£₹])\s+(?=\d)", r"\1", value)
+            if title and value:
+                breakdown.append(f"{title}: {value}")
+        return breakdown
+    except Exception:
+        logger.warning("devpost: enrich: failed to extract prize breakdown", exc_info=True)
+        return []
+
+
+def _extract_eligibility(soup: BeautifulSoup) -> str | None:
+    try:
+        items = soup.select("#eligibility-list li")
+        restrictions = []
+        for li in items:
+            text = li.get_text(" ", strip=True)
+            if not text:
+                continue
+            if any(text.lower().startswith(b) or b in text.lower() for b in _ELIGIBILITY_BOILERPLATE):
+                continue
+            restrictions.append(text)
+        return "; ".join(restrictions) or None
+    except Exception:
+        logger.warning("devpost: enrich: failed to extract eligibility", exc_info=True)
+        return None
+
+
+def _extract_sponsors(soup: BeautifulSoup) -> list[str]:
+    try:
+        tiles = soup.select_one("#sponsor-tiles")
+        if tiles is None:
+            return []
+        return [img.get("alt") for img in tiles.select("img[alt]") if img.get("alt")]
+    except Exception:
+        logger.warning("devpost: enrich: failed to extract sponsors", exc_info=True)
+        return []
 
 
 class DevpostSource(Source):
@@ -171,3 +275,35 @@ class DevpostSource(Source):
         except Exception:
             logger.warning("devpost: failed to parse entry %r", entry.get("id"), exc_info=True)
             return None
+
+    def enrich(self, hackathon: Hackathon) -> Hackathon:
+        try:
+            response = get(
+                hackathon.url,
+                timeout=config.ENRICH_DETAIL_TIMEOUT,
+                retries=config.ENRICH_DETAIL_RETRIES,
+            )
+            response.raise_for_status()
+        except Exception:
+            logger.warning("devpost: enrich: fetch failed for %s", hackathon.url, exc_info=True)
+            return hackathon
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        ld = _parse_json_ld(soup)
+        if ld is None:
+            logger.warning(
+                "devpost: enrich: no challenge-json-ld found for %s, "
+                "page structure may have changed",
+                hackathon.url,
+            )
+            return hackathon
+
+        return dataclasses.replace(
+            hackathon,
+            description=_extract_description(ld),
+            prize_breakdown=_extract_prize_breakdown(soup),
+            eligibility=_extract_eligibility(soup),
+            required_tech=[],  # no reliable structured source on Devpost
+            deadline=_extract_deadline(ld),
+            sponsors=_extract_sponsors(soup),
+        )

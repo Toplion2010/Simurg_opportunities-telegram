@@ -15,6 +15,7 @@ import config
 logger = logging.getLogger(__name__)
 
 STATE_PATH = Path(__file__).resolve().parent.parent / "state" / "seen.json"
+ENRICHED_STATE_PATH = Path(__file__).resolve().parent.parent / "state" / "enriched.json"
 
 
 def load(path: Path = STATE_PATH) -> dict:

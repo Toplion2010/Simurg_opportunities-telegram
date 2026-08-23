@@ -33,6 +33,30 @@ DEVPOST_PAGE_CAP: int = 5
 # --- State ---
 SEEN_PRUNE_DAYS: int = 60
 
+# --- Enrichment (pipeline/enrich.py) ---
+ENRICH_ENABLED: bool = True
+ENRICH_TIMEOUT_TOTAL: float = 120.0  # wall-clock budget per run, seconds
+ENRICH_DETAIL_TIMEOUT: int = 15  # per detail-page request
+ENRICH_DETAIL_RETRIES: int = 1
+ENRICH_SLEEP_SECONDS: float = 1.0  # between detail fetches
+
+# --- Image generation (pipeline/image_gen.py) ---
+# Fallback cover image via Gemini when a source gives no real photo (a
+# filtered generic placeholder, or a source that never provides one). Same
+# GEMINI_API_KEY secret and model family as Simurg's own opportunity-card
+# generator (src/publisher/live_background.py) — read from the environment
+# in main.py, not stored here, matching TELEGRAM_BOT_TOKEN's convention.
+IMAGE_GEN_ENABLED: bool = True
+GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+GEMINI_IMAGE_FALLBACK_MODELS: list[str] = [
+    "gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-3-pro-image",
+]
+IMAGE_GEN_TIMEOUT: int = 30
+# Lighter than Simurg's card generator (0,4,10,25,45s) — this bot posts up
+# to MAX_POSTS_PER_RUN items per cron run and needs to stay well inside a
+# GitHub Actions job's time budget, not just eventually succeed.
+IMAGE_GEN_RETRY_SCHEDULE: tuple[float, ...] = (0, 3, 8)
+
 # --- HTTP ---
 REQUEST_TIMEOUT_SECONDS: int = 20
 REQUEST_RETRIES: int = 2

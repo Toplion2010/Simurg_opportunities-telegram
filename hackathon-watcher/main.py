@@ -8,8 +8,6 @@ entry's module dynamically and never imports a source module by name.
 from __future__ import annotations
 
 import argparse
-import importlib
-import inspect
 import logging
 import os
 import sys
@@ -17,11 +15,14 @@ from datetime import date
 
 import config
 from pipeline.dedup import dedup, dedup_key
+from pipeline.enrich import enrich
 from pipeline.filters import apply_filters
+from pipeline.normalize import canonicalize_url
 from pipeline.state import load as load_seen
 from pipeline.state import prune as prune_seen
 from pipeline.state import save as save_seen
 from pipeline.telegram import post_hackathons
+from sources import get_source_class
 from sources.base import Hackathon, Source
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -29,21 +30,6 @@ if hasattr(sys.stdout, "reconfigure"):
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("main")
-
-
-def _load_source_class(module_path: str) -> type[Source] | None:
-    try:
-        module = importlib.import_module(module_path)
-    except Exception:
-        logger.error("failed to import source module %s", module_path, exc_info=True)
-        return None
-
-    for _, obj in inspect.getmembers(module, inspect.isclass):
-        if obj.__module__ == module_path and issubclass(obj, Source) and obj is not Source:
-            return obj
-
-    logger.error("no Source subclass found in %s", module_path)
-    return None
 
 
 def _resolve_sources(names: list[str] | None) -> dict[str, type[Source]]:
@@ -58,7 +44,7 @@ def _resolve_sources(names: list[str] | None) -> dict[str, type[Source]]:
         if entry is None:
             logger.error("unknown source: %s", name)
             continue
-        source_cls = _load_source_class(entry["module"])
+        source_cls = get_source_class(entry["module"])
         if source_cls is not None:
             resolved[name] = source_cls
     return resolved
@@ -67,12 +53,15 @@ def _resolve_sources(names: list[str] | None) -> dict[str, type[Source]]:
 def fetch_all(names: list[str] | None = None, limit: int | None = None) -> list[Hackathon]:
     """Fetch from every resolved source. `limit`, if given, caps the number
     of items kept per source — a command-layer concern; sources themselves
-    take no `limit` parameter."""
+    take no `limit` parameter. Every url is canonicalized here (tracking
+    params stripped, host lowercased) before dedup ever sees it."""
     results: list[Hackathon] = []
     for name, source_cls in _resolve_sources(names).items():
         fetched = source_cls().fetch()
         if limit is not None:
             fetched = fetched[:limit]
+        for h in fetched:
+            h.url = canonicalize_url(h.url)
         logger.info("%s: fetched %d", name, len(fetched))
         results.extend(fetched)
     return results
@@ -84,6 +73,18 @@ def _print_hackathon(h: Hackathon) -> None:
     print(f"    dates: {h.starts_at} -> {h.ends_at}  online={h.is_online}")
     print(f"    prize: {h.prize_text}  location: {h.location}")
     print(f"    themes: {h.themes}")
+    if h.description:
+        print(f"    description: {h.description}")
+    if h.prize_breakdown:
+        print(f"    prize_breakdown: {h.prize_breakdown}")
+    if h.eligibility:
+        print(f"    eligibility: {h.eligibility}")
+    if h.required_tech:
+        print(f"    required_tech: {h.required_tech}")
+    if h.sponsors:
+        print(f"    sponsors: {h.sponsors}")
+    if h.deadline:
+        print(f"    deadline: {h.deadline}")
 
 
 def _seen_entry(h: Hackathon) -> dict:
@@ -117,6 +118,14 @@ def main() -> None:
         "--seed", action="store_true",
         help="populate seen.json with everything currently live, without posting",
     )
+    parser.add_argument(
+        "--no-enrich", action="store_true",
+        help="skip the detail-page enrichment step",
+    )
+    parser.add_argument(
+        "--no-image-gen", action="store_true",
+        help="skip Gemini fallback image generation, even if GEMINI_API_KEY is set",
+    )
     args = parser.parse_args()
 
     fetched = fetch_all(args.resources, args.limit)
@@ -136,17 +145,25 @@ def main() -> None:
     new_items = [h for h in filtered if dedup_key(h) not in check_against]
     logger.info("new: %d", len(new_items))
 
-    if args.dry_run:
-        print(f"\n{len(new_items)} hackathon(s) would be posted:\n")
-        for h in new_items:
-            _print_hackathon(h)
-        return
-
     if args.seed:
+        # Seeds off `filtered` (everything currently live), not `new_items`
+        # — enrichment stays skipped here on purpose, since seeding would
+        # otherwise pay for detail-page fetches on ~40+ items instead of
+        # the handful that would actually get posted on a normal run.
         for h in filtered:
             seen[dedup_key(h)] = _seen_entry(h)
         save_seen(prune_seen(seen))
         logger.info("seeded seen.json with %d entries, nothing posted", len(filtered))
+        return
+
+    if config.ENRICH_ENABLED and not args.no_enrich:
+        new_items = enrich(new_items, dry_run=args.dry_run)
+        logger.info("enriched: %d", len(new_items))
+
+    if args.dry_run:
+        print(f"\n{len(new_items)} hackathon(s) would be posted:\n")
+        for h in new_items:
+            _print_hackathon(h)
         return
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -158,7 +175,8 @@ def main() -> None:
         )
         return
 
-    posted = post_hackathons(token, chat_id, new_items)
+    gemini_api_key = None if args.no_image_gen else os.environ.get("GEMINI_API_KEY")
+    posted = post_hackathons(token, chat_id, new_items, gemini_api_key)
     logger.info("posted: %d / %d new", len(posted), len(new_items))
 
     for h in posted:

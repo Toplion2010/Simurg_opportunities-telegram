@@ -12,15 +12,17 @@ import config
 logger = logging.getLogger(__name__)
 
 
-def get(url: str, **kwargs) -> requests.Response:
+def get(url: str, retries: int | None = None, **kwargs) -> requests.Response:
     """GET with a real User-Agent, a fixed timeout, and retries on 5xx /
     timeout. Raises requests.RequestException if every attempt fails —
-    callers (each Source.fetch) are responsible for catching that."""
+    callers (each Source.fetch) are responsible for catching that.
+    `retries` overrides config.REQUEST_RETRIES for this call only (e.g.
+    enrichment wants a shorter timeout/fewer retries than listing fetches)."""
     headers = kwargs.pop("headers", {})
     headers.setdefault("User-Agent", config.USER_AGENT)
     kwargs.setdefault("timeout", config.REQUEST_TIMEOUT_SECONDS)
 
-    attempts = config.REQUEST_RETRIES + 1
+    attempts = (retries if retries is not None else config.REQUEST_RETRIES) + 1
     last_exc: Exception | None = None
     for attempt in range(attempts):
         try:
