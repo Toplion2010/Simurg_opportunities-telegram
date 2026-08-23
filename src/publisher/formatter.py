@@ -31,6 +31,46 @@ def _bold(text: str) -> str:
     return f"<b>{text}</b>"
 
 
+_ABOUT_MARKER = f"📝 {_bold('About:')}"
+
+
+def _fit_caption(text: str, max_length: int) -> str:
+    """Shrink an overlong caption to fit by trimming the About section.
+
+    Telegram caps a photo caption at 1024 chars, but most of that overflow is
+    the free-form description — the card image already carries the title,
+    category, eligibility, and prize as short fields, so cutting About down
+    (or dropping it) loses nothing the reader can't get from the image or the
+    apply link right below it.
+    """
+    about_start = text.find(_ABOUT_MARKER)
+    if about_start == -1:
+        return text  # nothing safe to trim; caller falls back to a follow-up message
+
+    content_start = about_start + len(_ABOUT_MARKER)
+    content_end = len(text)
+    for marker in ("\n🔗 ", "\n——"):
+        idx = text.find(marker, content_start)
+        if idx != -1:
+            content_end = min(content_end, idx)
+
+    before = text[:content_start]
+    after = text[content_end:]
+    desc = text[content_start:content_end]
+
+    overflow = len(text) - max_length
+    budget = len(desc) - overflow - 1  # room left for the trailing ellipsis
+
+    if budget < 40:
+        # Not enough room for a meaningful excerpt — drop the section outright.
+        result = text[:about_start] + after
+    else:
+        truncated = desc[:budget].rsplit(" ", 1)[0].rstrip("\n .,;:—-") + "…"
+        result = before + "\n" + truncated + "\n\n" + after.lstrip("\n")
+
+    return re.sub(r"\n{3,}", "\n\n", result).strip()
+
+
 def _split_paragraphs(text: str) -> list[str]:
     chunks = [c.strip() for c in re.split(r"\n{2,}", text) if c.strip()]
     if len(chunks) > 1:
@@ -108,10 +148,14 @@ def _format_hackathon(opp: Opportunity) -> str:
     return text
 
 
-def format_opportunity(opp: Opportunity) -> str:
-    if opp.category == Category.Hackathon:
-        return _format_hackathon(opp)
+def format_opportunity(opp: Opportunity, max_length: int | None = None) -> str:
+    text = _format_hackathon(opp) if opp.category == Category.Hackathon else _format_generic(opp)
+    if max_length is not None and len(text) > max_length:
+        text = _fit_caption(text, max_length)
+    return text
 
+
+def _format_generic(opp: Opportunity) -> str:
     parts: list[str] = []
 
     # Hooks — already formatted display strings (e.g. "🔥 #PremiumOpportunity")
