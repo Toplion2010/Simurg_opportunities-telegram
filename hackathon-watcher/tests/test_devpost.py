@@ -21,6 +21,8 @@ def test_devpost_parses_fixture(fixture_response, monkeypatch):
     assert first.is_online is True
     assert first.prize_text == "$1,000"
     assert first.themes == ["Machine Learning/AI", "Web"]
+    assert first.image_url == "https://d2dmyh35ffsxbl.cloudfront.net/test-thumb.png"
+    assert first.organizer == "Test Org"
 
     second = hackathons[1]
     assert second.starts_at == date(2026, 10, 10)

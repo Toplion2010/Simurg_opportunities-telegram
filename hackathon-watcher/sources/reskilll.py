@@ -136,6 +136,12 @@ class ReskilllSource(Source):
                 if t.get_text(strip=True)
             ]
 
+            cover_img = card.select_one('img[data-nimg="fill"]')
+            image_url = cover_img.get("src") if cover_img else None
+
+            organizer_span = card.select_one("div.flex.items-center.gap-2 span.truncate")
+            organizer = organizer_span.get_text(strip=True) if organizer_span else None
+
             return Hackathon(
                 source=self.name,
                 source_id=url,
@@ -146,6 +152,8 @@ class ReskilllSource(Source):
                 is_online=is_online,
                 prize_text=prize_text,
                 location=location,
+                image_url=image_url,
+                organizer=organizer,
                 themes=themes,
                 raw={"html": str(card)[:2000]},
             )

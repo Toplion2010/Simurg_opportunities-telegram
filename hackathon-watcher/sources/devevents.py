@@ -116,6 +116,8 @@ class DevEventsSource(Source):
             description = entry.get("description", "")
             starts_at, is_online, location = _parse_description(description)
             themes = [t.get("term") for t in getattr(entry, "tags", []) if t.get("term")]
+            enclosures = getattr(entry, "enclosures", [])
+            image_url = enclosures[0].get("href") if enclosures else None
 
             return Hackathon(
                 source=self.name,
@@ -127,6 +129,8 @@ class DevEventsSource(Source):
                 is_online=is_online,
                 prize_text=None,
                 location=location,
+                image_url=image_url,
+                organizer=None,
                 themes=themes,
                 raw=dict(entry) if hasattr(entry, "keys") else {},
             )

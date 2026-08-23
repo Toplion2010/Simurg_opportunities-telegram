@@ -97,6 +97,8 @@ class DevfolioSource(Source):
                 for t in entry.get("themes", [])
                 if t.get("theme", {}).get("name")
             ]
+            settings = entry.get("settings", {}) or {}
+            image_url = settings.get("featured_cover_img_v2") or settings.get("featured_cover_img")
 
             return Hackathon(
                 source=self.name,
@@ -108,6 +110,8 @@ class DevfolioSource(Source):
                 is_online=entry.get("is_online"),
                 prize_text=None,
                 location=None,
+                image_url=image_url or None,
+                organizer=None,
                 themes=themes,
                 raw=entry,
             )

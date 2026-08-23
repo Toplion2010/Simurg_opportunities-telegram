@@ -76,6 +76,21 @@ def _parse_dates(text: str | None) -> tuple[date | None, date | None]:
         return None, None
 
 
+def _organizer(name: str | None) -> str | None:
+    """Devpost's own API sometimes echoes back the literal placeholder
+    'other' (an unfilled category selector, not a real org name)."""
+    if name and name.strip().lower() != "other":
+        return name
+    return None
+
+
+def _absolute_url(url: str | None) -> str | None:
+    """devpost's thumbnail_url is sometimes protocol-relative ('//host/...')."""
+    if url and url.startswith("//"):
+        return f"https:{url}"
+    return url or None
+
+
 def _strip_html(text: str | None) -> str | None:
     if not text:
         return None
@@ -148,6 +163,8 @@ class DevpostSource(Source):
                 is_online=is_online,
                 prize_text=_strip_html(entry.get("prize_amount")),
                 location=location,
+                image_url=_absolute_url(entry.get("thumbnail_url")),
+                organizer=_organizer(entry.get("organization_name")),
                 themes=[t.get("name") for t in entry.get("themes", []) if t.get("name")],
                 raw=entry,
             )

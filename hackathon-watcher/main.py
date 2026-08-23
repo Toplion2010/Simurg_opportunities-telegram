@@ -128,8 +128,12 @@ def main() -> None:
     filtered = apply_filters(deduped)
     logger.info("filtered: %d", len(filtered))
 
-    seen = {} if args.force else load_seen()
-    new_items = [h for h in filtered if dedup_key(h) not in seen]
+    # `seen` is always the on-disk state and is what gets persisted —
+    # --force only changes which items COUNT as new, so it can never wipe
+    # out entries for hackathons this run didn't touch.
+    seen = load_seen()
+    check_against = {} if args.force else seen
+    new_items = [h for h in filtered if dedup_key(h) not in check_against]
     logger.info("new: %d", len(new_items))
 
     if args.dry_run:

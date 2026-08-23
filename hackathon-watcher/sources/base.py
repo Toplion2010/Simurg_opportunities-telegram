@@ -18,6 +18,8 @@ class Hackathon:
     is_online: bool | None
     prize_text: str | None
     location: str | None
+    image_url: str | None = None
+    organizer: str | None = None
     themes: list[str] = field(default_factory=list)
     raw: dict = field(default_factory=dict)
 

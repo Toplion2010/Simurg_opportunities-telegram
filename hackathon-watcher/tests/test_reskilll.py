@@ -20,11 +20,15 @@ def test_reskilll_parses_fixture(fixture_response, monkeypatch):
     assert online.starts_at == date(2026, 9, 20)
     assert online.ends_at == date(2026, 9, 21)
     assert "AI" in online.themes
+    assert online.image_url == "https://content.reskilll.com/uploads/events/test-online.png"
+    assert online.organizer == "Reskilll"
 
     assert offline.title == "Test Onsite Hackathon"
     assert offline.is_online is False
     assert offline.location == "Delhi NCR"
     assert offline.starts_at == date(2026, 10, 5)
+    assert offline.image_url is None
+    assert offline.organizer is None
 
 
 def test_reskilll_returns_empty_when_cards_missing(monkeypatch):

@@ -107,6 +107,8 @@ class MlhSource(Source):
                 is_online=is_online,
                 prize_text=None,
                 location=entry.get("location"),
+                image_url=entry.get("backgroundUrl") or entry.get("logoUrl") or None,
+                organizer=None,
                 themes=list(themes),
                 raw=entry,
             )

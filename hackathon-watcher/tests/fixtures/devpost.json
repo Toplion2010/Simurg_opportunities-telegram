@@ -10,6 +10,8 @@
       "displayed_location": {
         "location": "Online"
       },
+      "thumbnail_url": "https://d2dmyh35ffsxbl.cloudfront.net/test-thumb.png",
+      "organization_name": "Test Org",
       "themes": [
         {
           "name": "Machine Learning/AI"

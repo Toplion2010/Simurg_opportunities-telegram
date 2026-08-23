@@ -31,6 +31,7 @@ def _merge(winner: Hackathon, loser: Hackathon) -> Hackathon:
     """Fill in any field on winner that is falsy with the loser's value."""
     for field_name in (
         "starts_at", "ends_at", "is_online", "prize_text", "location",
+        "image_url", "organizer",
     ):
         if getattr(winner, field_name) is None:
             setattr(winner, field_name, getattr(loser, field_name))
