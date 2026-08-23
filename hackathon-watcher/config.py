@@ -14,6 +14,11 @@ SOURCES: dict[str, dict] = {
     "mlh": {"module": "sources.mlh", "priority": 3, "enabled": True},
     "devfolio": {"module": "sources.devfolio", "priority": 4, "enabled": True},
     "reskilll": {"module": "sources.reskilll", "priority": 5, "enabled": True},
+    "ethglobal": {"module": "sources.ethglobal", "priority": 6, "enabled": True},
+    "hackathoncom": {"module": "sources.hackathoncom", "priority": 7, "enabled": True},
+    "allhackathons": {"module": "sources.allhackathons", "priority": 8, "enabled": True},
+    "hackclub": {"module": "sources.hackclub", "priority": 9, "enabled": True},
+    "lablab": {"module": "sources.lablab", "priority": 10, "enabled": True},
 }
 
 # --- Filters (pipeline/filters.py reads these) ---
@@ -29,6 +34,16 @@ POST_SLEEP_SECONDS: float = 1.5
 
 # --- Source-specific ---
 DEVPOST_PAGE_CAP: int = 5
+# allhackathons.com has ~60 pages (mixed past/upcoming, sorted newest-added
+# first, not by date) — capped low since we only care about recently added
+# items; the still_open filter drops anything past regardless of page.
+ALLHACKATHONS_PAGE_CAP: int = 3
+# lablab.ai's listing page body is client-rendered, but the page embeds a
+# real schema.org ItemList (title+url, ~24 items, first-page order) and
+# each detail page embeds a real schema.org Event (dates, attendance mode,
+# prize-pool text) — both server-side JSON-LD, no browser needed. Detail
+# fetches are capped since each hackathon needs its own request.
+LABLAB_DETAIL_CAP: int = 15
 
 # --- State ---
 SEEN_PRUNE_DAYS: int = 60
