@@ -5,11 +5,29 @@
     "title": "3rd-Web-Hack",
     "url": "https://3rd-web-hack.devpost.com"
   },
+  "agents for humans|2026-08-10": {
+    "ends_at": "2026-09-14",
+    "first_seen": "2026-08-23",
+    "title": "Agents for Humans Hackathon",
+    "url": "https://agentsforhumans.devpost.com"
+  },
   "ai yes international youth ai competition|2026-06-17": {
     "ends_at": "2026-09-01",
     "first_seen": "2026-08-23",
     "title": "AI YES :International Youth AI Competition",
     "url": "https://ai-yes-competition-30441.devpost.com/"
+  },
+  "all things agentic|2026-08-04": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "All Things Agentic Hackathon",
+    "url": "https://allthingsagentichackathon.devpost.com"
+  },
+  "beginner s paradise firstcommit|2026-08-21": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-23",
+    "title": "Beginner's Paradise - FirstCommit",
+    "url": "https://firstcommit.devpost.com"
   },
   "blockchain amrita|2026-08-23": {
     "ends_at": "2026-08-25",
@@ -17,10 +35,82 @@
     "title": "Blockchain amrita",
     "url": "https://blockchain-amrita.devpost.com"
   },
+  "brainwave midnight track|2026-08-10": {
+    "ends_at": "2026-08-26",
+    "first_seen": "2026-08-23",
+    "title": "Brainwave 2026 – Midnight Track",
+    "url": "https://brainwave-2026-midnight-track.devpost.com"
+  },
+  "call e your code is calling|2026-07-23": {
+    "ends_at": "2026-09-14",
+    "first_seen": "2026-08-23",
+    "title": "CALL-E: Your Code Is Calling",
+    "url": "https://call-e.devpost.com"
+  },
+  "compsphere 12|2026-08-03": {
+    "ends_at": "2026-09-17",
+    "first_seen": "2026-08-23",
+    "title": "COMPSPHERE 12",
+    "url": "https://compsphere12.devpost.com"
+  },
+  "graphiques innovation challenge|2026-08-21": {
+    "ends_at": "2026-08-23",
+    "first_seen": "2026-08-23",
+    "title": "Graphiques Innovation Challenge ",
+    "url": "https://graphiques-challenge.devpost.com"
+  },
+  "innovart art and technology day|2026-08-23": {
+    "ends_at": "2027-01-02",
+    "first_seen": "2026-08-23",
+    "title": "InnovArt 2027: Art and Technology Hack Day",
+    "url": "https://innovart2027.devpost.com"
+  },
+  "inspire|2026-08-14": {
+    "ends_at": "2026-08-24",
+    "first_seen": "2026-08-23",
+    "title": "Inspire Hackathon ",
+    "url": "https://inspire-hackathon.devpost.com"
+  },
+  "next founders|2026-08-16": {
+    "ends_at": "2026-10-15",
+    "first_seen": "2026-08-23",
+    "title": "Next Founders Hackathon",
+    "url": "https://next-founders.devpost.com"
+  },
+  "nextstep hacks|2026-08-21": {
+    "ends_at": "2026-09-13",
+    "first_seen": "2026-08-23",
+    "title": "NextStep Hacks 2026",
+    "url": "https://nextstep2026.devpost.com"
+  },
+  "prometheus august ai challenge|2026-08-18": {
+    "ends_at": "2026-08-30",
+    "first_seen": "2026-08-23",
+    "title": "Prometheus August AI Challenge",
+    "url": "https://august-ai-challenge-31059.devpost.com"
+  },
+  "prometheus september ai challenge 2|2026-08-19": {
+    "ends_at": "2026-09-12",
+    "first_seen": "2026-08-23",
+    "title": "Prometheus September AI Challenge 2",
+    "url": "https://prometheus-september-ai-2.devpost.com"
+  },
+  "prometheus september ai challenge|2026-08-19": {
+    "ends_at": "2026-09-05",
+    "first_seen": "2026-08-23",
+    "title": "Prometheus September AI Challenge",
+    "url": "https://prometheus-sept-ai-classic.devpost.com"
+  },
   "quantumhacks|2026-06-21": {
     "ends_at": "2026-08-24",
     "first_seen": "2026-08-22",
     "title": "QuantumHacks",
     "url": "https://quantumhacks.devpost.com/"
+  },
+  "the habitat|2026-08-07": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "Hack the Habitat",
+    "url": "https://hack-the-habitat-2026.devpost.com"
   }
 }
