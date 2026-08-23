@@ -47,11 +47,59 @@
     "title": "All Things Agentic Hackathon",
     "url": "https://allthingsagentichackathon.devpost.com"
   },
+  "alpaca ai trading agents|2026-08-28": {
+    "ends_at": "2026-09-04",
+    "first_seen": "2026-08-23",
+    "title": "Alpaca AI Trading Agents Hackathon",
+    "url": "https://lablab.ai/ai-hackathons/alpaca-ai-trading-agents-hackathon"
+  },
+  "amd x lablab ai academy challenge|2026-09-01": {
+    "ends_at": "2026-12-01",
+    "first_seen": "2026-08-23",
+    "title": "AMD x Lablab AI Academy Challenge",
+    "url": "https://lablab.ai/ai-hackathons/amd-lablab-ai-academy-challenge"
+  },
+  "animal|2026-09-13": {
+    "ends_at": "2026-09-13",
+    "first_seen": "2026-08-23",
+    "title": "Animal Hack",
+    "url": "https://animalhack.org"
+  },
   "anna ai app builder program|2026-09-01": {
     "ends_at": null,
     "first_seen": "2026-08-23",
     "title": "Anna AI App Builder Program",
     "url": "https://dev.events/conferences/anna-ai-app-builder-program-xgebmvyo"
+  },
+  "arc prize arc agi 2|2026-03-25": {
+    "ends_at": "2026-11-02",
+    "first_seen": "2026-08-23",
+    "title": "ARC Prize 2026 - ARC-AGI-2",
+    "url": "https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-2"
+  },
+  "arc prize arc agi 3|2026-03-25": {
+    "ends_at": "2026-11-02",
+    "first_seen": "2026-08-23",
+    "title": "ARC Prize 2026 - ARC-AGI-3",
+    "url": "https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3"
+  },
+  "arc prize paper track|2026-03-25": {
+    "ends_at": "2026-11-09",
+    "first_seen": "2026-08-23",
+    "title": "ARC Prize 2026 - Paper Track",
+    "url": "https://www.kaggle.com/competitions/arc-prize-2026-paper-track"
+  },
+  "assemblyai voice agent|2026-09-01": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-23",
+    "title": "AssemblyAI - Voice Agent Hackathon",
+    "url": "https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon"
+  },
+  "banana hacks|2026-10-09": {
+    "ends_at": "2026-10-12",
+    "first_seen": "2026-08-23",
+    "title": "Banana Hacks",
+    "url": "https://www.bananahacks.tech"
   },
   "beginner s paradise firstcommit|2026-08-21": {
     "ends_at": "2026-09-30",
@@ -76,6 +124,24 @@
     "first_seen": "2026-08-23",
     "title": "Brainwave 2026 – Midnight Track",
     "url": "https://brainwave-2026-midnight-track.devpost.com"
+  },
+  "build models to transcribe handwritten historical records|2026-07-03": {
+    "ends_at": "2026-10-05",
+    "first_seen": "2026-08-23",
+    "title": "Build Models to Transcribe Handwritten Historical Records",
+    "url": "https://zindi.africa/competitions/road-barbados-historic-handwriting-challenge"
+  },
+  "build speech recognition systems for caribbean voices|2025-11-17": {
+    "ends_at": "2026-12-07",
+    "first_seen": "2026-08-23",
+    "title": "Build Speech Recognition Systems for Caribbean Voices",
+    "url": "https://zindi.africa/competitions/caribbean-voices-hackathon"
+  },
+  "build vision ai online|2026-08-31": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "Build Vision AI- Online",
+    "url": "https://allhackathons.com/hackathon/build-vision-ai-online"
   },
   "build with ai vibe with x google cloud|None": {
     "ends_at": null,
@@ -113,6 +179,12 @@
     "title": "COMPSPHERE 12",
     "url": "https://compsphere12.devpost.com"
   },
+  "detect structural breaks in real time time series data|2026-05-06": {
+    "ends_at": "2026-09-17",
+    "first_seen": "2026-08-23",
+    "title": "Detect Structural Breaks in Real-Time Time Series Data",
+    "url": "https://hub.crunchdao.com/competitions/structural-break-real-time"
+  },
   "dsh hacks v2|2026-06-24": {
     "ends_at": "2026-11-08",
     "first_seen": "2026-08-23",
@@ -130,6 +202,12 @@
     "first_seen": "2026-08-23",
     "title": "Evorozen Apex: NextGen AI Buildathon",
     "url": "https://evorozen-apex.devpost.com"
+  },
+  "find multi step ai agent attack paths|2026-06-11": {
+    "ends_at": "2026-09-01",
+    "first_seen": "2026-08-23",
+    "title": "Find Multi-step AI Agent Attack Paths",
+    "url": "https://www.kaggle.com/competitions/ai-agent-security-multi-step-tool-attacks"
   },
   "global innovation build challenge v2|2026-07-11": {
     "ends_at": "2026-09-21",
@@ -166,6 +244,12 @@
     "first_seen": "2026-08-23",
     "title": "Hefty-Hacks",
     "url": "https://hefty-hacks.devfolio.co"
+  },
+  "ibm bob 2 0|2026-09-25": {
+    "ends_at": "2026-09-27",
+    "first_seen": "2026-08-23",
+    "title": "IBM Bob 2.0 hackathon",
+    "url": "https://lablab.ai/ai-hackathons/ibm-bob-2-hackathon"
   },
   "ibm dev day bob in action|2026-08-27": {
     "ends_at": null,
@@ -226,6 +310,12 @@
     "first_seen": "2026-08-23",
     "title": "NextStep Hacks 2026",
     "url": "https://nextstep2026.devpost.com"
+  },
+  "predict cross sectional equity returns|2026-01-05": {
+    "ends_at": "2026-12-31",
+    "first_seen": "2026-08-23",
+    "title": "Predict Cross-sectional Equity Returns",
+    "url": "https://hub.crunchdao.com/competitions/datacrunch-2"
   },
   "prometheus august ai challenge|2026-08-18": {
     "ends_at": "2026-08-30",
