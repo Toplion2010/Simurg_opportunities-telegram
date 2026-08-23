@@ -48,7 +48,13 @@ class OpportunitySender:
         return [school, university]  # both
 
     async def publish(self, opp: Opportunity, bot: Bot) -> PublishResult:
+        # format_opportunity trims the About section to fit _CAPTION_LIMIT when
+        # possible, so the common case (an overlong description) stays a single
+        # message. `caption` keeps the untrimmed text for the rare case where
+        # even eligibility/prize/notes alone don't fit — the last-resort
+        # follow-up message below.
         caption = format_opportunity(opp)
+        photo_caption = format_opportunity(opp, max_length=_CAPTION_LIMIT)
         targets = self._resolve_targets(opp.audience)
 
         # Generate the card ONCE — Gemini + Playwright render is expensive and
@@ -60,8 +66,9 @@ class OpportunitySender:
             logger.exception("publish_failed", opp_id=opp.id, error=str(e))
             raise PublishError(f"Failed to render card for opportunity {opp.id}: {e}") from e
 
-        overlong = len(caption) > _CAPTION_LIMIT
-        photo_caption = f"<b>✨ {opp.title or 'Opportunity'}</b>" if overlong else caption
+        overlong = len(photo_caption) > _CAPTION_LIMIT
+        if overlong:
+            photo_caption = f"<b>✨ {opp.title or 'Opportunity'}</b>"
 
         result = PublishResult()
         for chat_id in targets:
