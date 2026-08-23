@@ -19,6 +19,7 @@ SOURCES: dict[str, dict] = {
     "allhackathons": {"module": "sources.allhackathons", "priority": 8, "enabled": True},
     "hackclub": {"module": "sources.hackclub", "priority": 9, "enabled": True},
     "lablab": {"module": "sources.lablab", "priority": 10, "enabled": True},
+    "mlcontests": {"module": "sources.mlcontests", "priority": 11, "enabled": True},
 }
 
 # --- Filters (pipeline/filters.py reads these) ---
