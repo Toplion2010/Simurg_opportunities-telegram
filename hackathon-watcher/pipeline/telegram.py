@@ -24,7 +24,7 @@ API_BASE = "https://api.telegram.org"
 
 REQUIRED_TECH_MAX = 4
 THEMES_MAX = 3
-DESCRIPTION_SENTENCE_MAX = 2
+DESCRIPTION_SENTENCE_MAX = 3
 
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 
@@ -116,9 +116,10 @@ def format_message(h: Hackathon, max_length: int = 4096) -> str:
     """Builds the HTML message/caption text. `max_length` differs by send
     path: 1024 for a sendPhoto caption, 4096 for a plain sendMessage text.
     Any line whose data is missing is omitted entirely — never an empty
-    label or bare emoji. When over budget, drops in this order: description
-    (truncated first, then dropped entirely) -> organizer -> themes ->
-    eligibility. Title, link, prize, and deadline are never dropped."""
+    label or bare emoji. When over budget, drops in this order: themes ->
+    organizer -> eligibility -> description (truncated, then dropped).
+    Title, link, prize, and deadline are never dropped. Description is kept
+    as long as possible since it's the most informative optional field."""
     core = _required_core(h)
     eligibility = _eligibility_line(h)
     organizer = _organizer_line(h)
@@ -130,7 +131,25 @@ def format_message(h: Hackathon, max_length: int = 4096) -> str:
     if len(candidate) <= max_length:
         return candidate
 
-    # 1. Truncate the description to whatever fits before dropping it.
+    # 1. Drop themes.
+    themes = None
+    candidate = _assemble(core, eligibility, organizer, themes, description)
+    if len(candidate) <= max_length:
+        return candidate
+
+    # 2. Drop organizer.
+    organizer = None
+    candidate = _assemble(core, eligibility, organizer, themes, description)
+    if len(candidate) <= max_length:
+        return candidate
+
+    # 3. Drop eligibility.
+    eligibility = None
+    candidate = _assemble(core, eligibility, organizer, themes, description)
+    if len(candidate) <= max_length:
+        return candidate
+
+    # 4. Truncate the description to whatever fits before dropping it.
     if description:
         without_desc = _assemble(core, eligibility, organizer, themes, None)
         budget = max_length - len(without_desc) - len("\n\n") - 1  # -1 for the ellipsis
@@ -139,25 +158,12 @@ def format_message(h: Hackathon, max_length: int = 4096) -> str:
             candidate = _assemble(core, eligibility, organizer, themes, truncated)
             if len(candidate) <= max_length:
                 return candidate
-        description = None
         candidate = _assemble(core, eligibility, organizer, themes, None)
         if len(candidate) <= max_length:
             return candidate
 
-    # 2. Drop organizer.
-    organizer = None
-    candidate = _assemble(core, eligibility, organizer, themes, None)
-    if len(candidate) <= max_length:
-        return candidate
-
-    # 3. Drop themes.
-    themes = None
-    candidate = _assemble(core, eligibility, organizer, themes, None)
-    if len(candidate) <= max_length:
-        return candidate
-
-    # 4. Drop eligibility — last resort; core alone (title/link/prize/deadline)
-    # is never truncated in practice, but is hard-capped here as a safety net.
+    # 5. Last resort; core alone (title/link/prize/deadline) is never
+    # truncated in practice, but is hard-capped here as a safety net.
     return core[:max_length]
 
 

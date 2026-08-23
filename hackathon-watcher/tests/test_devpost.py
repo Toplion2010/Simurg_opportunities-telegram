@@ -110,6 +110,19 @@ def test_devpost_enrich_boilerplate_only_gives_none_eligibility(fixture_response
     assert enriched.eligibility is None
 
 
+def test_devpost_enrich_discards_short_boilerplate_description(monkeypatch):
+    html = """
+    <script type="application/ld+json" id="challenge-json-ld">
+    {"description": "About the challenge Get starte", "endDate": "2026-09-27T03:00:00.000-04:00"}
+    </script>
+    """
+    from conftest import FakeResponse
+    monkeypatch.setattr("sources.devpost.get", lambda *a, **k: FakeResponse(html))
+
+    enriched = DevpostSource().enrich(_bare_hackathon())
+    assert enriched.description is None
+
+
 def test_devpost_enrich_returns_unchanged_when_no_json_ld(monkeypatch):
     from conftest import FakeResponse
 

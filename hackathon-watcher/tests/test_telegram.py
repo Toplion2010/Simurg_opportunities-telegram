@@ -121,11 +121,11 @@ def test_no_optional_fields_no_empty_lines_or_orphan_emoji():
     assert "\n\n" not in text
 
 
-def test_description_two_sentences_no_emoji_prefix_blank_line_before():
-    desc = "First sentence here. Second sentence here. Third should not appear."
+def test_description_three_sentences_no_emoji_prefix_blank_line_before():
+    desc = "First sentence here. Second sentence here. Third sentence here. Fourth should not appear."
     text = format_message(_h(description=desc))
-    assert "\n\nFirst sentence here. Second sentence here." in text
-    assert "Third" not in text
+    assert "\n\nFirst sentence here. Second sentence here. Third sentence here." in text
+    assert "Fourth" not in text
 
 
 def test_description_html_escaped():
@@ -134,7 +134,7 @@ def test_description_html_escaped():
     assert "&lt;script&gt;" in text
 
 
-# --- truncation order: description -> organizer -> themes -> eligibility --
+# --- truncation order: themes -> organizer -> eligibility -> description --
 
 def test_truncation_never_touches_title_link():
     h = _h(description="word " * 2000, organizer="Org", themes=["A", "B", "C"], eligibility="Students only")
@@ -143,29 +143,45 @@ def test_truncation_never_touches_title_link():
     assert len(text) <= 200
 
 
-def test_truncation_drops_description_before_organizer():
-    h = _h(description="word " * 500, organizer="Org", themes=[], eligibility=None)
-    # budget too small for the (short) description but big enough for core+organizer
+def test_truncation_drops_themes_before_organizer():
+    h = _h(description=None, organizer="Org", themes=["A", "B", "C"], eligibility=None)
     core_and_org_len = len(format_message(_h(description=None, organizer="Org", themes=[], eligibility=None)))
     text = format_message(h, max_length=core_and_org_len + 2)
     assert "Org" in text
-    assert "word" not in text
+    assert "#A" not in text
 
 
-def test_truncation_drops_organizer_before_themes():
-    h = _h(description=None, organizer="A Very Long Organizer Name Indeed", themes=["A", "B", "C"], eligibility=None)
-    core_and_themes_len = len(format_message(_h(description=None, organizer=None, themes=["A", "B", "C"], eligibility=None)))
-    text = format_message(h, max_length=core_and_themes_len + 2)
-    assert "#A #B #C" in text
-    assert "A Very Long Organizer Name Indeed" not in text
-
-
-def test_truncation_drops_themes_before_eligibility():
-    h = _h(description=None, organizer=None, themes=["A", "B", "C"], eligibility="Students only")
+def test_truncation_drops_organizer_before_eligibility():
+    h = _h(description=None, organizer="A Very Long Organizer Name Indeed", themes=[], eligibility="Students only")
     core_and_elig_len = len(format_message(_h(description=None, organizer=None, themes=[], eligibility="Students only")))
     text = format_message(h, max_length=core_and_elig_len + 2)
     assert "Students only" in text
+    assert "A Very Long Organizer Name Indeed" not in text
+
+
+def test_truncation_drops_eligibility_before_description():
+    h = _h(description="First sentence here. Second sentence here.", organizer=None, themes=[], eligibility="Students only")
+    core_and_desc_len = len(format_message(
+        _h(description="First sentence here. Second sentence here.", organizer=None, themes=[], eligibility=None)
+    ))
+    text = format_message(h, max_length=core_and_desc_len + 2)
+    assert "First sentence here" in text
+    assert "Students only" not in text
+
+
+def test_truncation_keeps_description_over_optional_fields():
+    h = _h(
+        description="First sentence here. Second sentence here.",
+        organizer="Org", themes=["A", "B", "C"], eligibility="Students only",
+    )
+    core_and_desc_len = len(format_message(
+        _h(description="First sentence here. Second sentence here.", organizer=None, themes=[], eligibility=None)
+    ))
+    text = format_message(h, max_length=core_and_desc_len + 2)
+    assert "First sentence here" in text
+    assert "Org" not in text
     assert "#A" not in text
+    assert "Students only" not in text
 
 
 # --- photo caption (1024) vs message text (4096) ------------------------

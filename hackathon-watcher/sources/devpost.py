@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 API_URL = "https://devpost.com/api/hackathons"
 
 DESCRIPTION_MAX_CHARS = 400
+DESCRIPTION_MIN_CHARS = 40  # below this, likely Devpost's own truncated boilerplate stub
 
 # Present on nearly every Devpost hackathon regardless of actual audience —
 # not a meaningful restriction, so excluded from the surfaced eligibility.
@@ -137,7 +138,10 @@ def _extract_description(ld: dict) -> str | None:
         unescaped = html_module.unescape(raw)
         text = BeautifulSoup(unescaped, "html.parser").get_text(" ", strip=True)
         text = re.sub(r"\s+", " ", text).strip()
-        if not text:
+        if len(text) < DESCRIPTION_MIN_CHARS:
+            # Organizers who never wrote a real description leave Devpost's
+            # own short auto-generated stub (e.g. "About the challenge Get
+            # starte[d]") — not worth showing over no description at all.
             return None
         if len(text) <= DESCRIPTION_MAX_CHARS:
             return text
