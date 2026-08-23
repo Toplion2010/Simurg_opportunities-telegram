@@ -153,3 +153,84 @@ def test_generate_image_never_raises_on_total_failure(monkeypatch):
     monkeypatch.setattr("pipeline.image_gen.requests.post", fake_post)
 
     assert generate_image(_h(), "fake-key") is None
+
+
+# --- generation always runs, even when a real source photo exists --------
+
+class _FakeGetResponse:
+    def __init__(self, content, status_code=200, content_type="image/png"):
+        self.content = content
+        self.status_code = status_code
+        self.ok = status_code < 400
+        self.headers = {"Content-Type": content_type}
+
+
+def test_generate_image_fetches_real_photo_as_reference(monkeypatch):
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    h = _h(image_url="https://example.com/cover.png")
+    raw = _small_jpeg_bytes()
+
+    fetched_urls = []
+    monkeypatch.setattr(
+        "pipeline.image_gen.requests.get",
+        lambda url, **k: (fetched_urls.append(url), _FakeGetResponse(b"reference-bytes"))[1],
+    )
+
+    captured_payload = {}
+
+    def fake_post(url, json, **k):
+        captured_payload.update(json)
+        return _FakeResponse(_fake_gemini_response(raw))
+
+    monkeypatch.setattr("pipeline.image_gen.requests.post", fake_post)
+
+    result = generate_image(h, "fake-key")
+
+    assert result is not None
+    assert fetched_urls == ["https://example.com/cover.png"]
+    # the reference image must be sent to Gemini as an inline_data part
+    parts = captured_payload["contents"][0]["parts"]
+    assert any("inline_data" in p for p in parts)
+
+
+def test_generate_image_falls_back_to_text_only_prompt_when_reference_fetch_fails(monkeypatch):
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    h = _h(image_url="https://example.com/cover.png")
+    raw = _small_jpeg_bytes()
+
+    monkeypatch.setattr(
+        "pipeline.image_gen.requests.get",
+        lambda url, **k: _FakeGetResponse(b"", status_code=404),
+    )
+
+    captured_payload = {}
+
+    def fake_post(url, json, **k):
+        captured_payload.update(json)
+        return _FakeResponse(_fake_gemini_response(raw))
+
+    monkeypatch.setattr("pipeline.image_gen.requests.post", fake_post)
+
+    result = generate_image(h, "fake-key")
+
+    assert result is not None
+    parts = captured_payload["contents"][0]["parts"]
+    assert not any("inline_data" in p for p in parts)
+
+
+def test_generate_image_without_image_url_skips_reference_fetch(monkeypatch):
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    h = _h(image_url=None)
+    raw = _small_jpeg_bytes()
+
+    called = []
+    monkeypatch.setattr(
+        "pipeline.image_gen.requests.get", lambda *a, **k: called.append(1)
+    )
+    monkeypatch.setattr(
+        "pipeline.image_gen.requests.post", lambda *a, **k: _FakeResponse(_fake_gemini_response(raw))
+    )
+
+    result = generate_image(h, "fake-key")
+    assert result is not None
+    assert called == []

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from pipeline.telegram import _deadline_line, format_message
+import config
+from pipeline.telegram import _deadline_line, format_message, send_hackathon
 from sources.base import Hackathon
 
 
@@ -194,3 +195,67 @@ def test_photo_caption_default_is_1024_and_message_default_is_4096():
     assert len(full_text) <= 4096
     assert len(full_text) > len(caption)
     assert caption.endswith("…")
+
+
+# --- send_hackathon: generation always attempted, even with a real photo --
+
+def test_send_hackathon_tries_generation_before_real_photo(monkeypatch):
+    h = _h(image_url="https://example.com/real-cover.png")
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    monkeypatch.setattr("pipeline.telegram.generate_image", lambda h, key: b"generated-bytes")
+
+    calls = []
+    monkeypatch.setattr(
+        "pipeline.telegram.send_photo_bytes",
+        lambda token, chat_id, data, caption: calls.append(("generated", data)) or True,
+    )
+    monkeypatch.setattr(
+        "pipeline.telegram.send_photo",
+        lambda token, chat_id, url, caption: calls.append(("real", url)) or True,
+    )
+
+    assert send_hackathon("tok", "chat", h, gemini_api_key="key") is True
+    assert calls == [("generated", b"generated-bytes")]
+
+
+def test_send_hackathon_falls_back_to_real_photo_when_generation_fails(monkeypatch):
+    h = _h(image_url="https://example.com/real-cover.png")
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    monkeypatch.setattr("pipeline.telegram.generate_image", lambda h, key: None)
+
+    calls = []
+    monkeypatch.setattr(
+        "pipeline.telegram.send_photo",
+        lambda token, chat_id, url, caption: calls.append(("real", url)) or True,
+    )
+
+    assert send_hackathon("tok", "chat", h, gemini_api_key="key") is True
+    assert calls == [("real", "https://example.com/real-cover.png")]
+
+
+def test_send_hackathon_falls_back_to_text_when_generation_and_photo_both_fail(monkeypatch):
+    h = _h(image_url="https://example.com/real-cover.png")
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    monkeypatch.setattr("pipeline.telegram.generate_image", lambda h, key: None)
+    monkeypatch.setattr("pipeline.telegram.send_photo", lambda *a, **k: False)
+
+    calls = []
+    monkeypatch.setattr(
+        "pipeline.telegram.send_message",
+        lambda token, chat_id, text: calls.append(text) or True,
+    )
+
+    assert send_hackathon("tok", "chat", h, gemini_api_key="key") is True
+    assert len(calls) == 1
+
+
+def test_send_hackathon_skips_generation_without_api_key(monkeypatch):
+    h = _h(image_url="https://example.com/real-cover.png")
+    called = []
+    monkeypatch.setattr(
+        "pipeline.telegram.generate_image", lambda h, key: called.append(1)
+    )
+    monkeypatch.setattr("pipeline.telegram.send_photo", lambda *a, **k: True)
+
+    assert send_hackathon("tok", "chat", h, gemini_api_key=None) is True
+    assert called == []

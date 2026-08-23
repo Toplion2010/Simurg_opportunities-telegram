@@ -122,7 +122,7 @@ def _pick(items: list[str], seed_text: str, stride: int) -> str:
     return items[(n * stride) % len(items)]
 
 
-def _compose_prompt(h: Hackathon) -> str:
+def _compose_prompt(h: Hackathon, has_reference: bool = False) -> str:
     seed = dedup_key(h)
     style = _pick(_STYLES, seed, 7)
     mood = _pick(_MOODS, seed, 3)
@@ -145,6 +145,24 @@ def _compose_prompt(h: Hackathon) -> str:
             f'text in the image): "{excerpt_text[:_EXCERPT_MAX_CHARS]}"'
         )
 
+    if has_reference:
+        intro = (
+            "An image is attached showing this hackathon's own cover art/logo. "
+            "Create a NEW, original illustration inspired by it — echo its general "
+            "color palette, mood, and subject matter so it feels like the same "
+            "event's artwork, but do not copy it directly, crop it, or reproduce "
+            f"any logo/text/wordmark from it verbatim. New scene: {subject}{context}.\n"
+        )
+        return (
+            f"{intro}"
+            f"Style: {style}. Mood: {mood} (adjust to match the reference's own mood "
+            f"if it clearly differs).\n"
+            f"Scene: {scene}, blended with whatever the reference image's own visual "
+            f"motif suggests.{excerpt_block}\n"
+            f"High resolution, {TARGET_WIDTH}x{TARGET_HEIGHT}, professional "
+            "poster-illustration quality."
+        )
+
     return (
         f"Create a vivid, modern digital illustration for {subject}{context}.\n"
         f"Style: {style}. Mood: {mood}. Color palette: {palette}.\n"
@@ -164,9 +182,36 @@ def _model_chain() -> list[str]:
     return chain
 
 
-def _call_gemini(prompt: str, api_key: str, model: str) -> bytes:
+def _fetch_reference_image(url: str) -> tuple[bytes, str] | None:
+    """Best-effort fetch of a source's real cover image, to use as a style
+    reference. Returns (bytes, mime_type) or None on any failure — a
+    missing/unfetchable reference just means generation falls back to the
+    text-only prompt, never a lost post."""
+    try:
+        response = requests.get(url, timeout=config.IMAGE_GEN_TIMEOUT)
+        if not response.ok:
+            return None
+        mime = response.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
+        if not mime.startswith("image/"):
+            return None
+        return response.content, mime
+    except Exception:
+        logger.warning("image_gen: failed to fetch reference image %s", url, exc_info=True)
+        return None
+
+
+def _call_gemini(
+    prompt: str, api_key: str, model: str, reference: tuple[bytes, str] | None = None
+) -> bytes:
+    parts = [{"text": f"{prompt}\n\nAvoid: {NEGATIVE_PROMPT}"}]
+    if reference is not None:
+        ref_bytes, ref_mime = reference
+        parts.insert(0, {
+            "inline_data": {"mime_type": ref_mime, "data": base64.b64encode(ref_bytes).decode()}
+        })
+
     payload = {
-        "contents": [{"parts": [{"text": f"{prompt}\n\nAvoid: {NEGATIVE_PROMPT}"}]}],
+        "contents": [{"parts": parts}],
         "generationConfig": {"responseModalities": ["image", "text"]},
     }
     url = f"{_API_BASE}/{model}:generateContent?key={api_key}"
@@ -218,12 +263,19 @@ def _crop_resize(raw: bytes, width: int = TARGET_WIDTH, height: int = TARGET_HEI
 
 def generate_image(h: Hackathon, api_key: str | None) -> bytes | None:
     """Best-effort JPEG bytes, or None on any failure/misconfiguration —
-    never raises. A missing image must never cost a post."""
+    never raises. A missing image must never cost a post.
+
+    Always generates, even when the source gave a real photo: when
+    `h.image_url` is set, that photo is fetched and passed to Gemini as a
+    style reference so the generated art matches the event's own look
+    instead of being generic — the reference is never posted as-is."""
     if not api_key or not config.IMAGE_GEN_ENABLED:
         return None
 
+    reference = _fetch_reference_image(h.image_url) if h.image_url else None
+
     try:
-        prompt = _compose_prompt(h)
+        prompt = _compose_prompt(h, has_reference=reference is not None)
     except Exception:
         logger.warning("image_gen: failed to compose prompt for %r", h.title, exc_info=True)
         return None
@@ -236,7 +288,7 @@ def generate_image(h: Hackathon, api_key: str | None) -> bytes | None:
         if delay:
             time.sleep(delay)
         try:
-            raw = _call_gemini(prompt, api_key, model)
+            raw = _call_gemini(prompt, api_key, model, reference=reference)
             return _crop_resize(raw)
         except Exception as e:
             last_error = e

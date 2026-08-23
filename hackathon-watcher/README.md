@@ -1,13 +1,18 @@
 # Hackathon Watcher
 
 A free, serverless hackathon watcher. It runs entirely on GitHub Actions
-cron — no persistent server, no paid services. It fetches listings from
-Devpost, dev.events, MLH, Devfolio, and reskilll, deduplicates them,
-filters for relevance, enriches Devpost items from their detail page
-(description, prize breakdown, eligibility, sponsors), and posts new ones
-to a Telegram channel. Posts that have no real cover image get one
-generated via Gemini (reusing Simurg's own image-generation approach) as a
-fallback — never blocking a post if generation fails.
+cron — no persistent server, no paid services. It fetches listings from 11
+sources (`config.SOURCES` is the source of truth — currently Devpost,
+dev.events, MLH, Devfolio, reskilll, ETHGlobal, hackathon.com,
+allhackathons.com, Hack Club Hackathons, lablab.ai, and mlcontests.json),
+deduplicates them, filters for relevance, enriches Devpost items from
+their detail page (description, prize breakdown, eligibility, sponsors),
+and posts new ones to a Telegram channel. Every post's cover image is
+generated via Gemini (reusing Simurg's own image-generation approach) —
+when the source has a real photo, it's fetched and used as a style
+reference so the generated art matches the event's own look instead of
+being generic; the real photo itself is only posted verbatim if
+generation fails. Never blocks a post if generation fails.
 
 This bot and its channel are fully independent of anything else in this
 repo — it does not share state, a channel, or Telegram secrets with
@@ -61,14 +66,16 @@ git commit -m "hackathon-watcher: seed initial state"
 git push
 ```
 
-### 5. (Optional) Fallback image generation
+### 5. (Optional) Image generation
 
-Posts get a real cover image when the source has one. When it doesn't (or
-Devpost only has its generic placeholder), the bot falls back to generating
-one with Gemini — reusing the repo's existing `GEMINI_API_KEY` secret
-(already set for Simurg's own opportunity-card generator; no new secret to
-create). If that key isn't set, or generation fails, the post still goes
-out as plain text — nothing ever blocks on this.
+Every post's cover image is generated via Gemini — reusing the repo's
+existing `GEMINI_API_KEY` secret (already set for Simurg's own
+opportunity-card generator; no new secret to create). When the source
+provided a real photo, it's fetched and passed to Gemini as a style
+reference (not posted as-is), so the result matches that event's actual
+look instead of a generic poster. If `GEMINI_API_KEY` isn't set, or
+generation fails, the source's real photo is posted instead if there is
+one, else the post goes out as plain text — nothing ever blocks on this.
 
 ### 6. Enable the workflow
 

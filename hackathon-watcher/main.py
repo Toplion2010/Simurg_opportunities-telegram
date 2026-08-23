@@ -142,7 +142,14 @@ def main() -> None:
     # out entries for hackathons this run didn't touch.
     seen = load_seen()
     check_against = {} if args.force else seen
-    new_items = [h for h in filtered if dedup_key(h) not in check_against]
+    # Secondary guard alongside dedup_key (title+start date): if either the
+    # title normalization or the parsed start date drifts slightly between
+    # fetches, the same URL matching a seen entry's URL still blocks a repost.
+    seen_urls = {v.get("url") for v in check_against.values() if v.get("url")}
+    new_items = [
+        h for h in filtered
+        if dedup_key(h) not in check_against and h.url not in seen_urls
+    ]
     logger.info("new: %d", len(new_items))
 
     if args.seed:

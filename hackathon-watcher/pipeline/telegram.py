@@ -249,16 +249,22 @@ def send_photo_bytes(token: str, chat_id: str, photo_bytes: bytes, caption: str)
 
 
 def send_hackathon(token: str, chat_id: str, h: Hackathon, gemini_api_key: str | None = None) -> bool:
-    if h.image_url:
-        caption = format_message(h, max_length=1024)
-        if send_photo(token, chat_id, h.image_url, caption):
-            return True
-    elif config.IMAGE_GEN_ENABLED and gemini_api_key:
+    """Always tries a generated image first — when the source gave a real
+    photo, generate_image() uses it as a style reference rather than
+    skipping generation, so posts look designed instead of using whatever
+    generic thumbnail the source happened to provide. Falls back to the
+    real photo verbatim, then to text-only, never costing a post."""
+    if config.IMAGE_GEN_ENABLED and gemini_api_key:
         generated = generate_image(h, gemini_api_key)
         if generated:
             caption = format_message(h, max_length=1024)
             if send_photo_bytes(token, chat_id, generated, caption):
                 return True
+
+    if h.image_url:
+        caption = format_message(h, max_length=1024)
+        if send_photo(token, chat_id, h.image_url, caption):
+            return True
 
     text = format_message(h, max_length=4096)
     return send_message(token, chat_id, text)
