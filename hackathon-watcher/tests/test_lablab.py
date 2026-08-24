@@ -30,6 +30,7 @@ def test_lablab_parses_listing_and_detail_fixtures(fixture_response, monkeypatch
     assert first.prize_text == "$6,000"
     assert first.themes == ["ai"]
     assert first.organizer == "lablab.ai"
+    assert first.description and "Online Hackathon" in first.description
 
 
 def test_lablab_caps_detail_fetches(fixture_response, monkeypatch):

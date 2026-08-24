@@ -128,9 +128,10 @@ class LablabSource(Source):
                 else:
                     location = loc.get("name")
 
-            description = event.get("description") or ""
-            prize_match = _PRIZE_RE.search(description)
+            raw_description = event.get("description") or ""
+            prize_match = _PRIZE_RE.search(raw_description)
             prize_text = prize_match.group(0).replace("Prize Pool", "").strip() if prize_match else None
+            description = raw_description.strip()[:500] or None
 
             source_id = url.rstrip("/").rsplit("/", 1)[-1]
 
@@ -147,6 +148,7 @@ class LablabSource(Source):
                 image_url=event.get("image"),
                 organizer="lablab.ai",
                 themes=["ai"],
+                description=description,
                 raw={},
             )
         except Exception:
