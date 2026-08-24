@@ -161,6 +161,12 @@
     "title": "CALL-E: Your Code Is Calling",
     "url": "https://call-e.devpost.com"
   },
+  "classify and segment intracranial aneurysms|None": {
+    "ends_at": "2026-09-05",
+    "first_seen": "2026-08-24",
+    "title": "Classify and Segment Intracranial Aneurysms",
+    "url": "https://topaneu-26.grand-challenge.org"
+  },
   "code for humanity|2026-07-16": {
     "ends_at": "2027-01-15",
     "first_seen": "2026-08-23",
@@ -173,11 +179,35 @@
     "title": "CodeStorm 2026: FutureForge",
     "url": "https://codestorm-futureforge.devfolio.co"
   },
+  "competitive farming strategy game|2026-07-30": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-24",
+    "title": "Competitive Farming Strategy Game",
+    "url": "https://www.kaggle.com/competitions/kaggriculture"
+  },
   "compsphere 12|2026-08-03": {
     "ends_at": "2026-09-17",
     "first_seen": "2026-08-23",
     "title": "COMPSPHERE 12",
     "url": "https://compsphere12.devpost.com"
+  },
+  "design physics experiments for gravitational waves|2026-07-15": {
+    "ends_at": "2026-10-15",
+    "first_seen": "2026-08-24",
+    "title": "Design Physics Experiments for Gravitational Waves",
+    "url": "https://www.learn2design2026.com"
+  },
+  "detect knee abnormalities in multimodal imaging data|2026-08-05": {
+    "ends_at": "2026-10-22",
+    "first_seen": "2026-08-24",
+    "title": "Detect Knee Abnormalities in Multimodal Imaging Data",
+    "url": "https://www.kaggle.com/competitions/rsna-knee-abnormality-detection"
+  },
+  "detect rare early stage cancers in endoscopy|2026-05-01": {
+    "ends_at": "2026-09-07",
+    "first_seen": "2026-08-24",
+    "title": "Detect Rare Early-Stage Cancers in Endoscopy",
+    "url": "https://rare26.grand-challenge.org"
   },
   "detect structural breaks in real time time series data|2026-05-06": {
     "ends_at": "2026-09-17",
@@ -185,11 +215,23 @@
     "title": "Detect Structural Breaks in Real-Time Time Series Data",
     "url": "https://hub.crunchdao.com/competitions/structural-break-real-time"
   },
+  "develop and explain pokemon card battle agents|2026-06-16": {
+    "ends_at": "2026-09-13",
+    "first_seen": "2026-08-24",
+    "title": "Develop and Explain Pokemon Card Battle Agents",
+    "url": "https://www.kaggle.com/competitions/pokemon-tcg-ai-battle-challenge-strategy"
+  },
   "dsh hacks v2|2026-06-24": {
     "ends_at": "2026-11-08",
     "first_seen": "2026-08-23",
     "title": "DSH Hacks V2 ",
     "url": "https://dsh-hacks-v2.devpost.com"
+  },
+  "estimate neural network activations from weights|2026-06-02": {
+    "ends_at": "2026-09-19",
+    "first_seen": "2026-08-24",
+    "title": "Estimate Neural Network Activations from Weights",
+    "url": "https://www.aicrowd.com/challenges/white-box-estimation-challenge-2026"
   },
   "event contracts|2026-08-25": {
     "ends_at": null,
@@ -208,6 +250,12 @@
     "first_seen": "2026-08-23",
     "title": "Find Multi-step AI Agent Attack Paths",
     "url": "https://www.kaggle.com/competitions/ai-agent-security-multi-step-tool-attacks"
+  },
+  "generate synthetic humanitarian survey responses|2026-08-01": {
+    "ends_at": "2026-11-14",
+    "first_seen": "2026-08-24",
+    "title": "Generate Synthetic Humanitarian Survey Responses",
+    "url": "https://situatedevals.org/simulacrabench"
   },
   "global innovation build challenge v2|2026-07-11": {
     "ends_at": "2026-09-21",
@@ -257,11 +305,23 @@
     "title": "IBM Dev Day: Bob in Action",
     "url": "https://www.hackathon.com/event/ibm-dev-day-bob-in-action-6a5e81b25ed7ce44d09798ed"
   },
+  "identify reef fish species with computer vision models|2026-07-25": {
+    "ends_at": "2026-08-29",
+    "first_seen": "2026-08-24",
+    "title": "Identify Reef Fish Species with Computer Vision Models",
+    "url": "https://zindi.africa/competitions/wishlist-hackathon-2026-marine-vision-challenge"
+  },
   "impactforge|2026-06-19": {
     "ends_at": "2026-08-24",
     "first_seen": "2026-08-23",
     "title": "ImpactForge",
     "url": "https://impactforge.devpost.com"
+  },
+  "infer fusion reactor magnetic geometry|None": {
+    "ends_at": "2026-10-26",
+    "first_seen": "2026-08-24",
+    "title": "Infer Fusion Reactor Magnetic Geometry",
+    "url": "https://fusion-equilibrium-challenge.sophelio.io"
   },
   "innovart art and technology day|2026-08-23": {
     "ends_at": "2027-01-02",
@@ -317,6 +377,12 @@
     "title": "Predict Cross-sectional Equity Returns",
     "url": "https://hub.crunchdao.com/competitions/datacrunch-2"
   },
+  "predict student learning outcomes from tutoring transcripts|2026-06-15": {
+    "ends_at": "2026-08-27",
+    "first_seen": "2026-08-24",
+    "title": "Predict Student Learning Outcomes from Tutoring Transcripts",
+    "url": "https://platform.k12-ai-infrastructure.org/competitions/3/tutoring-outcomes"
+  },
   "prometheus august ai challenge|2026-08-18": {
     "ends_at": "2026-08-30",
     "first_seen": "2026-08-23",
@@ -341,6 +407,12 @@
     "title": "QuantumHacks",
     "url": "https://quantumhacks.devpost.com/"
   },
+  "realpde scientific ml for real world physical systems|2026-07-05": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-08-24",
+    "title": "RealPDE: Scientific ML for Real-World Physical Systems",
+    "url": "https://realpdecompetition.github.io"
+  },
   "rescuehacks|2026-08-22": {
     "ends_at": "2026-08-29",
     "first_seen": "2026-08-23",
@@ -352,6 +424,12 @@
     "first_seen": "2026-08-23",
     "title": "SahAI for Shiksha Hackathon",
     "url": "https://wadhwaniai.reskilll.com"
+  },
+  "segment lesions in whole body scans|2026-04-01": {
+    "ends_at": "2026-09-01",
+    "first_seen": "2026-08-24",
+    "title": "Segment Lesions in Whole-Body Scans",
+    "url": "https://autopet-v.grand-challenge.org"
   },
   "syntax summit|2026-07-18": {
     "ends_at": "2026-09-05",
@@ -377,10 +455,22 @@
     "title": "Hack The Limit",
     "url": "https://hack-the-limit-1.devpost.com"
   },
+  "track developing cells in 3d microscopy data|2026-06-29": {
+    "ends_at": "2026-09-29",
+    "first_seen": "2026-08-24",
+    "title": "Track Developing Cells in 3D Microscopy Data",
+    "url": "https://www.kaggle.com/competitions/biohub-cell-tracking-during-development"
+  },
   "univabio|2026-08-07": {
     "ends_at": "2026-10-06",
     "first_seen": "2026-08-23",
     "title": "UnivaBio",
     "url": "https://univabio.devpost.com"
+  },
+  "weak lensing uncertainty under distribution shift|2026-04-22": {
+    "ends_at": "2026-10-11",
+    "first_seen": "2026-08-24",
+    "title": "Weak Lensing Uncertainty under Distribution Shift",
+    "url": "https://fair-universe.lbl.gov"
   }
 }
