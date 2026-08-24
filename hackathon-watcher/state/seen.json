@@ -95,6 +95,12 @@
     "title": "AssemblyAI - Voice Agent Hackathon",
     "url": "https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon"
   },
+  "automated speech recognition under diverse speech patterns|2025-12-03": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-24",
+    "title": "Automated Speech Recognition Under Diverse Speech Patterns",
+    "url": "https://xiuwenz2.github.io/SAPC2-website"
+  },
   "banana hacks|2026-10-09": {
     "ends_at": "2026-10-12",
     "first_seen": "2026-08-23",
@@ -131,11 +137,23 @@
     "title": "Build Models to Transcribe Handwritten Historical Records",
     "url": "https://zindi.africa/competitions/road-barbados-historic-handwriting-challenge"
   },
+  "build on device llms for laptop hardware|2026-06-16": {
+    "ends_at": "2026-08-24",
+    "first_seen": "2026-08-24",
+    "title": "Build On-Device LLMs for Laptop Hardware",
+    "url": "https://adtc-2026.devpost.com"
+  },
   "build speech recognition systems for caribbean voices|2025-11-17": {
     "ends_at": "2026-12-07",
     "first_seen": "2026-08-23",
     "title": "Build Speech Recognition Systems for Caribbean Voices",
     "url": "https://zindi.africa/competitions/caribbean-voices-hackathon"
+  },
+  "build useful end to end differentiable systems|2026-08-03": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-24",
+    "title": "Build Useful End-to-End Differentiable Systems",
+    "url": "https://pasteurlabs.ai/tesseract-hackathon-2026"
   },
   "build vision ai online|2026-08-31": {
     "ends_at": "2026-08-31",
@@ -166,6 +184,12 @@
     "first_seen": "2026-08-24",
     "title": "Classify and Segment Intracranial Aneurysms",
     "url": "https://topaneu-26.grand-challenge.org"
+  },
+  "classify dat scans for parkinson s detection|2026-07-23": {
+    "ends_at": "2026-09-16",
+    "first_seen": "2026-08-24",
+    "title": "Classify DaT Scans for Parkinson's Detection",
+    "url": "https://www.drivendata.org/competitions/311/dat-parkinsons-challenge"
   },
   "code for humanity|2026-07-16": {
     "ends_at": "2027-01-15",
@@ -257,6 +281,18 @@
     "title": "Generate Synthetic Humanitarian Survey Responses",
     "url": "https://situatedevals.org/simulacrabench"
   },
+  "generative ai for antimicrobial peptide design|None": {
+    "ends_at": "2026-10-01",
+    "first_seen": "2026-08-24",
+    "title": "Generative AI for Antimicrobial Peptide Design",
+    "url": "https://szczurek-lab.github.io/amp-challenge-website"
+  },
+  "generative modeling of mouse embryo development|2026-06-30": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-08-24",
+    "title": "Generative Modeling of Mouse Embryo Development",
+    "url": "https://virtualembryo.ai/challenge"
+  },
   "global innovation build challenge v2|2026-07-11": {
     "ends_at": "2026-09-21",
     "first_seen": "2026-08-23",
@@ -335,6 +371,12 @@
     "title": "Inspire Hackathon ",
     "url": "https://inspire-hackathon.devpost.com"
   },
+  "interpretability for ai mathematical olympiad reasoning|2026-07-15": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-08-24",
+    "title": "Interpretability for AI Mathematical Olympiad Reasoning",
+    "url": "https://aimo-interp.github.io"
+  },
   "luma september 20th 28th|2026-06-26": {
     "ends_at": "2026-09-28",
     "first_seen": "2026-08-23",
@@ -401,6 +443,12 @@
     "title": "Prometheus September AI Challenge",
     "url": "https://prometheus-sept-ai-classic.devpost.com"
   },
+  "quantitative physical reasoning for vlms|2026-06-30": {
+    "ends_at": "2026-11-05",
+    "first_seen": "2026-08-24",
+    "title": "Quantitative Physical Reasoning for VLMs",
+    "url": "https://quantiphy.stanford.edu/competition/index.html"
+  },
   "quantumhacks|2026-06-21": {
     "ends_at": "2026-08-24",
     "first_seen": "2026-08-22",
@@ -418,6 +466,12 @@
     "first_seen": "2026-08-23",
     "title": "RescueHacks",
     "url": "https://rescue-hacks-30680.devpost.com"
+  },
+  "robust optical flow correspondence matching|2026-07-02": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-24",
+    "title": "Robust Optical Flow Correspondence Matching",
+    "url": "https://roco-spring.github.io"
   },
   "sahai for shiksha|None": {
     "ends_at": null,
