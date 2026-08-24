@@ -133,7 +133,8 @@ class AllHackathonsSource(Source):
                 image_url=image_url,
                 organizer=None,
                 themes=themes,
-                raw={"description": description} if description else {},
+                description=description,
+                raw={},
             )
         except Exception:
             logger.warning("allhackathons: failed to parse card", exc_info=True)

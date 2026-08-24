@@ -9,11 +9,13 @@ Next.js can reorder queries.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import re
 from datetime import date, datetime
 
+import config
 from sources.base import Hackathon, Source
 from sources.http import get
 
@@ -24,6 +26,13 @@ _DATA_SCRIPT_RE = re.compile(
     r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', re.S
 )
 
+DESCRIPTION_MAX_CHARS = 400
+# Common markdown noise devfolio organizers' "desc" text carries — stripped
+# rather than rendered, since the Telegram caption is plain text.
+_MD_HEADER_RE = re.compile(r"^#{1,6}\s*", re.M)
+_MD_BOLD_ITALIC_RE = re.compile(r"[*_]{1,3}")
+_MD_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+
 
 def _parse_iso(text: str | None) -> date | None:
     if not text:
@@ -32,6 +41,13 @@ def _parse_iso(text: str | None) -> date | None:
         return datetime.fromisoformat(text).date()
     except Exception:
         return None
+
+
+def _strip_markdown(text: str) -> str:
+    text = _MD_LINK_RE.sub(r"\1", text)
+    text = _MD_HEADER_RE.sub("", text)
+    text = _MD_BOLD_ITALIC_RE.sub("", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _find_open_hackathons(obj) -> list[dict] | None:
@@ -118,3 +134,80 @@ class DevfolioSource(Source):
         except Exception:
             logger.warning("devfolio: failed to parse entry %r", entry.get("slug"), exc_info=True)
             return None
+
+    def enrich(self, hackathon: Hackathon) -> Hackathon:
+        """Each event's own devfolio.co subdomain (a devfolio-controlled
+        template, not the organizer's arbitrary site) embeds real prize and
+        description data the listing page doesn't carry."""
+        try:
+            response = get(
+                hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
+            )
+            response.raise_for_status()
+        except Exception:
+            logger.warning("devfolio: enrich: fetch failed for %s", hackathon.url, exc_info=True)
+            return hackathon
+
+        match = _DATA_SCRIPT_RE.search(response.text)
+        if not match:
+            logger.warning(
+                "devfolio: enrich: __NEXT_DATA__ not found for %s, page structure may have changed",
+                hackathon.url,
+            )
+            return hackathon
+
+        try:
+            data = json.loads(match.group(1))
+            page_props = data["props"]["pageProps"]
+        except Exception:
+            logger.warning("devfolio: enrich: failed to parse page data for %s", hackathon.url, exc_info=True)
+            return hackathon
+
+        return dataclasses.replace(
+            hackathon,
+            description=self._extract_description(page_props),
+            prize_text=self._extract_prize(page_props),
+            sponsors=self._extract_sponsors(page_props),
+        )
+
+    def _extract_description(self, page_props: dict) -> str | None:
+        try:
+            h = page_props.get("hackathon") or {}
+            raw = h.get("desc") or h.get("tagline")
+            if not raw:
+                return None
+            text = _strip_markdown(raw)
+            if not text:
+                return None
+            if len(text) <= DESCRIPTION_MAX_CHARS:
+                return text
+            return text[:DESCRIPTION_MAX_CHARS].rsplit(" ", 1)[0] + "…"
+        except Exception:
+            logger.warning("devfolio: enrich: failed to extract description", exc_info=True)
+            return None
+
+    def _extract_prize(self, page_props: dict) -> str | None:
+        try:
+            value = page_props.get("aggregatePrizeValue")
+            currency = page_props.get("aggregatePrizeCurrency")
+            if not value:
+                return None
+            amount = f"{value:,.0f}" if value == int(value) else f"{value:,.2f}"
+            return f"{currency} {amount}" if currency else amount
+        except Exception:
+            logger.warning("devfolio: enrich: failed to extract prize", exc_info=True)
+            return None
+
+    def _extract_sponsors(self, page_props: dict) -> list[str]:
+        try:
+            h = page_props.get("hackathon") or {}
+            names = []
+            for tier in h.get("sponsor_tiers", []) or []:
+                for sponsor in tier.get("sponsors", []) or []:
+                    name = sponsor.get("name")
+                    if name:
+                        names.append(name)
+            return names
+        except Exception:
+            logger.warning("devfolio: enrich: failed to extract sponsors", exc_info=True)
+            return []

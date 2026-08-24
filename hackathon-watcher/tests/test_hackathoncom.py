@@ -23,6 +23,8 @@ def test_hackathoncom_parses_fixture(fixture_response, monkeypatch):
     assert first.ends_at is None
     assert "AI" in first.themes
     assert first.starts_at is not None
+    assert first.description
+    assert "AI Builders Challenge" in first.description
 
 
 def test_hackathoncom_returns_empty_when_selectors_rot(monkeypatch):

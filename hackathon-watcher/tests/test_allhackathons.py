@@ -25,6 +25,8 @@ def test_allhackathons_parses_fixture(fixture_response, monkeypatch):
     assert online_one.starts_at == date(2026, 8, 31)
     assert online_one.ends_at == date(2026, 8, 31)
     assert "ai" in [t.lower() for t in online_one.themes]
+    assert online_one.description
+    assert "Vision AI" in online_one.description
 
     in_person = next(h for h in hackathons if h.title == "DevNetwork [API + Cloud + AI] Hackathon 2026")
     assert in_person.is_online is False

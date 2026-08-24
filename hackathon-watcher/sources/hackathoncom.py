@@ -131,7 +131,8 @@ class HackathonComSource(Source):
                 image_url=image_url,
                 organizer=None,
                 themes=themes,
-                raw={"description": description} if description else {},
+                description=description,
+                raw={},
             )
         except Exception:
             logger.warning("hackathoncom: failed to parse card", exc_info=True)
