@@ -1,9 +1,39 @@
 {
+  "3d websites|2026-06-22": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "3D Websites Hackathon",
+    "url": "https://3d-websites-hackathon.devpost.com"
+  },
   "3rd web|2026-08-22": {
     "ends_at": "2026-09-27",
     "first_seen": "2026-08-23",
     "title": "3rd-Web-Hack",
     "url": "https://3rd-web-hack.devpost.com"
+  },
+  "agentic cinema the blockbuster|2026-07-27": {
+    "ends_at": "2026-09-09",
+    "first_seen": "2026-08-23",
+    "title": "Agentic Cinema: The Blockbuster Hackathon",
+    "url": "https://agentic-cinema.devpost.com"
+  },
+  "agents for humans|2026-08-10": {
+    "ends_at": "2026-09-14",
+    "first_seen": "2026-08-23",
+    "title": "Agents for Humans Hackathon",
+    "url": "https://agentsforhumans.devpost.com"
+  },
+  "ai builders challenge with ibm bob|2027-07-01": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "AI Builders Challenge with IBM Bob",
+    "url": "https://www.hackathon.com/event/ai-builders-challenge-with-ibm-bob-6a29d039b55a95e59d3bda60"
+  },
+  "ai builders conference with ibm bob|2026-09-16": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "AI Builders Conference with IBM Bob",
+    "url": "https://www.hackathon.com/event/ai-builders-conference-with-ibm-bob-6a7b8191dad62da4bae61b4f"
   },
   "ai yes international youth ai competition|2026-06-17": {
     "ends_at": "2026-09-01",
@@ -11,16 +41,490 @@
     "title": "AI YES :International Youth AI Competition",
     "url": "https://ai-yes-competition-30441.devpost.com/"
   },
+  "all things agentic|2026-08-04": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "All Things Agentic Hackathon",
+    "url": "https://allthingsagentichackathon.devpost.com"
+  },
+  "alpaca ai trading agents|2026-08-28": {
+    "ends_at": "2026-09-04",
+    "first_seen": "2026-08-23",
+    "title": "Alpaca AI Trading Agents Hackathon",
+    "url": "https://lablab.ai/ai-hackathons/alpaca-ai-trading-agents-hackathon"
+  },
+  "amd x lablab ai academy challenge|2026-09-01": {
+    "ends_at": "2026-12-01",
+    "first_seen": "2026-08-23",
+    "title": "AMD x Lablab AI Academy Challenge",
+    "url": "https://lablab.ai/ai-hackathons/amd-lablab-ai-academy-challenge"
+  },
+  "animal|2026-09-13": {
+    "ends_at": "2026-09-13",
+    "first_seen": "2026-08-23",
+    "title": "Animal Hack",
+    "url": "https://animalhack.org"
+  },
+  "anna ai app builder program|2026-09-01": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "Anna AI App Builder Program",
+    "url": "https://dev.events/conferences/anna-ai-app-builder-program-xgebmvyo"
+  },
+  "arc prize arc agi 2|2026-03-25": {
+    "ends_at": "2026-11-02",
+    "first_seen": "2026-08-23",
+    "title": "ARC Prize 2026 - ARC-AGI-2",
+    "url": "https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-2"
+  },
+  "arc prize arc agi 3|2026-03-25": {
+    "ends_at": "2026-11-02",
+    "first_seen": "2026-08-23",
+    "title": "ARC Prize 2026 - ARC-AGI-3",
+    "url": "https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3"
+  },
+  "arc prize paper track|2026-03-25": {
+    "ends_at": "2026-11-09",
+    "first_seen": "2026-08-23",
+    "title": "ARC Prize 2026 - Paper Track",
+    "url": "https://www.kaggle.com/competitions/arc-prize-2026-paper-track"
+  },
+  "assemblyai voice agent|2026-09-01": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-23",
+    "title": "AssemblyAI - Voice Agent Hackathon",
+    "url": "https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon"
+  },
+  "automated speech recognition under diverse speech patterns|2025-12-03": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-24",
+    "title": "Automated Speech Recognition Under Diverse Speech Patterns",
+    "url": "https://xiuwenz2.github.io/SAPC2-website"
+  },
+  "banana hacks|2026-10-09": {
+    "ends_at": "2026-10-12",
+    "first_seen": "2026-08-23",
+    "title": "Banana Hacks",
+    "url": "https://www.bananahacks.tech"
+  },
+  "beginner s paradise firstcommit|2026-08-21": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-23",
+    "title": "Beginner's Paradise - FirstCommit",
+    "url": "https://firstcommit.devpost.com"
+  },
   "blockchain amrita|2026-08-23": {
     "ends_at": "2026-08-25",
     "first_seen": "2026-08-23",
     "title": "Blockchain amrita",
     "url": "https://blockchain-amrita.devpost.com"
   },
+  "boss battle|2026-09-06": {
+    "ends_at": "2026-10-05",
+    "first_seen": "2026-08-23",
+    "title": "BOSS Battle",
+    "url": "https://boss-battle.devfolio.co"
+  },
+  "brainwave midnight track|2026-08-10": {
+    "ends_at": "2026-08-26",
+    "first_seen": "2026-08-23",
+    "title": "Brainwave 2026 – Midnight Track",
+    "url": "https://brainwave-2026-midnight-track.devpost.com"
+  },
+  "build models to transcribe handwritten historical records|2026-07-03": {
+    "ends_at": "2026-10-05",
+    "first_seen": "2026-08-23",
+    "title": "Build Models to Transcribe Handwritten Historical Records",
+    "url": "https://zindi.africa/competitions/road-barbados-historic-handwriting-challenge"
+  },
+  "build on device llms for laptop hardware|2026-06-16": {
+    "ends_at": "2026-08-24",
+    "first_seen": "2026-08-24",
+    "title": "Build On-Device LLMs for Laptop Hardware",
+    "url": "https://adtc-2026.devpost.com"
+  },
+  "build speech recognition systems for caribbean voices|2025-11-17": {
+    "ends_at": "2026-12-07",
+    "first_seen": "2026-08-23",
+    "title": "Build Speech Recognition Systems for Caribbean Voices",
+    "url": "https://zindi.africa/competitions/caribbean-voices-hackathon"
+  },
+  "build useful end to end differentiable systems|2026-08-03": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-24",
+    "title": "Build Useful End-to-End Differentiable Systems",
+    "url": "https://pasteurlabs.ai/tesseract-hackathon-2026"
+  },
+  "build vision ai online|2026-08-31": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "Build Vision AI- Online",
+    "url": "https://allhackathons.com/hackathon/build-vision-ai-online"
+  },
+  "build with ai vibe with x google cloud|None": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "Build with AI: Vibe with X × Google Cloud",
+    "url": "https://buildwithai.reskilll.com"
+  },
+  "bunniex|2026-06-22": {
+    "ends_at": "2026-09-22",
+    "first_seen": "2026-08-23",
+    "title": "BunnieX Hackathon",
+    "url": "https://buuniex-hackathon.devpost.com"
+  },
+  "call e your code is calling|2026-07-23": {
+    "ends_at": "2026-09-14",
+    "first_seen": "2026-08-23",
+    "title": "CALL-E: Your Code Is Calling",
+    "url": "https://call-e.devpost.com"
+  },
+  "classify and segment intracranial aneurysms|None": {
+    "ends_at": "2026-09-05",
+    "first_seen": "2026-08-24",
+    "title": "Classify and Segment Intracranial Aneurysms",
+    "url": "https://topaneu-26.grand-challenge.org"
+  },
+  "classify dat scans for parkinson s detection|2026-07-23": {
+    "ends_at": "2026-09-16",
+    "first_seen": "2026-08-24",
+    "title": "Classify DaT Scans for Parkinson's Detection",
+    "url": "https://www.drivendata.org/competitions/311/dat-parkinsons-challenge"
+  },
+  "code for humanity|2026-07-16": {
+    "ends_at": "2027-01-15",
+    "first_seen": "2026-08-23",
+    "title": "Code for Humanity",
+    "url": "https://code-for-humanity.devpost.com"
+  },
+  "codestorm futureforge|2026-07-31": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "CodeStorm 2026: FutureForge",
+    "url": "https://codestorm-futureforge.devfolio.co"
+  },
+  "competitive farming strategy game|2026-07-30": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-24",
+    "title": "Competitive Farming Strategy Game",
+    "url": "https://www.kaggle.com/competitions/kaggriculture"
+  },
+  "compsphere 12|2026-08-03": {
+    "ends_at": "2026-09-17",
+    "first_seen": "2026-08-23",
+    "title": "COMPSPHERE 12",
+    "url": "https://compsphere12.devpost.com"
+  },
+  "design physics experiments for gravitational waves|2026-07-15": {
+    "ends_at": "2026-10-15",
+    "first_seen": "2026-08-24",
+    "title": "Design Physics Experiments for Gravitational Waves",
+    "url": "https://www.learn2design2026.com"
+  },
+  "detect knee abnormalities in multimodal imaging data|2026-08-05": {
+    "ends_at": "2026-10-22",
+    "first_seen": "2026-08-24",
+    "title": "Detect Knee Abnormalities in Multimodal Imaging Data",
+    "url": "https://www.kaggle.com/competitions/rsna-knee-abnormality-detection"
+  },
+  "detect rare early stage cancers in endoscopy|2026-05-01": {
+    "ends_at": "2026-09-07",
+    "first_seen": "2026-08-24",
+    "title": "Detect Rare Early-Stage Cancers in Endoscopy",
+    "url": "https://rare26.grand-challenge.org"
+  },
+  "detect structural breaks in real time time series data|2026-05-06": {
+    "ends_at": "2026-09-17",
+    "first_seen": "2026-08-23",
+    "title": "Detect Structural Breaks in Real-Time Time Series Data",
+    "url": "https://hub.crunchdao.com/competitions/structural-break-real-time"
+  },
+  "develop and explain pokemon card battle agents|2026-06-16": {
+    "ends_at": "2026-09-13",
+    "first_seen": "2026-08-24",
+    "title": "Develop and Explain Pokemon Card Battle Agents",
+    "url": "https://www.kaggle.com/competitions/pokemon-tcg-ai-battle-challenge-strategy"
+  },
+  "dsh hacks v2|2026-06-24": {
+    "ends_at": "2026-11-08",
+    "first_seen": "2026-08-23",
+    "title": "DSH Hacks V2 ",
+    "url": "https://dsh-hacks-v2.devpost.com"
+  },
+  "estimate neural network activations from weights|2026-06-02": {
+    "ends_at": "2026-09-19",
+    "first_seen": "2026-08-24",
+    "title": "Estimate Neural Network Activations from Weights",
+    "url": "https://www.aicrowd.com/challenges/white-box-estimation-challenge-2026"
+  },
+  "event contracts|2026-08-25": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "Event Contracts Hackathon",
+    "url": "https://dev.events/conferences/event-contracts-hackathon-th2co2co"
+  },
+  "evorozen apex nextgen ai buildathon|2026-07-17": {
+    "ends_at": "2026-09-20",
+    "first_seen": "2026-08-23",
+    "title": "Evorozen Apex: NextGen AI Buildathon",
+    "url": "https://evorozen-apex.devpost.com"
+  },
+  "find multi step ai agent attack paths|2026-06-11": {
+    "ends_at": "2026-09-01",
+    "first_seen": "2026-08-23",
+    "title": "Find Multi-step AI Agent Attack Paths",
+    "url": "https://www.kaggle.com/competitions/ai-agent-security-multi-step-tool-attacks"
+  },
+  "generate synthetic humanitarian survey responses|2026-08-01": {
+    "ends_at": "2026-11-14",
+    "first_seen": "2026-08-24",
+    "title": "Generate Synthetic Humanitarian Survey Responses",
+    "url": "https://situatedevals.org/simulacrabench"
+  },
+  "generative ai for antimicrobial peptide design|None": {
+    "ends_at": "2026-10-01",
+    "first_seen": "2026-08-24",
+    "title": "Generative AI for Antimicrobial Peptide Design",
+    "url": "https://szczurek-lab.github.io/amp-challenge-website"
+  },
+  "generative modeling of mouse embryo development|2026-06-30": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-08-24",
+    "title": "Generative Modeling of Mouse Embryo Development",
+    "url": "https://virtualembryo.ai/challenge"
+  },
+  "global innovation build challenge v2|2026-07-11": {
+    "ends_at": "2026-09-21",
+    "first_seen": "2026-08-23",
+    "title": "Global Innovation Build Challenge V2",
+    "url": "https://gibc-v2.devpost.com"
+  },
+  "global week data|2026-09-11": {
+    "ends_at": "2026-09-17",
+    "first_seen": "2026-08-23",
+    "title": "Global Hack Week: Data",
+    "url": "https://events.mlh.io/events/14416-global-hack-week-data"
+  },
+  "graphiques innovation challenge|2026-08-21": {
+    "ends_at": "2026-08-23",
+    "first_seen": "2026-08-23",
+    "title": "Graphiques Innovation Challenge ",
+    "url": "https://graphiques-challenge.devpost.com"
+  },
+  "hacksocial|2026-08-01": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "Hacksocial 2026",
+    "url": "https://hacksocial2026.devpost.com"
+  },
+  "health a thon|None": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "Health-a-thon 2026",
+    "url": "https://healthathon.reskilll.com"
+  },
+  "hefty hacks|2026-10-23": {
+    "ends_at": "2026-10-31",
+    "first_seen": "2026-08-23",
+    "title": "Hefty-Hacks",
+    "url": "https://hefty-hacks.devfolio.co"
+  },
+  "ibm bob 2 0|2026-09-25": {
+    "ends_at": "2026-09-27",
+    "first_seen": "2026-08-23",
+    "title": "IBM Bob 2.0 hackathon",
+    "url": "https://lablab.ai/ai-hackathons/ibm-bob-2-hackathon"
+  },
+  "ibm dev day bob in action|2026-08-27": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "IBM Dev Day: Bob in Action",
+    "url": "https://www.hackathon.com/event/ibm-dev-day-bob-in-action-6a5e81b25ed7ce44d09798ed"
+  },
+  "identify reef fish species with computer vision models|2026-07-25": {
+    "ends_at": "2026-08-29",
+    "first_seen": "2026-08-24",
+    "title": "Identify Reef Fish Species with Computer Vision Models",
+    "url": "https://zindi.africa/competitions/wishlist-hackathon-2026-marine-vision-challenge"
+  },
+  "impactforge|2026-06-19": {
+    "ends_at": "2026-08-24",
+    "first_seen": "2026-08-23",
+    "title": "ImpactForge",
+    "url": "https://impactforge.devpost.com"
+  },
+  "infer fusion reactor magnetic geometry|None": {
+    "ends_at": "2026-10-26",
+    "first_seen": "2026-08-24",
+    "title": "Infer Fusion Reactor Magnetic Geometry",
+    "url": "https://fusion-equilibrium-challenge.sophelio.io"
+  },
+  "innovart art and technology day|2026-08-23": {
+    "ends_at": "2027-01-02",
+    "first_seen": "2026-08-23",
+    "title": "InnovArt 2027: Art and Technology Hack Day",
+    "url": "https://innovart2027.devpost.com"
+  },
+  "inspire|2026-08-14": {
+    "ends_at": "2026-08-24",
+    "first_seen": "2026-08-23",
+    "title": "Inspire Hackathon ",
+    "url": "https://inspire-hackathon.devpost.com"
+  },
+  "interpretability for ai mathematical olympiad reasoning|2026-07-15": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-08-24",
+    "title": "Interpretability for AI Mathematical Olympiad Reasoning",
+    "url": "https://aimo-interp.github.io"
+  },
+  "luma september 20th 28th|2026-06-26": {
+    "ends_at": "2026-09-28",
+    "first_seen": "2026-08-23",
+    "title": "LUMA Hackathon (September 20th - 28th)",
+    "url": "https://luma-hackathon-fall.devpost.com"
+  },
+  "midnight virtual august|2026-08-28": {
+    "ends_at": "2026-08-30",
+    "first_seen": "2026-08-23",
+    "title": "Midnight Virtual Hackathon [August]",
+    "url": "https://events.mlh.com/events/14510-midnight-hackathon-august"
+  },
+  "muba blockchain|2026-08-26": {
+    "ends_at": "2026-09-05",
+    "first_seen": "2026-08-23",
+    "title": "MUBA Blockchain Hackathon",
+    "url": "https://muba-hackathon.devfolio.co"
+  },
+  "neuralsprint|2026-06-18": {
+    "ends_at": "2026-08-24",
+    "first_seen": "2026-08-23",
+    "title": "NeuralSprint",
+    "url": "https://neuralsprint.devpost.com"
+  },
+  "next founders|2026-08-16": {
+    "ends_at": "2026-10-15",
+    "first_seen": "2026-08-23",
+    "title": "Next Founders Hackathon",
+    "url": "https://next-founders.devpost.com"
+  },
+  "nextstep hacks|2026-08-21": {
+    "ends_at": "2026-09-13",
+    "first_seen": "2026-08-23",
+    "title": "NextStep Hacks 2026",
+    "url": "https://nextstep2026.devpost.com"
+  },
+  "predict cross sectional equity returns|2026-01-05": {
+    "ends_at": "2026-12-31",
+    "first_seen": "2026-08-23",
+    "title": "Predict Cross-sectional Equity Returns",
+    "url": "https://hub.crunchdao.com/competitions/datacrunch-2"
+  },
+  "predict student learning outcomes from tutoring transcripts|2026-06-15": {
+    "ends_at": "2026-08-27",
+    "first_seen": "2026-08-24",
+    "title": "Predict Student Learning Outcomes from Tutoring Transcripts",
+    "url": "https://platform.k12-ai-infrastructure.org/competitions/3/tutoring-outcomes"
+  },
+  "prometheus august ai challenge|2026-08-18": {
+    "ends_at": "2026-08-30",
+    "first_seen": "2026-08-23",
+    "title": "Prometheus August AI Challenge",
+    "url": "https://august-ai-challenge-31059.devpost.com"
+  },
+  "prometheus september ai challenge 2|2026-08-19": {
+    "ends_at": "2026-09-12",
+    "first_seen": "2026-08-23",
+    "title": "Prometheus September AI Challenge 2",
+    "url": "https://prometheus-september-ai-2.devpost.com"
+  },
+  "prometheus september ai challenge|2026-08-19": {
+    "ends_at": "2026-09-05",
+    "first_seen": "2026-08-23",
+    "title": "Prometheus September AI Challenge",
+    "url": "https://prometheus-sept-ai-classic.devpost.com"
+  },
+  "quantitative physical reasoning for vlms|2026-06-30": {
+    "ends_at": "2026-11-05",
+    "first_seen": "2026-08-24",
+    "title": "Quantitative Physical Reasoning for VLMs",
+    "url": "https://quantiphy.stanford.edu/competition/index.html"
+  },
   "quantumhacks|2026-06-21": {
     "ends_at": "2026-08-24",
     "first_seen": "2026-08-22",
     "title": "QuantumHacks",
     "url": "https://quantumhacks.devpost.com/"
+  },
+  "realpde scientific ml for real world physical systems|2026-07-05": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-08-24",
+    "title": "RealPDE: Scientific ML for Real-World Physical Systems",
+    "url": "https://realpdecompetition.github.io"
+  },
+  "rescuehacks|2026-08-22": {
+    "ends_at": "2026-08-29",
+    "first_seen": "2026-08-23",
+    "title": "RescueHacks",
+    "url": "https://rescue-hacks-30680.devpost.com"
+  },
+  "robust optical flow correspondence matching|2026-07-02": {
+    "ends_at": "2026-09-30",
+    "first_seen": "2026-08-24",
+    "title": "Robust Optical Flow Correspondence Matching",
+    "url": "https://roco-spring.github.io"
+  },
+  "sahai for shiksha|None": {
+    "ends_at": null,
+    "first_seen": "2026-08-23",
+    "title": "SahAI for Shiksha Hackathon",
+    "url": "https://wadhwaniai.reskilll.com"
+  },
+  "segment lesions in whole body scans|2026-04-01": {
+    "ends_at": "2026-09-01",
+    "first_seen": "2026-08-24",
+    "title": "Segment Lesions in Whole-Body Scans",
+    "url": "https://autopet-v.grand-challenge.org"
+  },
+  "syntax summit|2026-07-18": {
+    "ends_at": "2026-09-05",
+    "first_seen": "2026-08-23",
+    "title": "Syntax Summit",
+    "url": "https://syntax-summit.devpost.com"
+  },
+  "the great agent|2026-09-25": {
+    "ends_at": "2026-09-26",
+    "first_seen": "2026-08-23",
+    "title": "The Great Agent Hackathon",
+    "url": "https://the-great-agent-hackathon.devfolio.co"
+  },
+  "the habitat|2026-08-07": {
+    "ends_at": "2026-08-31",
+    "first_seen": "2026-08-23",
+    "title": "Hack the Habitat",
+    "url": "https://hack-the-habitat-2026.devpost.com"
+  },
+  "the limit|2026-06-18": {
+    "ends_at": "2026-08-30",
+    "first_seen": "2026-08-23",
+    "title": "Hack The Limit",
+    "url": "https://hack-the-limit-1.devpost.com"
+  },
+  "track developing cells in 3d microscopy data|2026-06-29": {
+    "ends_at": "2026-09-29",
+    "first_seen": "2026-08-24",
+    "title": "Track Developing Cells in 3D Microscopy Data",
+    "url": "https://www.kaggle.com/competitions/biohub-cell-tracking-during-development"
+  },
+  "univabio|2026-08-07": {
+    "ends_at": "2026-10-06",
+    "first_seen": "2026-08-23",
+    "title": "UnivaBio",
+    "url": "https://univabio.devpost.com"
+  },
+  "weak lensing uncertainty under distribution shift|2026-04-22": {
+    "ends_at": "2026-10-11",
+    "first_seen": "2026-08-24",
+    "title": "Weak Lensing Uncertainty under Distribution Shift",
+    "url": "https://fair-universe.lbl.gov"
   }
 }
