@@ -9,6 +9,7 @@ anything already ended regardless of which page it came from.
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import re
 from datetime import date
@@ -139,3 +140,34 @@ class AllHackathonsSource(Source):
         except Exception:
             logger.warning("allhackathons: failed to parse card", exc_info=True)
             return None
+
+    def enrich(self, hackathon: Hackathon) -> Hackathon:
+        """Each hackathon's own detail page has a "Prizes" card the listing
+        page doesn't carry — free-form text, not a clean total, but real."""
+        try:
+            response = get(
+                hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
+            )
+            response.raise_for_status()
+        except Exception:
+            logger.warning("allhackathons: enrich: fetch failed for %s", hackathon.url, exc_info=True)
+            return hackathon
+
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+            for heading in soup.select("h5.card-title"):
+                if heading.get_text(strip=True).lower() != "prizes":
+                    continue
+                card_body = heading.find_parent("div", class_="card-body")
+                if card_body is None:
+                    continue
+                text_el = card_body.select_one(".text-muted")
+                if text_el is None:
+                    continue
+                text = text_el.get_text(" ", strip=True)
+                if text:
+                    return dataclasses.replace(hackathon, prize_text=text)
+            return hackathon
+        except Exception:
+            logger.warning("allhackathons: enrich: failed to extract prize for %s", hackathon.url, exc_info=True)
+            return hackathon

@@ -4,6 +4,7 @@ from datetime import date
 
 import config
 from sources.allhackathons import AllHackathonsSource, _parse_date_range
+from sources.base import Hackathon
 
 
 def test_allhackathons_parses_fixture(fixture_response, monkeypatch):
@@ -83,3 +84,38 @@ def test_parse_date_range_multi_day():
 
 def test_parse_date_range_none():
     assert _parse_date_range(None) == (None, None)
+
+
+def _bare_hackathon() -> Hackathon:
+    return Hackathon(
+        source="allhackathons", source_id="1", title="Test Hack",
+        url="https://allhackathons.com/hackathon/build-vision-ai-online/",
+        starts_at=date(2026, 8, 31), ends_at=date(2026, 8, 31), is_online=True,
+        prize_text=None, location=None, themes=[], raw={},
+    )
+
+
+def test_allhackathons_enrich_parses_prize_from_fixture(fixture_response, monkeypatch):
+    response = fixture_response("allhackathons_detail.html")
+    monkeypatch.setattr("sources.allhackathons.get", lambda *a, **k: response)
+
+    enriched = AllHackathonsSource().enrich(_bare_hackathon())
+    assert enriched.prize_text == "First Prize: £500 + 50 Viso Now credits Second Prize: £300 + 30 Viso Now credits Third Price: £100 + 20 Viso Now credits"
+    assert enriched.title == "Test Hack"
+
+
+def test_allhackathons_enrich_returns_unchanged_when_no_prizes_card(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr("sources.allhackathons.get", lambda *a, **k: FakeResponse("<html><body>gone</body></html>"))
+    original = _bare_hackathon()
+    assert AllHackathonsSource().enrich(original) == original
+
+
+def test_allhackathons_enrich_returns_unchanged_on_fetch_failure(monkeypatch):
+    def _raise(*a, **k):
+        raise ConnectionError("boom")
+
+    monkeypatch.setattr("sources.allhackathons.get", _raise)
+    original = _bare_hackathon()
+    assert AllHackathonsSource().enrich(original) == original

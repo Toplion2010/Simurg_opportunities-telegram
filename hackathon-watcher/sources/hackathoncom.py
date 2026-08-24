@@ -24,6 +24,12 @@ logger = logging.getLogger(__name__)
 ONLINE_URL = "https://www.hackathon.com/online"
 BASE_URL = "https://www.hackathon.com"
 
+# No structured prize field exists anywhere on this site — some
+# descriptions mention it in prose (e.g. "...compete for a share of the
+# $15,000 prize pool"), so pull it out of text already fetched for the
+# description rather than costing an extra request.
+_PRIZE_RE = re.compile(r"[$€£₹][\d,]+(?:\.\d+)?\s*prize\s*pool", re.IGNORECASE)
+
 _MONTHS = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
@@ -105,6 +111,9 @@ class HackathonComSource(Source):
             desc_el = card.select_one(".ht-event-card__desc")
             description = desc_el.get_text(" ", strip=True) if desc_el else None
 
+            prize_match = _PRIZE_RE.search(description) if description else None
+            prize_text = prize_match.group(0).split()[0] if prize_match else None
+
             themes = [
                 t.get_text(strip=True)
                 for t in card.select(".ht-event-topics__tag")
@@ -126,7 +135,7 @@ class HackathonComSource(Source):
                 starts_at=starts_at,
                 ends_at=None,
                 is_online=is_online,
-                prize_text=None,
+                prize_text=prize_text,
                 location=location,
                 image_url=image_url,
                 organizer=None,

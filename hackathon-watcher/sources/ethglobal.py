@@ -8,12 +8,14 @@ hackathons — the rest are meetups/conferences and are filtered out here.
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import re
 from datetime import date
 
 from bs4 import BeautifulSoup
 
+import config
 from sources.base import Hackathon, Source
 from sources.http import get
 
@@ -141,3 +143,31 @@ class EthGlobalSource(Source):
         except Exception:
             logger.warning("ethglobal: failed to parse card", exc_info=True)
             return None
+
+    def enrich(self, hackathon: Hackathon) -> Hackathon:
+        """Each event's own detail page has a server-rendered '#prizes'
+        section with a clean total ($X,XXX) the listing card doesn't carry."""
+        try:
+            response = get(
+                hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
+            )
+            response.raise_for_status()
+        except Exception:
+            logger.warning("ethglobal: enrich: fetch failed for %s", hackathon.url, exc_info=True)
+            return hackathon
+
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+            prizes_section = soup.select_one("#prizes")
+            if prizes_section is None:
+                return hackathon
+            total_el = prizes_section.select_one("h2")
+            if total_el is None:
+                return hackathon
+            text = total_el.get_text(strip=True)
+            if not re.match(r"^[$€£₹][\d,]+", text):
+                return hackathon
+            return dataclasses.replace(hackathon, prize_text=text)
+        except Exception:
+            logger.warning("ethglobal: enrich: failed to extract prize for %s", hackathon.url, exc_info=True)
+            return hackathon

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from sources.hackathoncom import HackathonComSource, _parse_date
+from sources.hackathoncom import HackathonComSource, _parse_date, _PRIZE_RE
 
 
 def test_hackathoncom_parses_fixture(fixture_response, monkeypatch):
@@ -25,6 +25,7 @@ def test_hackathoncom_parses_fixture(fixture_response, monkeypatch):
     assert first.starts_at is not None
     assert first.description
     assert "AI Builders Challenge" in first.description
+    assert first.prize_text == "$15,000"
 
 
 def test_hackathoncom_returns_empty_when_selectors_rot(monkeypatch):
@@ -56,3 +57,13 @@ def test_parse_date_stays_current_year_when_still_upcoming():
 
 def test_parse_date_none_when_missing():
     assert _parse_date(None) is None
+
+
+def test_prize_re_extracts_amount_from_prose():
+    m = _PRIZE_RE.search("compete for a share of the $15,000 prize pool.")
+    assert m.group(0).split()[0] == "$15,000"
+
+
+def test_prize_re_no_match_without_prize_pool_phrase():
+    text = "win up to $2,000 USD for the Grand Prize"
+    assert _PRIZE_RE.search(text) is None
