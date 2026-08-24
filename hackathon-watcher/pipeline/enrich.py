@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os
 import time
 from datetime import date
 
 import config
 from pipeline.dedup import dedup_key
 from pipeline.generic_enrich import generic_enrich
+from pipeline.kaggle_enrich import enrich_kaggle, is_kaggle_competition_url
 from pipeline.state import ENRICHED_STATE_PATH
 from pipeline.state import load as load_cache
 from pipeline.state import prune as prune_cache
@@ -84,6 +86,16 @@ def _enrich_one(h: Hackathon, gemini_api_key: str | None) -> tuple[Hackathon, bo
         return h, False
 
     if source_cls.enrich is Source.enrich:
+        if is_kaggle_competition_url(h.url):
+            username, key = os.environ.get("KAGGLE_USERNAME"), os.environ.get("KAGGLE_KEY")
+            if username and key:
+                try:
+                    return enrich_kaggle(h, username, key), True
+                except Exception:
+                    logger.warning(
+                        "enrich: kaggle enrich failed for %r, falling back to generic_enrich",
+                        h.title, exc_info=True,
+                    )
         try:
             return generic_enrich(h, gemini_api_key), True
         except Exception:

@@ -134,6 +134,65 @@ def test_no_op_source_falls_back_to_generic_enrich_and_sleeps(monkeypatch):
     assert result[0].title == "Test Hack"  # unenriched but present, never dropped
 
 
+def test_kaggle_url_uses_kaggle_enrich_when_credentials_present(monkeypatch):
+    monkeypatch.setattr(config, "ENRICH_ENABLED", True)
+    _no_op_cache(monkeypatch)
+    monkeypatch.setattr("pipeline.enrich.time.sleep", lambda s: None)
+    monkeypatch.setenv("KAGGLE_USERNAME", "user")
+    monkeypatch.setenv("KAGGLE_KEY", "key")
+
+    class _PlainSource(Source):
+        name = "mlcontests"
+        def fetch(self):
+            return []
+
+    monkeypatch.setattr("pipeline.enrich.get_source_class", lambda module: _PlainSource)
+
+    called = {}
+    def _fake_enrich_kaggle(h, username, key):
+        called["args"] = (username, key)
+        import dataclasses
+        return dataclasses.replace(h, description="kaggle description")
+    monkeypatch.setattr("pipeline.enrich.enrich_kaggle", _fake_enrich_kaggle)
+
+    import dataclasses
+    h = dataclasses.replace(_h(title="Kaggle Comp"), url="https://www.kaggle.com/competitions/some-slug")
+
+    result = enrich([h])
+
+    assert called["args"] == ("user", "key")
+    assert result[0].description == "kaggle description"
+
+
+def test_kaggle_url_falls_back_to_generic_enrich_without_credentials(monkeypatch):
+    monkeypatch.setattr(config, "ENRICH_ENABLED", True)
+    _no_op_cache(monkeypatch)
+    monkeypatch.setattr("pipeline.enrich.time.sleep", lambda s: None)
+    monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
+    monkeypatch.delenv("KAGGLE_KEY", raising=False)
+
+    class _PlainSource(Source):
+        name = "mlcontests"
+        def fetch(self):
+            return []
+
+    monkeypatch.setattr("pipeline.enrich.get_source_class", lambda module: _PlainSource)
+
+    from conftest import FakeResponse
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse("<html><body>no jsonld</body></html>"))
+
+    def _boom(*a, **k):
+        raise AssertionError("enrich_kaggle should not be called without credentials")
+    monkeypatch.setattr("pipeline.enrich.enrich_kaggle", _boom)
+
+    import dataclasses
+    h = dataclasses.replace(_h(title="Kaggle Comp"), url="https://www.kaggle.com/competitions/some-slug")
+
+    result = enrich([h])
+
+    assert result[0].title == "Kaggle Comp"
+
+
 def test_total_time_cap_passes_remainder_through_unenriched(monkeypatch):
     monkeypatch.setattr(config, "ENRICH_ENABLED", True)
     monkeypatch.setattr(config, "ENRICH_TIMEOUT_TOTAL", 10.0)

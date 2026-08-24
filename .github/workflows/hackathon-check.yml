@@ -37,6 +37,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.HACKATHON_WATCHER_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.HACKATHON_WATCHER_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: python main.py ${{ inputs.args }}
 
       - name: Commit updated state
