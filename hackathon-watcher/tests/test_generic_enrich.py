@@ -108,6 +108,107 @@ def test_ai_tier_runs_when_jsonld_missing_and_key_present(monkeypatch):
     assert enriched.links == [{"label": "Rules", "url": "https://example.com/rules"}]
 
 
+# --- Tier 3: Firecrawl-rendered text (JS-only shells) ----------------------
+
+def test_firecrawl_tier_used_when_raw_page_too_thin(monkeypatch):
+    from conftest import FakeResponse
+
+    # A near-empty raw fetch, like ethglobal.com/kaggle.com's real JS shells.
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>Some Event Title</body></html>"),
+    )
+
+    ai_payload = {
+        "description": "A hackathon rendered only via JS, now readable.",
+        "prize_amount": None, "prize_currency": None, "eligibility": None,
+        "is_online": None, "location": None, "links": [],
+    }
+    calls = []
+
+    def _fake_post(url, **kwargs):
+        calls.append(url)
+        if "firecrawl" in url:
+            return FakeResponse(json.dumps({"data": {"markdown": "Real rendered content about the hackathon."}}))
+        return _fake_gemini_json_response(ai_payload)
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key", firecrawl_api_key="fc-key")
+
+    assert any("firecrawl" in c for c in calls)
+    assert enriched.description == "A hackathon rendered only via JS, now readable."
+
+
+def test_firecrawl_tier_skipped_when_raw_page_has_enough_text(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse(f"<html><body>{'Plenty of real prose. ' * 20}</body></html>"),
+    )
+    calls = []
+
+    def _fake_post(url, **kwargs):
+        calls.append(url)
+        return _fake_gemini_json_response({
+            "description": "from raw text", "prize_amount": None, "prize_currency": None,
+            "eligibility": None, "is_online": None, "location": None, "links": [],
+        })
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
+
+    generic_enrich(_h(), gemini_api_key="fake-key", firecrawl_api_key="fc-key")
+
+    assert not any("firecrawl" in c for c in calls)
+
+
+def test_firecrawl_tier_skipped_without_key_even_if_page_thin(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>thin</body></html>"),
+    )
+    calls = []
+
+    def _fake_post(url, **kwargs):
+        calls.append(url)
+        return _fake_gemini_json_response({
+            "description": None, "prize_amount": None, "prize_currency": None,
+            "eligibility": None, "is_online": None, "location": None, "links": [],
+        })
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
+
+    generic_enrich(_h(), gemini_api_key="fake-key", firecrawl_api_key=None)
+
+    assert not any("firecrawl" in c for c in calls)
+
+
+def test_firecrawl_failure_falls_back_to_raw_ai_extraction(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>thin</body></html>"),
+    )
+
+    def _fake_post(url, **kwargs):
+        if "firecrawl" in url:
+            raise ConnectionError("firecrawl down")
+        return _fake_gemini_json_response({
+            "description": "fallback description", "prize_amount": None, "prize_currency": None,
+            "eligibility": None, "is_online": None, "location": None, "links": [],
+        })
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key", firecrawl_api_key="fc-key")
+
+    assert enriched.description == "fallback description"
+
+
 def test_ai_tier_skipped_without_api_key(monkeypatch):
     from conftest import FakeResponse
 

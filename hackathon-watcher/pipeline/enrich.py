@@ -73,50 +73,67 @@ def _apply_cache_entry(h: Hackathon, entry: dict) -> Hackathon:
     )
 
 
-def _enrich_one(h: Hackathon, gemini_api_key: str | None) -> tuple[Hackathon, bool]:
+def _needs_more(h: Hackathon) -> bool:
+    """True when neither a description nor a prize figure exists yet —
+    the signal that a source's own enrich() (or the lack of one) didn't
+    get enough, and the generic fallback should get a shot too."""
+    return not h.description and not h.prize_text
+
+
+def _enrich_one(
+    h: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
+) -> tuple[Hackathon, bool]:
     """Returns (possibly-enriched hackathon, whether a real detail-page
-    fetch was attempted — used to decide whether to sleep). A source with
-    no enrich() override (the ABC default) falls back to generic_enrich
-    (schema.org JSON-LD sniff, then optionally Gemini) — that still counts
-    as a fetch, just not a source-specific one."""
+    fetch was attempted — used to decide whether to sleep). A source's own
+    enrich(), if it has one, runs first; if it raises or still leaves the
+    item thin (no description, no prize — e.g. ethglobal's detail pages
+    are JS-only shells its selector-based enrich() can't read), the
+    generic fallback (schema.org JSON-LD sniff, then optionally Gemini —
+    with Firecrawl rendering for pages too thin even for that) gets a
+    second attempt. Both count as a fetch for sleep-pacing purposes."""
     entry = config.SOURCES.get(h.source, {})
     source_cls = get_source_class(entry.get("module", ""))
 
     if source_cls is None:
         return h, False
 
-    if source_cls.enrich is Source.enrich:
-        if is_kaggle_competition_url(h.url):
-            username, key = os.environ.get("KAGGLE_USERNAME"), os.environ.get("KAGGLE_KEY")
-            if username and key:
-                try:
-                    return enrich_kaggle(h, username, key), True
-                except Exception:
-                    logger.warning(
-                        "enrich: kaggle enrich failed for %r, falling back to generic_enrich",
-                        h.title, exc_info=True,
-                    )
+    if source_cls.enrich is not Source.enrich:
         try:
-            return generic_enrich(h, gemini_api_key), True
+            h = source_cls().enrich(h)
         except Exception:
             logger.warning(
-                "enrich: generic_enrich failed for %r, passing through unenriched",
-                h.title, exc_info=True,
+                "enrich: %s.enrich() failed for %r, trying generic fallback",
+                h.source, h.title, exc_info=True,
             )
+        if not _needs_more(h):
             return h, True
 
+    if is_kaggle_competition_url(h.url):
+        username, key = os.environ.get("KAGGLE_USERNAME"), os.environ.get("KAGGLE_KEY")
+        if username and key:
+            try:
+                return enrich_kaggle(h, username, key), True
+            except Exception:
+                logger.warning(
+                    "enrich: kaggle enrich failed for %r, falling back to generic_enrich",
+                    h.title, exc_info=True,
+                )
+
     try:
-        return source_cls().enrich(h), True
+        return generic_enrich(h, gemini_api_key, firecrawl_api_key), True
     except Exception:
         logger.warning(
-            "enrich: %s.enrich() failed for %r, passing through unenriched",
-            h.source, h.title, exc_info=True,
+            "enrich: generic_enrich failed for %r, passing through unenriched",
+            h.title, exc_info=True,
         )
         return h, True
 
 
 def enrich(
-    hackathons: list[Hackathon], dry_run: bool = False, gemini_api_key: str | None = None
+    hackathons: list[Hackathon],
+    dry_run: bool = False,
+    gemini_api_key: str | None = None,
+    firecrawl_api_key: str | None = None,
 ) -> list[Hackathon]:
     """dry_run controls persistence only, not fetching: dry-run still does
     live detail-page fetches (so --dry-run output reflects real enriched
@@ -149,7 +166,7 @@ def enrich(
             result.append(_apply_cache_entry(h, cached))
             continue
 
-        enriched, did_fetch = _enrich_one(h, gemini_api_key)
+        enriched, did_fetch = _enrich_one(h, gemini_api_key, firecrawl_api_key)
         result.append(enriched)
         cache[key] = _cache_entry(enriched)
         if did_fetch:

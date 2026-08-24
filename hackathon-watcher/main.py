@@ -169,10 +169,14 @@ def main() -> None:
         return
 
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
+    firecrawl_api_key = os.environ.get("FIRECRAWL_API_KEY")
 
     if config.ENRICH_ENABLED and not args.no_enrich:
         ai_enrich_key = None if args.no_ai_enrich else gemini_api_key
-        new_items = enrich(new_items, dry_run=args.dry_run, gemini_api_key=ai_enrich_key)
+        firecrawl_key = None if args.no_ai_enrich else firecrawl_api_key
+        new_items = enrich(
+            new_items, dry_run=args.dry_run, gemini_api_key=ai_enrich_key, firecrawl_api_key=firecrawl_key
+        )
         logger.info("enriched: %d", len(new_items))
 
     if args.dry_run:

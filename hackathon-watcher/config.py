@@ -83,6 +83,12 @@ AI_ENRICH_ENABLED: bool = True
 GEMINI_TEXT_MODEL: str = "gemini-3.6-flash"
 AI_ENRICH_PAGE_CHARS: int = 6000  # page text truncation before sending to Gemini
 AI_ENRICH_TIMEOUT: int = 20
+# Below this many visible characters, a raw fetch is treated as a JS-only
+# shell (confirmed live on ethglobal.com and kaggle.com: ~15-20 chars, just
+# the title) not worth sending to Gemini — Firecrawl (if configured) renders
+# the page with real JS execution instead.
+AI_ENRICH_MIN_PAGE_CHARS: int = 200
+FIRECRAWL_TIMEOUT: int = 30
 
 # --- HTTP ---
 REQUEST_TIMEOUT_SECONDS: int = 20

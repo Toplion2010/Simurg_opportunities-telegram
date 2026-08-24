@@ -1,16 +1,24 @@
 """Generic enrichment fallback for any source that hasn't defined its own
 `enrich()` (currently reskilll, dev.events, MLH, Hack Club Hackathons —
-any future source added without a custom scraper gets this automatically).
+any future source added without a custom scraper gets this automatically),
+plus a second-pass fallback for sources whose own enrich() came back empty
+(e.g. ethglobal — see pipeline/enrich.py's `_needs_more` check).
 
-Two tiers, cheapest first:
+Three tiers, cheapest first:
 
 1. Schema.org JSON-LD sniff (free, no API call) — many event sites embed
    a real `Event`/`EducationEvent`/`EventSeries` block regardless of
    platform (confirmed live on reskilll's and dev.events' own pages).
-2. Gemini text extraction (only if tier 1 finds nothing, and
-   GEMINI_API_KEY is set) — for sites with no structured data at all
-   (confirmed on MLH/Hack Club's linked organizer sites: hackrice.com,
-   hackmty.com, animalhack.org, ... none carry JSON-LD).
+2. Gemini text extraction from the raw fetch (only if tier 1 finds
+   nothing, and GEMINI_API_KEY is set) — for sites with no structured
+   data at all but real server-rendered text (confirmed on MLH/Hack
+   Club's linked organizer sites: hackrice.com, hackmty.com,
+   animalhack.org, ... none carry JSON-LD but have plenty of real text).
+3. Firecrawl-rendered text + Gemini (only if the raw fetch is a JS-only
+   shell — under AI_ENRICH_MIN_PAGE_CHARS of visible text — and
+   FIRECRAWL_API_KEY is set) — for pure client-rendered SPAs where even
+   the raw HTML has nothing to read (confirmed live on ethglobal.com and
+   kaggle.com: ~15-20 visible characters, just the page title).
 
 Only fills fields that are currently empty on the Hackathon — never
 overwrites data a source's own listing/enrich already provided. Never
@@ -38,6 +46,7 @@ from sources.http import get
 logger = logging.getLogger(__name__)
 
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+_FIRECRAWL_SCRAPE_URL = "https://api.firecrawl.dev/v1/scrape"
 
 _LD_JSON_RE = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.S)
 _PRIZE_NEAR_WORD_RE = re.compile(
@@ -125,6 +134,25 @@ def _extract_from_jsonld(event: dict) -> dict:
         fields["ends_at"] = ends_at
 
     return fields
+
+
+# --- Tier 3: Firecrawl-rendered text (for JS-only pages) ------------------
+
+
+def _firecrawl_page_text(url: str, api_key: str) -> str | None:
+    response = requests.post(
+        _FIRECRAWL_SCRAPE_URL,
+        headers={"Authorization": f"Bearer {api_key}"},
+        json={"url": url, "formats": ["markdown"], "onlyMainContent": True},
+        timeout=config.FIRECRAWL_TIMEOUT,
+    )
+    if response.status_code != 200:
+        raise RuntimeError(f"Firecrawl API error {response.status_code}: {response.text[:300]}")
+    data = response.json()
+    markdown = ((data.get("data") or {}).get("markdown")) or None
+    if not markdown or not markdown.strip():
+        return None
+    return re.sub(r"\s+", " ", markdown).strip()[: config.AI_ENRICH_PAGE_CHARS]
 
 
 # --- Tier 2: Gemini text extraction ---------------------------------------
@@ -242,7 +270,9 @@ def _extract_via_ai(hackathon: Hackathon, page_text: str, api_key: str) -> dict:
 # --- Orchestrator ----------------------------------------------------------
 
 
-def generic_enrich(hackathon: Hackathon, gemini_api_key: str | None) -> Hackathon:
+def generic_enrich(
+    hackathon: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
+) -> Hackathon:
     try:
         response = get(
             hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
@@ -264,6 +294,15 @@ def generic_enrich(hackathon: Hackathon, gemini_api_key: str | None) -> Hackatho
     if not fields and gemini_api_key and config.AI_ENRICH_ENABLED:
         try:
             text = _page_text(html)
+            if len(text) < config.AI_ENRICH_MIN_PAGE_CHARS and firecrawl_api_key:
+                try:
+                    rendered = _firecrawl_page_text(hackathon.url, firecrawl_api_key)
+                    if rendered:
+                        text = rendered
+                except Exception:
+                    logger.warning(
+                        "generic_enrich: Firecrawl render failed for %s", hackathon.url, exc_info=True
+                    )
             if text:
                 fields = _extract_via_ai(hackathon, text, gemini_api_key)
         except Exception:

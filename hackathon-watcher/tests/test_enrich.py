@@ -56,11 +56,17 @@ def test_enrich_empty_list_short_circuits(monkeypatch):
     assert enrich([]) == []
 
 
-def test_source_enrich_exception_passes_item_through_unchanged(monkeypatch):
+def test_source_enrich_exception_falls_back_to_generic_enrich(monkeypatch):
+    """A custom enrich() that raises is no longer a dead end — it falls
+    back to generic_enrich, same as a source with no custom enrich() at
+    all that yields nothing (mirrors the ethglobal case: its own enrich()
+    finds nothing live, so the generic fallback gets a shot too)."""
     monkeypatch.setattr(config, "ENRICH_ENABLED", True)
     monkeypatch.setattr("pipeline.enrich.get_source_class", lambda module: _RaisingSource)
     _no_op_cache(monkeypatch)
     monkeypatch.setattr("pipeline.enrich.time.sleep", lambda s: None)
+    from conftest import FakeResponse
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse("<html><body>no jsonld</body></html>"))
 
     h = _h()
     result = enrich([h])
@@ -191,6 +197,63 @@ def test_kaggle_url_falls_back_to_generic_enrich_without_credentials(monkeypatch
     result = enrich([h])
 
     assert result[0].title == "Kaggle Comp"
+
+
+class _EthGlobalLikeSource(Source):
+    """Mirrors ethglobal.py: has its own enrich() but the target site is a
+    JS-only shell, so it consistently returns the hackathon unchanged."""
+    name = "devpost"
+
+    def fetch(self):
+        return []
+
+    def enrich(self, hackathon):
+        return hackathon
+
+
+def test_custom_enrich_that_finds_nothing_falls_back_to_generic_enrich(monkeypatch):
+    monkeypatch.setattr(config, "ENRICH_ENABLED", True)
+    monkeypatch.setattr("pipeline.enrich.get_source_class", lambda module: _EthGlobalLikeSource)
+    _no_op_cache(monkeypatch)
+    monkeypatch.setattr("pipeline.enrich.time.sleep", lambda s: None)
+
+    from conftest import FakeResponse
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>No structured data, real prose here.</body></html>"),
+    )
+
+    import json as _json
+
+    def _fake_post(url, **kwargs):
+        payload = {
+            "description": "found via the generic fallback", "prize_amount": None,
+            "prize_currency": None, "eligibility": None, "is_online": None,
+            "location": None, "links": [],
+        }
+        body = {"candidates": [{"content": {"parts": [{"text": _json.dumps(payload)}]}}]}
+        return FakeResponse(_json.dumps(body))
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
+
+    result = enrich([_h()], gemini_api_key="fake-key")
+
+    assert result[0].description == "found via the generic fallback"
+
+
+def test_custom_enrich_with_real_data_skips_generic_fallback(monkeypatch):
+    monkeypatch.setattr(config, "ENRICH_ENABLED", True)
+    monkeypatch.setattr("pipeline.enrich.get_source_class", lambda module: _WorkingSource)
+    _no_op_cache(monkeypatch)
+    monkeypatch.setattr("pipeline.enrich.time.sleep", lambda s: None)
+
+    def _boom(*a, **k):
+        raise AssertionError("generic_enrich's get() should not be called")
+    monkeypatch.setattr("pipeline.generic_enrich.get", _boom)
+
+    result = enrich([_h()])
+
+    assert result[0].description == "a real description"
 
 
 def test_total_time_cap_passes_remainder_through_unenriched(monkeypatch):
