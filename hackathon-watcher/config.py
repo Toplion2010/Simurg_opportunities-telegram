@@ -80,7 +80,7 @@ IMAGE_GEN_RETRY_SCHEDULE: tuple[float, ...] = (0, 3, 8)
 # finds nothing and GEMINI_API_KEY is set. Same key/model family as
 # image_gen.py, but a text model, not the image one.
 AI_ENRICH_ENABLED: bool = True
-GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"
+GEMINI_TEXT_MODEL: str = "gemini-3.6-flash"
 AI_ENRICH_PAGE_CHARS: int = 6000  # page text truncation before sending to Gemini
 AI_ENRICH_TIMEOUT: int = 20
 
