@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 */3 * * *"
   workflow_dispatch:
+    inputs:
+      args:
+        description: "Extra CLI args (e.g. '-r mlh hackclub -n -f -l 3' for a debug dry-run). Leave empty for a normal run."
+        required: false
+        default: ""
 
 concurrency:
   group: hackathon-watcher
@@ -32,7 +37,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.HACKATHON_WATCHER_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.HACKATHON_WATCHER_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python main.py
+        run: python main.py ${{ inputs.args }}
 
       - name: Commit updated state
         run: |
