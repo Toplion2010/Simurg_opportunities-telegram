@@ -54,7 +54,7 @@ def test_empty_breakdown_and_no_prize_text_returns_none():
 
 def test_indian_rupee_symbol_parses():
     result = summarize_prize(["1st: ₹50,000"], None)
-    assert result == "Prize pool ₹50,000"
+    assert result == "Prize pool ₹50,000 (~$600)"
 
 
 def test_currency_code_prefix_parses():
@@ -72,3 +72,32 @@ def test_does_not_convert_currencies():
     result = summarize_prize(["1st: $500", "2nd: ₹50,000"], None)
     assert "550" not in result
     assert result == "2 prizes"
+
+
+# --- USD estimate suffix ---------------------------------------------
+
+def test_bare_non_usd_prize_text_gets_usd_suffix():
+    result = summarize_prize([], "₹40,00,000")
+    assert result == "₹40,00,000 (~$48,000)"
+
+
+def test_bare_usd_prize_text_gets_no_suffix():
+    result = summarize_prize([], "$175,000")
+    assert result == "$175,000"
+
+
+def test_already_usd_coded_prize_text_gets_no_suffix():
+    result = summarize_prize([], "USD 1,050.46")
+    assert result == "USD 1,050.46"
+
+
+def test_free_form_multi_prize_text_gets_no_suffix():
+    # A number embedded in a longer sentence — converting the wrong
+    # figure would be misleading, so no suffix is added at all.
+    text = "First Prize: £500 + 50 credits Second Prize: £300"
+    assert summarize_prize([], text) == text
+
+
+def test_unknown_currency_code_gets_no_suffix_no_crash():
+    result = summarize_prize([], "CHF 1,000")
+    assert result == "CHF 1,000"

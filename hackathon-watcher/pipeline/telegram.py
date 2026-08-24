@@ -113,10 +113,33 @@ def _themes_line(h: Hackathon) -> str | None:
     return " ".join(tags) if tags else None
 
 
+LINKS_MAX = 3
+
+
+def _links_line(h: Hackathon) -> str | None:
+    """Built entirely from validated (label, url) pairs — never from raw
+    text a model might return — so there's no HTML-injection risk here."""
+    if not h.links:
+        return None
+    anchors = []
+    for item in h.links[:LINKS_MAX]:
+        if not isinstance(item, dict):
+            continue
+        label, url = item.get("label"), item.get("url")
+        if not label or not url or not str(url).startswith(("http://", "https://")):
+            continue
+        safe_label = html.escape(str(label))
+        safe_url = html.escape(str(url), quote=True)
+        anchors.append(f'<a href="{safe_url}">{safe_label}</a>')
+    if not anchors:
+        return None
+    return "\U0001F517 " + " · ".join(anchors)
+
+
 def _assemble(core: str, eligibility: str | None, organizer: str | None,
-              themes: str | None, description: str | None) -> str:
+              themes: str | None, links: str | None, description: str | None) -> str:
     parts = [core]
-    for line in (eligibility, organizer, themes):
+    for line in (eligibility, organizer, themes, links):
         if line:
             parts.append(line)
     text = "\n".join(parts)
@@ -130,52 +153,60 @@ def format_message(h: Hackathon, max_length: int = 4096) -> str:
     path: 1024 for a sendPhoto caption, 4096 for a plain sendMessage text.
     Any line whose data is missing is omitted entirely — never an empty
     label or bare emoji. When over budget, drops in this order: themes ->
-    organizer -> eligibility -> description (truncated, then dropped).
-    Title, link, prize, and deadline are never dropped. Description is kept
-    as long as possible since it's the most informative optional field."""
+    organizer -> links -> eligibility -> description (truncated, then
+    dropped). Title, link, prize, and deadline are never dropped.
+    Description is kept as long as possible since it's the most
+    informative optional field."""
     core = _required_core(h)
     eligibility = _eligibility_line(h)
     organizer = _organizer_line(h)
     themes = _themes_line(h)
+    links = _links_line(h)
     description = _first_sentences(h.description, DESCRIPTION_SENTENCE_MAX) if h.description else None
     description = html.escape(description) if description else None
 
-    candidate = _assemble(core, eligibility, organizer, themes, description)
+    candidate = _assemble(core, eligibility, organizer, themes, links, description)
     if len(candidate) <= max_length:
         return candidate
 
     # 1. Drop themes.
     themes = None
-    candidate = _assemble(core, eligibility, organizer, themes, description)
+    candidate = _assemble(core, eligibility, organizer, themes, links, description)
     if len(candidate) <= max_length:
         return candidate
 
     # 2. Drop organizer.
     organizer = None
-    candidate = _assemble(core, eligibility, organizer, themes, description)
+    candidate = _assemble(core, eligibility, organizer, themes, links, description)
     if len(candidate) <= max_length:
         return candidate
 
-    # 3. Drop eligibility.
+    # 3. Drop links.
+    links = None
+    candidate = _assemble(core, eligibility, organizer, themes, links, description)
+    if len(candidate) <= max_length:
+        return candidate
+
+    # 4. Drop eligibility.
     eligibility = None
-    candidate = _assemble(core, eligibility, organizer, themes, description)
+    candidate = _assemble(core, eligibility, organizer, themes, links, description)
     if len(candidate) <= max_length:
         return candidate
 
-    # 4. Truncate the description to whatever fits before dropping it.
+    # 5. Truncate the description to whatever fits before dropping it.
     if description:
-        without_desc = _assemble(core, eligibility, organizer, themes, None)
+        without_desc = _assemble(core, eligibility, organizer, themes, links, None)
         budget = max_length - len(without_desc) - len("\n\n") - 1  # -1 for the ellipsis
         if budget > 20:
             truncated = description[:budget].rsplit(" ", 1)[0] + "…"
-            candidate = _assemble(core, eligibility, organizer, themes, truncated)
+            candidate = _assemble(core, eligibility, organizer, themes, links, truncated)
             if len(candidate) <= max_length:
                 return candidate
-        candidate = _assemble(core, eligibility, organizer, themes, None)
+        candidate = _assemble(core, eligibility, organizer, themes, links, None)
         if len(candidate) <= max_length:
             return candidate
 
-    # 5. Last resort; core alone (title/link/prize/deadline) is never
+    # 6. Last resort; core alone (title/link/prize/deadline) is never
     # truncated in practice, but is hard-capped here as a safety net.
     return core[:max_length]
 

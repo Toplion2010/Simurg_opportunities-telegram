@@ -29,6 +29,9 @@ class Hackathon:
     required_tech: list[str] = field(default_factory=list)
     deadline: date | None = None
     sponsors: list[str] = field(default_factory=list)
+    # Small set of on-page reference links (e.g. Rules, Prizes, Register),
+    # populated by pipeline/generic_enrich.py. Each item: {"label": str, "url": str}.
+    links: list[dict] = field(default_factory=list)
 
 
 class Source(ABC):

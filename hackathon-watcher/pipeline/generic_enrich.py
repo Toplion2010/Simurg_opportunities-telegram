@@ -1,0 +1,293 @@
+"""Generic enrichment fallback for any source that hasn't defined its own
+`enrich()` (currently reskilll, dev.events, MLH, Hack Club Hackathons —
+any future source added without a custom scraper gets this automatically).
+
+Two tiers, cheapest first:
+
+1. Schema.org JSON-LD sniff (free, no API call) — many event sites embed
+   a real `Event`/`EducationEvent`/`EventSeries` block regardless of
+   platform (confirmed live on reskilll's and dev.events' own pages).
+2. Gemini text extraction (only if tier 1 finds nothing, and
+   GEMINI_API_KEY is set) — for sites with no structured data at all
+   (confirmed on MLH/Hack Club's linked organizer sites: hackrice.com,
+   hackmty.com, animalhack.org, ... none carry JSON-LD).
+
+Only fills fields that are currently empty on the Hackathon — never
+overwrites data a source's own listing/enrich already provided. Never
+raises: any fetch/parse/API failure just means no extra fields, not a
+lost post.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import json
+import logging
+import re
+from datetime import datetime
+from urllib.parse import urlsplit
+
+import requests
+from bs4 import BeautifulSoup
+
+import config
+from pipeline.format_prize import _format_amount
+from sources.base import Hackathon
+from sources.http import get
+
+logger = logging.getLogger(__name__)
+
+_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+
+_LD_JSON_RE = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.S)
+_PRIZE_NEAR_WORD_RE = re.compile(
+    r"[$€£₹][\d,]+(?:\.\d+)?\s*(?:in\s*)?prizes?(?:\s*pool)?", re.IGNORECASE
+)
+
+_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "description": {"type": "string", "nullable": True},
+        "prize_amount": {"type": "number", "nullable": True},
+        "prize_currency": {"type": "string", "nullable": True},
+        "eligibility": {"type": "string", "nullable": True},
+        "is_online": {"type": "boolean", "nullable": True},
+        "location": {"type": "string", "nullable": True},
+        "links": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {"type": "string"},
+                    "url": {"type": "string"},
+                },
+            },
+        },
+    },
+}
+
+
+def _parse_iso(text: str | None):
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
+# --- Tier 1: schema.org JSON-LD sniff -------------------------------------
+
+
+def _find_jsonld_event(html: str) -> dict | None:
+    for match in _LD_JSON_RE.finditer(html):
+        try:
+            data = json.loads(match.group(1))
+        except json.JSONDecodeError:
+            continue
+        candidates = data if isinstance(data, list) else [data]
+        for block in list(candidates):
+            if isinstance(block, dict) and isinstance(block.get("@graph"), list):
+                candidates = candidates + block["@graph"]
+        for candidate in candidates:
+            if not isinstance(candidate, dict):
+                continue
+            type_ = candidate.get("@type")
+            types = type_ if isinstance(type_, list) else [type_]
+            if any(isinstance(t, str) and "event" in t.lower() for t in types):
+                return candidate
+    return None
+
+
+def _extract_from_jsonld(event: dict) -> dict:
+    fields: dict = {}
+    raw_description = event.get("description")
+    if raw_description:
+        text = BeautifulSoup(str(raw_description), "html.parser").get_text(" ", strip=True)
+        text = re.sub(r"\s+", " ", text).strip()
+        if text:
+            fields["description"] = text[:500]
+            prize_match = _PRIZE_NEAR_WORD_RE.search(text)
+            if prize_match:
+                fields["prize_text"] = prize_match.group(0).split()[0]
+
+    mode = event.get("eventAttendanceMode") or ""
+    if "Online" in mode:
+        fields["is_online"] = True
+    elif "Offline" in mode or "Mixed" in mode:
+        fields["is_online"] = False
+
+    starts_at = _parse_iso(event.get("startDate"))
+    ends_at = _parse_iso(event.get("endDate"))
+    if starts_at:
+        fields["starts_at"] = starts_at
+    if ends_at:
+        fields["ends_at"] = ends_at
+
+    return fields
+
+
+# --- Tier 2: Gemini text extraction ---------------------------------------
+
+
+def _page_text(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
+    return text[: config.AI_ENRICH_PAGE_CHARS]
+
+
+def _valid_link(url: str, page_domain: str) -> bool:
+    try:
+        parts = urlsplit(url)
+        if parts.scheme not in ("http", "https") or not parts.netloc:
+            return False
+        return parts.netloc == page_domain or parts.netloc.endswith(f".{page_domain}")
+    except Exception:
+        return False
+
+
+def _call_gemini_text(prompt: str, api_key: str) -> dict | None:
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": _RESPONSE_SCHEMA,
+        },
+    }
+    url = f"{_API_BASE}/{config.GEMINI_TEXT_MODEL}:generateContent?key={api_key}"
+    response = requests.post(url, json=payload, timeout=config.AI_ENRICH_TIMEOUT)
+    if response.status_code != 200:
+        raise RuntimeError(f"Gemini API error {response.status_code}: {response.text[:300]}")
+
+    data = response.json()
+    candidates = data.get("candidates") or []
+    if not candidates:
+        return None
+    parts = (candidates[0].get("content") or {}).get("parts") or []
+    for part in parts:
+        text = part.get("text")
+        if text:
+            return json.loads(text)
+    return None
+
+
+def _extract_via_ai(hackathon: Hackathon, page_text: str, api_key: str) -> dict:
+    prompt = (
+        "You are extracting factual information about a hackathon or coding "
+        "competition from the raw text of its own webpage, given below. "
+        "Return null for any field that is not clearly and explicitly stated "
+        "on the page — never guess, infer, or invent a value. For 'links', "
+        "list at most 3 links to sub-pages clearly relevant to the event "
+        "itself (e.g. Rules, Prizes, Schedule, Register) if you can identify "
+        "their URLs in the text; omit anything you're not confident about.\n\n"
+        f"Hackathon title (for context only, do not repeat it back): {hackathon.title}\n\n"
+        f"Page text:\n{page_text}"
+    )
+    try:
+        result = _call_gemini_text(prompt, api_key)
+    except Exception:
+        logger.warning("generic_enrich: AI extraction failed for %s", hackathon.url, exc_info=True)
+        return {}
+    if not result:
+        return {}
+
+    fields: dict = {}
+
+    description = result.get("description")
+    if isinstance(description, str) and description.strip():
+        fields["description"] = description.strip()[:500]
+
+    amount = result.get("prize_amount")
+    currency = result.get("prize_currency")
+    if isinstance(amount, (int, float)) and amount > 0 and isinstance(currency, str) and currency.strip():
+        try:
+            currency_str = currency.strip()
+            sep = "" if len(currency_str) == 1 else " "
+            fields["prize_text"] = f"{currency_str}{sep}{_format_amount(float(amount))}"
+        except Exception:
+            pass
+
+    eligibility = result.get("eligibility")
+    if isinstance(eligibility, str) and eligibility.strip():
+        fields["eligibility"] = eligibility.strip()[:300]
+
+    if isinstance(result.get("is_online"), bool):
+        fields["is_online"] = result["is_online"]
+
+    location = result.get("location")
+    if isinstance(location, str) and location.strip():
+        fields["location"] = location.strip()
+
+    page_domain = urlsplit(hackathon.url).netloc
+    valid_links = []
+    for item in result.get("links") or []:
+        if len(valid_links) >= 3:
+            break
+        if not isinstance(item, dict):
+            continue
+        label, link_url = item.get("label"), item.get("url")
+        if not isinstance(label, str) or not isinstance(link_url, str):
+            continue
+        if not label.strip() or not _valid_link(link_url, page_domain):
+            continue
+        valid_links.append({"label": label.strip()[:30], "url": link_url})
+    if valid_links:
+        fields["links"] = valid_links
+
+    return fields
+
+
+# --- Orchestrator ----------------------------------------------------------
+
+
+def generic_enrich(hackathon: Hackathon, gemini_api_key: str | None) -> Hackathon:
+    try:
+        response = get(
+            hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
+        )
+        response.raise_for_status()
+        html = response.text
+    except Exception:
+        logger.warning("generic_enrich: fetch failed for %s", hackathon.url, exc_info=True)
+        return hackathon
+
+    fields: dict = {}
+    try:
+        event = _find_jsonld_event(html)
+        if event:
+            fields = _extract_from_jsonld(event)
+    except Exception:
+        logger.warning("generic_enrich: JSON-LD extraction failed for %s", hackathon.url, exc_info=True)
+
+    if not fields and gemini_api_key and config.AI_ENRICH_ENABLED:
+        try:
+            text = _page_text(html)
+            if text:
+                fields = _extract_via_ai(hackathon, text, gemini_api_key)
+        except Exception:
+            logger.warning("generic_enrich: AI tier failed for %s", hackathon.url, exc_info=True)
+
+    if not fields:
+        return hackathon
+
+    updates: dict = {}
+    if not hackathon.description and fields.get("description"):
+        updates["description"] = fields["description"]
+    if not hackathon.prize_text and fields.get("prize_text"):
+        updates["prize_text"] = fields["prize_text"]
+    if not hackathon.eligibility and fields.get("eligibility"):
+        updates["eligibility"] = fields["eligibility"]
+    if hackathon.is_online is None and fields.get("is_online") is not None:
+        updates["is_online"] = fields["is_online"]
+    if not hackathon.location and fields.get("location"):
+        updates["location"] = fields["location"]
+    if not hackathon.starts_at and fields.get("starts_at"):
+        updates["starts_at"] = fields["starts_at"]
+    if not hackathon.ends_at and fields.get("ends_at"):
+        updates["ends_at"] = fields["ends_at"]
+    if not hackathon.links and fields.get("links"):
+        updates["links"] = fields["links"]
+
+    return dataclasses.replace(hackathon, **updates) if updates else hackathon

@@ -108,15 +108,18 @@ def test_cache_hit_skips_source_enrich_entirely(monkeypatch):
     assert result[0].eligibility == "Students only"
 
 
-def test_no_op_source_does_not_sleep(monkeypatch):
-    """A source that never overrides enrich() should count as no fetch —
-    no sleep, since --no-enrich-style default behavior shouldn't slow
-    down sources that don't do any enrichment work."""
+def test_no_op_source_falls_back_to_generic_enrich_and_sleeps(monkeypatch):
+    """A source that never overrides enrich() no longer means "skip
+    entirely" — it falls back to generic_enrich (schema.org JSON-LD sniff,
+    then optionally Gemini), which does a real fetch and so still counts
+    as one for sleep-pacing purposes."""
     monkeypatch.setattr(config, "ENRICH_ENABLED", True)
     _no_op_cache(monkeypatch)
 
     slept = []
     monkeypatch.setattr("pipeline.enrich.time.sleep", lambda s: slept.append(s))
+    from conftest import FakeResponse
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse("<html><body>no jsonld here</body></html>"))
 
     class _PlainSource(Source):
         name = "devpost"
@@ -125,9 +128,10 @@ def test_no_op_source_does_not_sleep(monkeypatch):
 
     monkeypatch.setattr("pipeline.enrich.get_source_class", lambda module: _PlainSource)
 
-    enrich([_h()])
+    result = enrich([_h()])
 
-    assert slept == []
+    assert slept == [config.ENRICH_SLEEP_SECONDS]
+    assert result[0].title == "Test Hack"  # unenriched but present, never dropped
 
 
 def test_total_time_cap_passes_remainder_through_unenriched(monkeypatch):

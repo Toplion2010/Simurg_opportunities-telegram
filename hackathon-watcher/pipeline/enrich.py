@@ -15,6 +15,7 @@ from datetime import date
 
 import config
 from pipeline.dedup import dedup_key
+from pipeline.generic_enrich import generic_enrich
 from pipeline.state import ENRICHED_STATE_PATH
 from pipeline.state import load as load_cache
 from pipeline.state import prune as prune_cache
@@ -34,12 +35,22 @@ def _cache_entry(h: Hackathon) -> dict:
         "required_tech": h.required_tech,
         "deadline": h.deadline.isoformat() if h.deadline else None,
         "sponsors": h.sponsors,
+        # --- generic_enrich.py fields (only ever set by the fallback path) ---
+        "starts_at": h.starts_at.isoformat() if h.starts_at else None,
+        "prize_text": h.prize_text,
+        "is_online": h.is_online,
+        "location": h.location,
+        "links": h.links,
     }
 
 
 def _apply_cache_entry(h: Hackathon, entry: dict) -> Hackathon:
     deadline_str = entry.get("deadline")
     deadline = date.fromisoformat(deadline_str) if deadline_str else None
+    cached_starts_at_str = entry.get("starts_at")
+    cached_starts_at = date.fromisoformat(cached_starts_at_str) if cached_starts_at_str else None
+    cached_ends_at_str = entry.get("ends_at")
+    cached_ends_at = date.fromisoformat(cached_ends_at_str) if cached_ends_at_str else None
     return dataclasses.replace(
         h,
         description=entry.get("description"),
@@ -48,17 +59,39 @@ def _apply_cache_entry(h: Hackathon, entry: dict) -> Hackathon:
         required_tech=entry.get("required_tech") or [],
         deadline=deadline,
         sponsors=entry.get("sponsors") or [],
+        # generic_enrich.py fields: prefer this run's freshly-fetched listing
+        # value over the cached one — the cache only fills what's missing,
+        # same "never overwrite good data" rule generic_enrich itself follows.
+        starts_at=h.starts_at or cached_starts_at,
+        ends_at=h.ends_at or cached_ends_at,
+        prize_text=h.prize_text or entry.get("prize_text"),
+        is_online=h.is_online if h.is_online is not None else entry.get("is_online"),
+        location=h.location or entry.get("location"),
+        links=h.links or (entry.get("links") or []),
     )
 
 
-def _enrich_one(h: Hackathon) -> tuple[Hackathon, bool]:
+def _enrich_one(h: Hackathon, gemini_api_key: str | None) -> tuple[Hackathon, bool]:
     """Returns (possibly-enriched hackathon, whether a real detail-page
     fetch was attempted — used to decide whether to sleep). A source with
-    no enrich() override (the ABC default) never counts as a fetch."""
+    no enrich() override (the ABC default) falls back to generic_enrich
+    (schema.org JSON-LD sniff, then optionally Gemini) — that still counts
+    as a fetch, just not a source-specific one."""
     entry = config.SOURCES.get(h.source, {})
     source_cls = get_source_class(entry.get("module", ""))
-    if source_cls is None or source_cls.enrich is Source.enrich:
+
+    if source_cls is None:
         return h, False
+
+    if source_cls.enrich is Source.enrich:
+        try:
+            return generic_enrich(h, gemini_api_key), True
+        except Exception:
+            logger.warning(
+                "enrich: generic_enrich failed for %r, passing through unenriched",
+                h.title, exc_info=True,
+            )
+            return h, True
 
     try:
         return source_cls().enrich(h), True
@@ -70,10 +103,14 @@ def _enrich_one(h: Hackathon) -> tuple[Hackathon, bool]:
         return h, True
 
 
-def enrich(hackathons: list[Hackathon], dry_run: bool = False) -> list[Hackathon]:
+def enrich(
+    hackathons: list[Hackathon], dry_run: bool = False, gemini_api_key: str | None = None
+) -> list[Hackathon]:
     """dry_run controls persistence only, not fetching: dry-run still does
     live detail-page fetches (so --dry-run output reflects real enriched
-    content) but never writes the cache to disk."""
+    content) but never writes the cache to disk. gemini_api_key is only
+    used by the generic fallback's AI tier — sources with their own
+    enrich() never need it."""
     if not config.ENRICH_ENABLED or not hackathons:
         return hackathons
 
@@ -100,7 +137,7 @@ def enrich(hackathons: list[Hackathon], dry_run: bool = False) -> list[Hackathon
             result.append(_apply_cache_entry(h, cached))
             continue
 
-        enriched, did_fetch = _enrich_one(h)
+        enriched, did_fetch = _enrich_one(h, gemini_api_key)
         result.append(enriched)
         cache[key] = _cache_entry(enriched)
         if did_fetch:

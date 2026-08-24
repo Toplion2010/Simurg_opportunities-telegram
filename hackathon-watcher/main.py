@@ -126,6 +126,11 @@ def main() -> None:
         "--no-image-gen", action="store_true",
         help="skip Gemini fallback image generation, even if GEMINI_API_KEY is set",
     )
+    parser.add_argument(
+        "--no-ai-enrich", action="store_true",
+        help="skip the generic AI-assisted enrichment fallback (used for sources "
+             "without their own enrich()), even if GEMINI_API_KEY is set",
+    )
     args = parser.parse_args()
 
     fetched = fetch_all(args.resources, args.limit)
@@ -163,8 +168,11 @@ def main() -> None:
         logger.info("seeded seen.json with %d entries, nothing posted", len(filtered))
         return
 
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+
     if config.ENRICH_ENABLED and not args.no_enrich:
-        new_items = enrich(new_items, dry_run=args.dry_run)
+        ai_enrich_key = None if args.no_ai_enrich else gemini_api_key
+        new_items = enrich(new_items, dry_run=args.dry_run, gemini_api_key=ai_enrich_key)
         logger.info("enriched: %d", len(new_items))
 
     if args.dry_run:
@@ -182,8 +190,8 @@ def main() -> None:
         )
         return
 
-    gemini_api_key = None if args.no_image_gen else os.environ.get("GEMINI_API_KEY")
-    posted = post_hackathons(token, chat_id, new_items, gemini_api_key)
+    image_gen_key = None if args.no_image_gen else gemini_api_key
+    posted = post_hackathons(token, chat_id, new_items, image_gen_key)
     logger.info("posted: %d / %d new", len(posted), len(new_items))
 
     for h in posted:

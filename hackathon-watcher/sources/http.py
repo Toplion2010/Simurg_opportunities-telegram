@@ -31,6 +31,15 @@ def get(url: str, retries: int | None = None, **kwargs) -> requests.Response:
                 raise requests.HTTPError(
                     f"{response.status_code} from {url}", response=response
                 )
+            # requests defaults to ISO-8859-1 per RFC 2616 when a server's
+            # Content-Type has no explicit charset, even when the body is
+            # actually UTF-8 (common — many of these sites omit it). That
+            # silently mangles non-ASCII text (₹, —, ×, accented names) in
+            # every parser downstream. `apparent_encoding` sniffs the real
+            # encoding from the bytes themselves.
+            content_type = response.headers.get("Content-Type", "")
+            if "charset" not in content_type.lower() and response.content:
+                response.encoding = response.apparent_encoding
             return response
         except (requests.Timeout, requests.HTTPError, requests.ConnectionError) as exc:
             last_exc = exc

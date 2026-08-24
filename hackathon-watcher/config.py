@@ -73,6 +73,17 @@ IMAGE_GEN_TIMEOUT: int = 30
 # GitHub Actions job's time budget, not just eventually succeed.
 IMAGE_GEN_RETRY_SCHEDULE: tuple[float, ...] = (0, 3, 8)
 
+# --- Generic AI-assisted enrichment (pipeline/generic_enrich.py) ---
+# Fallback for any source that hasn't defined its own enrich() (reskilll,
+# devevents, mlh, hackclub today). Tier 1 (free) sniffs schema.org JSON-LD
+# on the item's own url; Tier 2 (Gemini text model) only runs when Tier 1
+# finds nothing and GEMINI_API_KEY is set. Same key/model family as
+# image_gen.py, but a text model, not the image one.
+AI_ENRICH_ENABLED: bool = True
+GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"
+AI_ENRICH_PAGE_CHARS: int = 6000  # page text truncation before sending to Gemini
+AI_ENRICH_TIMEOUT: int = 20
+
 # --- HTTP ---
 REQUEST_TIMEOUT_SECONDS: int = 20
 REQUEST_RETRIES: int = 2

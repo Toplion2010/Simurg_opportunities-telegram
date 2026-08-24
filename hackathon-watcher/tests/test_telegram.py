@@ -275,3 +275,41 @@ def test_send_hackathon_skips_generation_without_api_key(monkeypatch):
 
     assert send_hackathon("tok", "chat", h, gemini_api_key=None) is True
     assert called == []
+
+
+# --- links line -----------------------------------------------------------
+
+def test_links_line_renders_valid_links():
+    h = _h(links=[{"label": "Rules", "url": "https://example.com/rules"}])
+    text = format_message(h)
+    assert '<a href="https://example.com/rules">Rules</a>' in text
+    assert "\U0001F517" in text
+
+
+def test_links_line_absent_when_no_links():
+    text = format_message(_h(links=[]))
+    assert "\U0001F517" not in text
+
+
+def test_links_line_caps_at_three():
+    links = [{"label": f"L{i}", "url": f"https://example.com/{i}"} for i in range(5)]
+    text = format_message(_h(links=links))
+    assert "L0" in text and "L1" in text and "L2" in text
+    assert "L3" not in text and "L4" not in text
+
+
+def test_links_line_drops_malformed_or_bad_scheme_entries():
+    h = _h(links=[
+        {"label": "Bad", "url": "javascript:alert(1)"},
+        {"label": "", "url": "https://example.com/x"},
+        {"label": "no url"},
+    ])
+    text = format_message(h)
+    assert "\U0001F517" not in text
+
+
+def test_links_line_escapes_adversarial_label_and_url():
+    h = _h(links=[{"label": '<script>alert(1)</script>', "url": 'https://example.com/"><script>x</script>'}])
+    text = format_message(h)
+    assert "<script>alert(1)</script>" not in text
+    assert "&lt;script&gt;" in text

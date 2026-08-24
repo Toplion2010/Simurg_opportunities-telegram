@@ -1,0 +1,190 @@
+from __future__ import annotations
+
+import json
+from datetime import date
+
+import config
+from pipeline.generic_enrich import generic_enrich
+from sources.base import Hackathon
+
+
+def _h(**overrides) -> Hackathon:
+    defaults = dict(
+        source="reskilll", source_id="1", title="Test Hack",
+        url="https://example.com/test-hack", starts_at=None, ends_at=None,
+        is_online=None, prize_text=None, location=None, themes=[], raw={},
+    )
+    defaults.update(overrides)
+    return Hackathon(**defaults)
+
+
+# --- Tier 1: JSON-LD sniff (no API key needed) ----------------------------
+
+def test_jsonld_tier_fills_description_prize_dates_online(fixture_response, monkeypatch):
+    response = fixture_response("generic_enrich_jsonld.html")
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: response)
+
+    enriched = generic_enrich(_h(), gemini_api_key=None)
+
+    assert enriched.description == "A fun hackathon with a $40,000 prize pool for everyone to enjoy."
+    assert enriched.prize_text == "$40,000"
+    assert enriched.is_online is False
+    assert enriched.starts_at == date(2026, 9, 1)
+    assert enriched.ends_at == date(2026, 9, 3)
+    assert enriched.title == "Test Hack"  # untouched
+
+
+def test_jsonld_tier_never_overwrites_existing_fields(fixture_response, monkeypatch):
+    response = fixture_response("generic_enrich_jsonld.html")
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: response)
+
+    original = _h(prize_text="already have this", is_online=True, starts_at=date(2020, 1, 1))
+    enriched = generic_enrich(original, gemini_api_key=None)
+
+    assert enriched.prize_text == "already have this"
+    assert enriched.is_online is True
+    assert enriched.starts_at == date(2020, 1, 1)
+    # fields that WERE empty still get filled
+    assert enriched.description
+
+
+def test_no_jsonld_and_no_api_key_returns_unchanged(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse("<html><body>plain page</body></html>"))
+    original = _h()
+    assert generic_enrich(original, gemini_api_key=None) == original
+
+
+def test_fetch_failure_returns_unchanged(monkeypatch):
+    def _raise(*a, **k):
+        raise ConnectionError("boom")
+
+    monkeypatch.setattr("pipeline.generic_enrich.get", _raise)
+    original = _h()
+    assert generic_enrich(original, gemini_api_key="fake-key") == original
+
+
+# --- Tier 2: Gemini text extraction ----------------------------------------
+
+def _fake_gemini_json_response(payload: dict):
+    from conftest import FakeResponse
+    body = {
+        "candidates": [
+            {"content": {"parts": [{"text": json.dumps(payload)}]}}
+        ]
+    }
+    return FakeResponse(json.dumps(body))
+
+
+def test_ai_tier_runs_when_jsonld_missing_and_key_present(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>No structured data, just prose about a great hackathon.</body></html>"),
+    )
+
+    ai_payload = {
+        "description": "A weekend hackathon for students to build AI projects.",
+        "prize_amount": 5000,
+        "prize_currency": "$",
+        "eligibility": "Students only",
+        "is_online": True,
+        "location": None,
+        "links": [{"label": "Rules", "url": "https://example.com/rules"}],
+    }
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, json, timeout: _fake_gemini_json_response(ai_payload),
+    )
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key")
+
+    assert enriched.description == "A weekend hackathon for students to build AI projects."
+    assert enriched.prize_text == "$5,000"
+    assert enriched.eligibility == "Students only"
+    assert enriched.is_online is True
+    assert enriched.links == [{"label": "Rules", "url": "https://example.com/rules"}]
+
+
+def test_ai_tier_skipped_without_api_key(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>No structured data here.</body></html>"),
+    )
+    calls = []
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda *a, **k: calls.append(1),
+    )
+
+    enriched = generic_enrich(_h(), gemini_api_key=None)
+    assert calls == []
+    assert enriched.description is None
+
+
+def test_ai_tier_drops_offdomain_or_malformed_links(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>No structured data, just prose.</body></html>"),
+    )
+
+    ai_payload = {
+        "description": None,
+        "prize_amount": None,
+        "prize_currency": None,
+        "eligibility": None,
+        "is_online": None,
+        "location": None,
+        "links": [
+            {"label": "Evil", "url": "https://evil.com/phish"},
+            {"label": "Bad scheme", "url": "javascript:alert(1)"},
+            {"label": "", "url": "https://example.com/empty-label"},
+            {"label": "Good", "url": "https://example.com/rules"},
+        ],
+    }
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, json, timeout: _fake_gemini_json_response(ai_payload),
+    )
+
+    enriched = generic_enrich(_h(url="https://example.com/test-hack"), gemini_api_key="fake-key")
+
+    assert enriched.links == [{"label": "Good", "url": "https://example.com/rules"}]
+
+
+def test_ai_tier_never_raises_on_api_failure(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>No structured data.</body></html>"),
+    )
+
+    def _raise(*a, **k):
+        raise ConnectionError("gemini is down")
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _raise)
+
+    original = _h()
+    assert generic_enrich(original, gemini_api_key="fake-key") == original
+
+
+def test_ai_tier_disabled_via_config(monkeypatch):
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(config, "AI_ENRICH_ENABLED", False)
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>No structured data.</body></html>"),
+    )
+    calls = []
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", lambda *a, **k: calls.append(1))
+
+    generic_enrich(_h(), gemini_api_key="fake-key")
+    assert calls == []
