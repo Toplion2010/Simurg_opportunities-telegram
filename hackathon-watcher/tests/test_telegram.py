@@ -109,6 +109,22 @@ def test_themes_capped_at_three():
     assert "#E" not in text
 
 
+def test_theme_with_slash_becomes_one_clean_hashtag():
+    """Telegram terminates a hashtag at the first non-word character, so
+    'Machine Learning/AI' with just spaces stripped would render as
+    '#MachineLearning' followed by a dangling, non-tagged '/AI'."""
+    text = format_message(_h(themes=["Machine Learning/AI"]))
+    assert "#MachineLearningAI" in text
+    assert "/AI" not in text
+    assert "#MachineLearning " not in text
+
+
+def test_theme_with_only_punctuation_is_dropped():
+    text = format_message(_h(themes=["/", "AI"]))
+    assert "#AI" in text
+    assert "# " not in text
+
+
 def test_no_optional_fields_no_empty_lines_or_orphan_emoji():
     h = _h(
         organizer=None, eligibility=None, themes=[], description=None,

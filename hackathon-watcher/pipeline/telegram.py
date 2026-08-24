@@ -93,11 +93,24 @@ def _organizer_line(h: Hackathon) -> str | None:
     return f"\U0001F3E2 {html.escape(h.organizer)}" if h.organizer else None
 
 
+_HASHTAG_STRIP_RE = re.compile(r"[^\w]+")
+
+
+def _to_hashtag(theme: str) -> str | None:
+    """Telegram terminates a hashtag at the first non-word character, so a
+    theme like 'Machine Learning/AI' can't just have spaces removed — the
+    '/' would silently cut it short and leave '/AI' dangling as plain text.
+    Strip every non-word character instead."""
+    cleaned = _HASHTAG_STRIP_RE.sub("", theme)
+    return f"#{html.escape(cleaned)}" if cleaned else None
+
+
 def _themes_line(h: Hackathon) -> str | None:
     if not h.themes:
         return None
-    tags = " ".join(f"#{html.escape(t).replace(' ', '')}" for t in h.themes[:THEMES_MAX])
-    return tags or None
+    tags = [_to_hashtag(t) for t in h.themes[:THEMES_MAX]]
+    tags = [t for t in tags if t]
+    return " ".join(tags) if tags else None
 
 
 def _assemble(core: str, eligibility: str | None, organizer: str | None,
