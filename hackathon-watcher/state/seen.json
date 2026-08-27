@@ -197,6 +197,12 @@
     "title": "CALL-E: Your Code Is Calling",
     "url": "https://call-e.devpost.com"
   },
+  "chain jam vol 1|2026-08-27": {
+    "ends_at": null,
+    "first_seen": "2026-08-27",
+    "title": "Chain Jam Vol. 1",
+    "url": "https://dev.events/conferences/chain-jam-vol-1-lc37xek8"
+  },
   "classify and segment intracranial aneurysms|None": {
     "ends_at": "2026-09-05",
     "first_seen": "2026-08-24",
@@ -419,6 +425,12 @@
     "title": "Interpretability for AI Mathematical Olympiad Reasoning",
     "url": "https://aimo-interp.github.io"
   },
+  "keeperhub the agent economy|2026-09-06": {
+    "ends_at": null,
+    "first_seen": "2026-08-27",
+    "title": "KeeperHub - The Agent Economy Hackathon",
+    "url": "https://dev.events/conferences/keeper-hub-the-agent-economy-hackathon-qcxqhyzh"
+  },
   "luma september 20th 28th|2026-06-26": {
     "ends_at": "2026-09-28",
     "first_seen": "2026-08-23",
@@ -436,6 +448,12 @@
     "first_seen": "2026-08-23",
     "title": "MUBA Blockchain Hackathon",
     "url": "https://muba-hackathon.devfolio.co"
+  },
+  "music from beatmind|2026-08-27": {
+    "ends_at": "2026-09-12",
+    "first_seen": "2026-08-27",
+    "title": "Music from BeatMind",
+    "url": "https://music-from-beatmind.devpost.com"
   },
   "nebius x nvidia global ai|2026-08-26": {
     "ends_at": "2026-10-30",
@@ -545,6 +563,12 @@
     "title": "Syntax Summit",
     "url": "https://syntax-summit.devpost.com"
   },
+  "techx rwanda|2026-08-27": {
+    "ends_at": "2026-09-03",
+    "first_seen": "2026-08-27",
+    "title": "TechX Rwanda Hackathon",
+    "url": "https://techx-rwanda-hackathon.devpost.com"
+  },
   "the great agent|2026-09-25": {
     "ends_at": "2026-09-26",
     "first_seen": "2026-08-23",
@@ -598,5 +622,11 @@
     "first_seen": "2026-08-24",
     "title": "Weak Lensing Uncertainty under Distribution Shift",
     "url": "https://fair-universe.lbl.gov"
+  },
+  "zero origin|2026-08-27": {
+    "ends_at": "2026-09-25",
+    "first_seen": "2026-08-27",
+    "title": "Zero Origin",
+    "url": "https://zero-origin.devpost.com"
   }
 }
