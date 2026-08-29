@@ -89,6 +89,51 @@ def test_devevents_enrich_keeps_listing_values_when_page_is_useless(monkeypatch)
     assert enriched.starts_at == date(2026, 8, 27)
 
 
+_IFRAME_PAGE = (
+    '<html><body><div class="iframe-wrapper">'
+    '<iframe title="embedded event\'s website" '
+    'src="https://dorahacks.io/hackathon/agent-economy/detail"></iframe>'
+    "</div></body></html>"
+)
+
+
+def test_devevents_enrich_follows_iframe_to_real_event_site(monkeypatch):
+    """Externally-hosted events are wrapped in an iframe; the wrapper has no
+    real content (and often errors), so the url must point at the target."""
+    from conftest import FakeResponse
+
+    monkeypatch.setattr("sources.devevents.get", lambda *a, **k: FakeResponse(_IFRAME_PAGE))
+
+    enriched = DevEventsSource().enrich(_listing_item())
+
+    assert enriched.url == "https://dorahacks.io/hackathon/agent-economy/detail"
+    assert enriched.title == _listing_item().title  # nothing else clobbered
+
+
+def test_devevents_enrich_ignores_self_referential_or_relative_iframe(monkeypatch):
+    from conftest import FakeResponse
+
+    page = (
+        '<html><body><div class="iframe-wrapper">'
+        '<iframe src="https://dev.events/embed/thing"></iframe>'
+        "</div></body></html>"
+    )
+    monkeypatch.setattr("sources.devevents.get", lambda *a, **k: FakeResponse(page))
+    h = _listing_item()
+
+    assert DevEventsSource().enrich(h).url == h.url
+
+
+def test_devevents_enrich_keeps_url_when_no_iframe(fixture_response, monkeypatch):
+    """Self-hosted events have no iframe — the dev.events url stays."""
+    monkeypatch.setattr(
+        "sources.devevents.get", lambda *a, **k: fixture_response("devevents_detail.html")
+    )
+    h = _listing_item()
+
+    assert DevEventsSource().enrich(h).url == h.url
+
+
 def test_devevents_enrich_survives_fetch_failure(monkeypatch):
     def boom(*a, **k):
         raise RuntimeError("connection reset")

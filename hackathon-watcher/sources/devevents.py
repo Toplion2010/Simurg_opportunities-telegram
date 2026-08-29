@@ -80,6 +80,21 @@ def _parse_description(description: str) -> tuple[date | None, bool | None, str 
         return None, None, None
 
 
+def _extract_embedded_event_url(soup: BeautifulSoup) -> str | None:
+    """dev.events pages for externally-hosted events are a thin wrapper that
+    iframes the real event site (dorahacks.io, ...). The wrapper carries no
+    description of its own and frequently renders "Something went wrong while
+    talking to the server", so the iframe target is both the only source of
+    real content and the better link to post."""
+    iframe = soup.select_one("div.iframe-wrapper iframe[src]")
+    if iframe is None:
+        return None
+    src = (iframe.get("src") or "").strip()
+    if not src.startswith(("http://", "https://")) or "dev.events" in src:
+        return None
+    return src
+
+
 def _parse_json_ld(soup: BeautifulSoup) -> dict | None:
     """dev.events renders its detail pages client-side, so the served HTML has
     almost no body text. The schema.org block is the only structured data in it."""
@@ -243,6 +258,13 @@ class DevEventsSource(Source):
             return hackathon
 
         soup = BeautifulSoup(response.text, "html.parser")
+
+        # Repoint at the real event site before anything else: the wrapper's
+        # own schema.org description is dev.events boilerplate ("Crypto /
+        # Blockchain hackathon Online"), so leaving the url here would leave
+        # the generic fallback nothing to read either.
+        embedded_url = _extract_embedded_event_url(soup)
+
         ld = _parse_json_ld(soup)
         if ld is None:
             logger.warning(
@@ -250,10 +272,9 @@ class DevEventsSource(Source):
                 "page structure may have changed",
                 hackathon.url,
             )
-            return hackathon
+            return dataclasses.replace(hackathon, url=embedded_url) if embedded_url else hackathon
 
-        return dataclasses.replace(
-            hackathon,
+        updates = dict(
             ends_at=_extract_end_date(ld) or hackathon.ends_at,
             description=_extract_description(ld),
             is_online=(
@@ -262,6 +283,9 @@ class DevEventsSource(Source):
             ),
             organizer=_extract_organizer(ld, hackathon.title) or hackathon.organizer,
         )
+        if embedded_url:
+            updates["url"] = embedded_url
+        return dataclasses.replace(hackathon, **updates)
 
     def _fetch_from_scrape(self) -> list[Hackathon]:
         try:
