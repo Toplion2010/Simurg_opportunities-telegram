@@ -258,7 +258,17 @@ def _call_gemini_text(prompt: str, api_key: str) -> dict | None:
         },
     }
     url = f"{_API_BASE}/{config.GEMINI_TEXT_MODEL}:generateContent?key={api_key}"
-    response = requests.post(url, json=payload, timeout=config.AI_ENRICH_TIMEOUT)
+    # These calls hang rather than fail fast, and the same page that times out
+    # succeeds on a later run, so one fresh attempt recovers most of them.
+    for attempt in range(config.AI_ENRICH_ATTEMPTS):
+        try:
+            response = requests.post(url, json=payload, timeout=config.AI_ENRICH_TIMEOUT)
+            break
+        except requests.exceptions.Timeout:
+            if attempt == config.AI_ENRICH_ATTEMPTS - 1:
+                raise
+            logger.warning("generic_enrich: Gemini timed out, retrying once")
+
     if response.status_code != 200:
         raise RuntimeError(f"Gemini API error {response.status_code}: {response.text[:300]}")
 

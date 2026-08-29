@@ -91,6 +91,7 @@ AI_ENRICH_PAGE_CHARS: int = 6000  # page text truncation before sending to Gemin
 # waiting on calls that ultimately fail, so this trades against
 # ENRICH_TIMEOUT_TOTAL rather than being maximised.
 AI_ENRICH_TIMEOUT: int = 30
+AI_ENRICH_ATTEMPTS: int = 2  # a timed-out call usually succeeds on a retry
 # Below this many visible characters, a raw fetch is treated as a JS-only
 # shell (confirmed live on ethglobal.com and kaggle.com: ~15-20 chars, just
 # the title) not worth sending to Gemini — Firecrawl (if configured) renders
@@ -99,7 +100,10 @@ AI_ENRICH_MIN_PAGE_CHARS: int = 200
 # Shorter than this is an aggregator's auto-generated stub, not a real
 # description (dev.events emits "Crypto / Blockchain hackathon Online").
 DESCRIPTION_MIN_CHARS: int = 40
-FIRECRAWL_TIMEOUT: int = 30
+# Firecrawl renders the page in a real browser before returning, so it needs
+# considerably longer than a plain fetch — 30s was cutting off dev.events
+# mid-render and losing the enrichment entirely.
+FIRECRAWL_TIMEOUT: int = 60
 
 # --- HTTP ---
 REQUEST_TIMEOUT_SECONDS: int = 20

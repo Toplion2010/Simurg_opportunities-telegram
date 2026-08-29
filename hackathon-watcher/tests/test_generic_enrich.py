@@ -308,6 +308,53 @@ def test_boilerplate_jsonld_description_is_rejected_and_iframe_followed(monkeypa
     assert enriched.ends_at == date(2026, 9, 18)  # wrapper's date still kept
 
 
+def test_gemini_timeout_is_retried_once(monkeypatch):
+    import requests as _requests
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>Plain prose, no structured data.</body></html>"),
+    )
+
+    calls = []
+
+    def _flaky_post(url, **kwargs):
+        calls.append(url)
+        if len(calls) == 1:
+            raise _requests.exceptions.Timeout("read timed out")
+        return _fake_gemini_json_response({
+            "description": "Extracted on the retry.", "prize_amount": None,
+            "prize_currency": None, "eligibility": None, "is_online": None,
+            "location": None, "links": [],
+        })
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _flaky_post)
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key")
+
+    assert len(calls) == 2
+    assert enriched.description == "Extracted on the retry."
+
+
+def test_gemini_timeout_on_every_attempt_never_raises(monkeypatch):
+    import requests as _requests
+    from conftest import FakeResponse
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda *a, **k: FakeResponse("<html><body>Plain prose here.</body></html>"),
+    )
+
+    def _always_timeout(url, **kwargs):
+        raise _requests.exceptions.Timeout("read timed out")
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _always_timeout)
+
+    original = _h()
+    assert generic_enrich(original, gemini_api_key="fake-key") == original
+
+
 def test_jsonld_markdown_description_is_flattened(monkeypatch):
     """DoraHacks ships markdown in schema.org description; '#' and '**' must
     not reach the post."""
