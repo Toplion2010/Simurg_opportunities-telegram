@@ -51,7 +51,11 @@ SEEN_PRUNE_DAYS: int = 60
 
 # --- Enrichment (pipeline/enrich.py) ---
 ENRICH_ENABLED: bool = True
-ENRICH_TIMEOUT_TOTAL: float = 120.0  # wall-clock budget per run, seconds
+# Wall-clock budget per run. Sized so a couple of slow AI calls can't starve
+# the rest of the queue: at 120s, two Gemini read timeouts were enough to push
+# 10 of 20 items through completely unenriched. A normal run only has a
+# handful of new items, so this ceiling is rarely approached.
+ENRICH_TIMEOUT_TOTAL: float = 600.0
 ENRICH_DETAIL_TIMEOUT: int = 15  # per detail-page request
 ENRICH_DETAIL_RETRIES: int = 1
 ENRICH_SLEEP_SECONDS: float = 1.0  # between detail fetches
@@ -82,10 +86,11 @@ IMAGE_GEN_RETRY_SCHEDULE: tuple[float, ...] = (0, 3, 8)
 AI_ENRICH_ENABLED: bool = True
 GEMINI_TEXT_MODEL: str = "gemini-3.6-flash"
 AI_ENRICH_PAGE_CHARS: int = 6000  # page text truncation before sending to Gemini
-# 20s proved too tight in production — the model reliably answers, but read
-# timeouts were the single largest cause of items posting without any
-# description (2 of 3 enrichment failures in an all-source audit run).
-AI_ENRICH_TIMEOUT: int = 45
+# 20s proved too tight in production (read timeouts were the largest cause of
+# items posting with no description), but every second here is also spent
+# waiting on calls that ultimately fail, so this trades against
+# ENRICH_TIMEOUT_TOTAL rather than being maximised.
+AI_ENRICH_TIMEOUT: int = 30
 # Below this many visible characters, a raw fetch is treated as a JS-only
 # shell (confirmed live on ethglobal.com and kaggle.com: ~15-20 chars, just
 # the title) not worth sending to Gemini — Firecrawl (if configured) renders
