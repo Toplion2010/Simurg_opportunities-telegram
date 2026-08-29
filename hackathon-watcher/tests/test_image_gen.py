@@ -124,6 +124,38 @@ def test_generate_image_retries_on_transient_then_succeeds(monkeypatch):
     assert len(calls) == 2
 
 
+def test_model_chain_starts_cheapest_and_never_uses_the_pro_model():
+    """gemini-3-pro-image costs $0.134-$0.24/image against $0.0336 for the lite
+    model — 3.4-6x — for a background nobody studies closely. It must not be
+    reachable at any retry depth."""
+    from pipeline.image_gen import _model_chain
+
+    chain = _model_chain()
+
+    assert chain[0] == "gemini-3.1-flash-lite-image"
+    assert not any("pro" in model for model in chain)
+
+
+def test_every_retry_stays_off_the_pro_model(monkeypatch):
+    """Retries rotate through the chain, so exhausting it must not escalate to
+    a pricier model than the run started with."""
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    monkeypatch.setattr(config, "IMAGE_GEN_RETRY_SCHEDULE", (0, 0, 0, 0, 0))
+    monkeypatch.setattr("pipeline.image_gen.time.sleep", lambda s: None)
+
+    urls = []
+
+    def fake_post(url, *a, **k):
+        urls.append(url)
+        return _FakeResponse({"error": "503 unavailable"}, status_code=503)
+
+    monkeypatch.setattr("pipeline.image_gen.requests.post", fake_post)
+
+    assert generate_image(_h(), "fake-key") is None
+    assert urls, "expected at least one attempt"
+    assert not any("pro" in url for url in urls)
+
+
 def test_generate_image_gives_up_on_non_transient_error(monkeypatch):
     monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
     monkeypatch.setattr(config, "IMAGE_GEN_RETRY_SCHEDULE", (0, 0, 0))

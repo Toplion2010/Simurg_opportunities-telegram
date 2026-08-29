@@ -43,9 +43,14 @@ _RAW_TEXT_EXCERPT_LEN = 400
 # Seconds to wait before each attempt. A 503 ("high demand") is a capacity spike
 # that outlasts a couple of seconds, so the old 5s/10s schedule almost always
 # gave up while the model was still busy. Each attempt also rotates to the next
-# model in the chain, because congestion is per-model — when 2.5-flash-image is
-# saturated a sibling model usually answers immediately.
-_RETRY_SCHEDULE = (0, 4, 10, 25, 45)
+# model in the chain, because congestion is per-model — when one model is
+# saturated a sibling usually answers immediately.
+#
+# Capped at 3 attempts: every attempt is a billed image generation, and the
+# 25s/45s ones arrived long after the free procedural fallback in
+# image_gen.generate_card() would have produced a perfectly good card. Three
+# keeps the outage tolerance that motivated retrying at all.
+_RETRY_SCHEDULE = (0, 4, 10)
 
 _TRANSIENT_MARKERS = (
     "rate", "429", "resource_exhausted", "quota", "500", "502", "503", "504",
@@ -383,6 +388,8 @@ async def generate_live_background(opp: "Opportunity") -> LiveBackground:
     from src.core.config import Settings
 
     settings = Settings()
+    if not settings.ENABLE_LIVE_BACKGROUND:
+        raise RuntimeError("ENABLE_LIVE_BACKGROUND is off")
     api_key = settings.GEMINI_API_KEY
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not configured")

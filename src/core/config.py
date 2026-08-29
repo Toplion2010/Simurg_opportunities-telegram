@@ -40,12 +40,19 @@ class Settings(BaseSettings):
 
     # Gemini — live per-post card background generation (image_gen.py)
     GEMINI_API_KEY: str = ""
-    GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+    # Cheapest image model first ($0.0336/image vs $0.039 for 2.5-flash-image).
+    GEMINI_IMAGE_MODEL: str = "gemini-3.1-flash-lite-image"
     # Tried in order when the primary returns 503/429. Congestion is per-model,
     # so a sibling usually answers instantly while the primary is saturated.
+    # gemini-3-pro-image is deliberately absent: at $0.134-$0.24/image it costs
+    # 3.4-6x the primary, and it was being reached on every 4th retry.
     GEMINI_IMAGE_FALLBACK_MODELS: str = (
-        "gemini-3.1-flash-image,gemini-3.1-flash-lite-image,gemini-3-pro-image"
+        "gemini-2.5-flash-image,gemini-3.1-flash-image"
     )
+    # Emergency brake for the per-post background generation. Separate from
+    # GEMINI_API_KEY so image spend can be stopped without also disabling
+    # ENABLE_IMAGE_ANALYSIS below, which reads the same key.
+    ENABLE_LIVE_BACKGROUND: bool = True
     # Gemini vision — reads text/details out of a post's attached poster image so
     # facts shown only on the image (e.g. a prize amount) reach the extractor.
     GEMINI_VISION_MODEL: str = "gemini-flash-latest"

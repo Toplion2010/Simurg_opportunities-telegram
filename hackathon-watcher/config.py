@@ -67,9 +67,12 @@ ENRICH_SLEEP_SECONDS: float = 1.0  # between detail fetches
 # generator (src/publisher/live_background.py) — read from the environment
 # in main.py, not stored here, matching TELEGRAM_BOT_TOKEN's convention.
 IMAGE_GEN_ENABLED: bool = True
-GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+# Cheapest image model first ($0.0336/image vs $0.039 for 2.5-flash-image), and
+# gemini-3-pro-image dropped from the chain entirely — at $0.134-$0.24/image it
+# costs 3.4-6x the primary for a background nobody reads closely.
+GEMINI_IMAGE_MODEL: str = "gemini-3.1-flash-lite-image"
 GEMINI_IMAGE_FALLBACK_MODELS: list[str] = [
-    "gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-3-pro-image",
+    "gemini-2.5-flash-image", "gemini-3.1-flash-image",
 ]
 IMAGE_GEN_TIMEOUT: int = 30
 # Lighter than Simurg's card generator (0,4,10,25,45s) — this bot posts up
