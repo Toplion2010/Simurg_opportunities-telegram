@@ -1,0 +1,47 @@
+name: Channel Setup
+
+# Manual only — the channel's pinned post and About text change when the
+# source list or post format does, not on a schedule.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the message without sending it"
+        type: boolean
+        required: false
+        default: true
+      edit_message_id:
+        description: "Rewrite this existing pinned post instead of posting a new one (leave empty to post a new one)"
+        required: false
+        default: ""
+      skip_description:
+        description: "Leave the channel's About text untouched"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: hackathon-watcher
+        run: pip install -r requirements.txt
+
+      - name: Publish navigation post
+        working-directory: hackathon-watcher
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.HACKATHON_WATCHER_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.HACKATHON_WATCHER_CHAT_ID }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ -n "${{ inputs.edit_message_id }}" ]; then ARGS="$ARGS --edit ${{ inputs.edit_message_id }}"; fi
+          if [ "${{ inputs.skip_description }}" = "true" ]; then ARGS="$ARGS --skip-description"; fi
+          python setup_channel.py $ARGS

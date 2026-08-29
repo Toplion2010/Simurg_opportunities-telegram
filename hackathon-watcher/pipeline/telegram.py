@@ -230,16 +230,88 @@ def _post(method: str, payload: dict) -> requests.Response | None:
     return None
 
 
-def send_message(token: str, chat_id: str, text: str) -> bool:
-    """Send a plain text message. Returns True on success."""
+def send_message_returning_id(
+    token: str, chat_id: str, text: str, disable_preview: bool = False
+) -> int | None:
+    """Send a plain text message, returning its message_id (needed to pin or
+    later edit it). None on failure."""
     response = _post(
         f"bot{token}/sendMessage",
-        {"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": False},
+        {
+            "chat_id": chat_id, "text": text, "parse_mode": "HTML",
+            "disable_web_page_preview": disable_preview,
+        },
+    )
+    if response is None:
+        return None
+    if not response.ok:
+        logger.error("telegram: sendMessage failed (%s): %s", response.status_code, response.text)
+        return None
+    try:
+        return response.json()["result"]["message_id"]
+    except (ValueError, KeyError):
+        logger.error("telegram: sendMessage returned no message_id: %s", response.text[:300])
+        return None
+
+
+def send_message(token: str, chat_id: str, text: str) -> bool:
+    """Send a plain text message. Returns True on success."""
+    return send_message_returning_id(token, chat_id, text) is not None
+
+
+def edit_message(token: str, chat_id: str, message_id: int, text: str,
+                 disable_preview: bool = False) -> bool:
+    """Rewrite an already-posted message in place — how the pinned navigation
+    post gets updated without unpinning or re-posting it."""
+    response = _post(
+        f"bot{token}/editMessageText",
+        {
+            "chat_id": chat_id, "message_id": message_id, "text": text,
+            "parse_mode": "HTML", "disable_web_page_preview": disable_preview,
+        },
     )
     if response is None:
         return False
     if not response.ok:
-        logger.error("telegram: sendMessage failed (%s): %s", response.status_code, response.text)
+        logger.error("telegram: editMessageText failed (%s): %s", response.status_code, response.text)
+        return False
+    return True
+
+
+def pin_message(token: str, chat_id: str, message_id: int) -> bool:
+    """Pin silently — a pin notification to every subscriber is noise for a
+    reference post they can find at the top anyway."""
+    response = _post(
+        f"bot{token}/pinChatMessage",
+        {"chat_id": chat_id, "message_id": message_id, "disable_notification": True},
+    )
+    if response is None:
+        return False
+    if not response.ok:
+        logger.error("telegram: pinChatMessage failed (%s): %s", response.status_code, response.text)
+        return False
+    return True
+
+
+CHAT_DESCRIPTION_MAX = 255
+
+
+def set_chat_description(token: str, chat_id: str, description: str) -> bool:
+    """Set the channel's About text. Telegram caps this at 255 characters and
+    rejects the whole call if it's longer, so it's enforced here."""
+    if len(description) > CHAT_DESCRIPTION_MAX:
+        logger.error(
+            "telegram: description is %d chars, max is %d",
+            len(description), CHAT_DESCRIPTION_MAX,
+        )
+        return False
+    response = _post(
+        f"bot{token}/setChatDescription", {"chat_id": chat_id, "description": description}
+    )
+    if response is None:
+        return False
+    if not response.ok:
+        logger.error("telegram: setChatDescription failed (%s): %s", response.status_code, response.text)
         return False
     return True
 
