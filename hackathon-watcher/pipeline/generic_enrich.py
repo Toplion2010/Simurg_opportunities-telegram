@@ -139,20 +139,45 @@ def _extract_from_jsonld(event: dict) -> dict:
 # --- Tier 3: Firecrawl-rendered text (for JS-only pages) ------------------
 
 
-def _firecrawl_page_text(url: str, api_key: str) -> str | None:
+def _firecrawl_page(url: str, api_key: str) -> tuple[str | None, str]:
+    """Returns (visible text, raw html). The html is what lets a wrapper
+    page's iframe target be found even when the site blocks this bot's
+    own fetches outright."""
     response = requests.post(
         _FIRECRAWL_SCRAPE_URL,
         headers={"Authorization": f"Bearer {api_key}"},
-        json={"url": url, "formats": ["markdown"], "onlyMainContent": True},
+        json={"url": url, "formats": ["markdown", "rawHtml"], "onlyMainContent": False},
         timeout=config.FIRECRAWL_TIMEOUT,
     )
     if response.status_code != 200:
         raise RuntimeError(f"Firecrawl API error {response.status_code}: {response.text[:300]}")
-    data = response.json()
-    markdown = ((data.get("data") or {}).get("markdown")) or None
-    if not markdown or not markdown.strip():
+    data = (response.json().get("data") or {})
+    raw_html = data.get("rawHtml") or ""
+    markdown = data.get("markdown") or ""
+    text = re.sub(r"\s+", " ", markdown).strip()[: config.AI_ENRICH_PAGE_CHARS] if markdown.strip() else None
+    return text, raw_html
+
+
+def _firecrawl_page_text(url: str, api_key: str) -> str | None:
+    return _firecrawl_page(url, api_key)[0]
+
+
+_IFRAME_SRC_RE = re.compile(r"<iframe[^>]+src=[\"'](https?://[^\"']+)[\"']", re.IGNORECASE)
+
+
+def _wrapper_iframe_target(html: str, page_url: str) -> str | None:
+    """Some aggregators (dev.events) serve a shell whose only real content is
+    an off-domain iframe of the actual event site. That target is both the
+    only readable content and the better link to post."""
+    if not html:
         return None
-    return re.sub(r"\s+", " ", markdown).strip()[: config.AI_ENRICH_PAGE_CHARS]
+    domain = urlsplit(page_url).netloc
+    for match in _IFRAME_SRC_RE.finditer(html):
+        src = match.group(1)
+        netloc = urlsplit(src).netloc
+        if netloc and netloc != domain and not netloc.endswith(f".{domain}"):
+            return src
+    return None
 
 
 # --- Tier 2: Gemini text extraction ---------------------------------------
@@ -270,27 +295,49 @@ def _extract_via_ai(hackathon: Hackathon, page_text: str, api_key: str) -> dict:
 # --- Orchestrator ----------------------------------------------------------
 
 
-def generic_enrich(
-    hackathon: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
-) -> Hackathon:
-    # A failed fetch is not the end of the road: sites that block this bot's
-    # user agent outright (dev.events 403s it) still render fine through
-    # Firecrawl's browser infrastructure, so fall through with empty html
-    # rather than giving up — the thin-page branch below picks it up.
-    html = ""
+def _load_page(url: str, firecrawl_api_key: str | None) -> str | None:
+    """Page html, preferring a plain fetch and falling back to Firecrawl when
+    the site blocks this bot outright (dev.events 403s datacenter IPs) or
+    serves a JS-only shell. None means nothing readable was obtained."""
     try:
-        response = get(
-            hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
-        )
+        response = get(url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES)
         response.raise_for_status()
         html = response.text
     except Exception:
         if not firecrawl_api_key:
-            logger.warning("generic_enrich: fetch failed for %s", hackathon.url, exc_info=True)
-            return hackathon
-        logger.warning(
-            "generic_enrich: fetch failed for %s, trying Firecrawl render", hackathon.url
-        )
+            logger.warning("generic_enrich: fetch failed for %s", url, exc_info=True)
+            return None
+        logger.warning("generic_enrich: fetch failed for %s, trying Firecrawl render", url)
+        html = ""
+
+    if firecrawl_api_key and len(_page_text(html) if html else "") < config.AI_ENRICH_MIN_PAGE_CHARS:
+        try:
+            _, rendered_html = _firecrawl_page(url, firecrawl_api_key)
+            if rendered_html:
+                return rendered_html
+        except Exception:
+            logger.warning("generic_enrich: Firecrawl render failed for %s", url, exc_info=True)
+
+    return html or None
+
+
+def generic_enrich(
+    hackathon: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
+) -> Hackathon:
+    html = _load_page(hackathon.url, firecrawl_api_key)
+    if html is None:
+        return hackathon
+
+    # A shell whose only content is an off-domain iframe (dev.events wraps
+    # externally-hosted events this way) has nothing to read and posts a link
+    # that often renders an error — follow it to the real event page once.
+    target = _wrapper_iframe_target(html, hackathon.url)
+    if target and len(_page_text(html)) < config.AI_ENRICH_MIN_PAGE_CHARS:
+        logger.info("generic_enrich: following wrapper iframe %s -> %s", hackathon.url, target)
+        target_html = _load_page(target, firecrawl_api_key)
+        if target_html:
+            hackathon = dataclasses.replace(hackathon, url=target)
+            html = target_html
 
     fields: dict = {}
     try:
@@ -302,16 +349,7 @@ def generic_enrich(
 
     if not fields and gemini_api_key and config.AI_ENRICH_ENABLED:
         try:
-            text = _page_text(html) if html else ""
-            if len(text) < config.AI_ENRICH_MIN_PAGE_CHARS and firecrawl_api_key:
-                try:
-                    rendered = _firecrawl_page_text(hackathon.url, firecrawl_api_key)
-                    if rendered:
-                        text = rendered
-                except Exception:
-                    logger.warning(
-                        "generic_enrich: Firecrawl render failed for %s", hackathon.url, exc_info=True
-                    )
+            text = _page_text(html)
             if text:
                 fields = _extract_via_ai(hackathon, text, gemini_api_key)
         except Exception:

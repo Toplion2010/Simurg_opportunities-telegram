@@ -129,7 +129,10 @@ def test_firecrawl_tier_used_when_raw_page_too_thin(monkeypatch):
     def _fake_post(url, **kwargs):
         calls.append(url)
         if "firecrawl" in url:
-            return FakeResponse(json.dumps({"data": {"markdown": "Real rendered content about the hackathon."}}))
+            return FakeResponse(json.dumps({"data": {
+                "markdown": "Real rendered content about the hackathon.",
+                "rawHtml": "<html><body>Real rendered content about the hackathon.</body></html>",
+            }}))
         return _fake_gemini_json_response(ai_payload)
 
     monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
@@ -221,7 +224,10 @@ def test_blocked_fetch_falls_through_to_firecrawl(monkeypatch):
 
     def _fake_post(url, **kwargs):
         if "firecrawl" in url:
-            return FakeResponse(json.dumps({"data": {"markdown": "Real content behind the 403."}}))
+            return FakeResponse(json.dumps({"data": {
+                "markdown": "Real content behind the 403.",
+                "rawHtml": "<html><body>Real content behind the 403.</body></html>",
+            }}))
         return _fake_gemini_json_response({
             "description": "recovered via firecrawl", "prize_amount": None,
             "prize_currency": None, "eligibility": None, "is_online": None,
@@ -233,6 +239,61 @@ def test_blocked_fetch_falls_through_to_firecrawl(monkeypatch):
     enriched = generic_enrich(_h(), gemini_api_key="fake-key", firecrawl_api_key="fc-key")
 
     assert enriched.description == "recovered via firecrawl"
+
+
+def test_wrapper_iframe_is_followed_to_the_real_event_page(monkeypatch):
+    """dev.events serves a shell that iframes the real site; enrichment must
+    read the target and repoint the posted url at it."""
+    from conftest import FakeResponse
+
+    wrapper = (
+        '<html><body><div class="iframe-wrapper">'
+        '<iframe src="https://dorahacks.io/hackathon/agent-economy/detail"></iframe>'
+        "</div></body></html>"
+    )
+    real = "<html><body>" + ("Real event content with all the details. " * 12) + "</body></html>"
+
+    def _fake_get(url, **kwargs):
+        return FakeResponse(real if "dorahacks" in url else wrapper)
+
+    monkeypatch.setattr("pipeline.generic_enrich.get", _fake_get)
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, **k: _fake_gemini_json_response({
+            "description": "From the real event page.", "prize_amount": 5000,
+            "prize_currency": "USD", "eligibility": None, "is_online": None,
+            "location": None, "links": [],
+        }),
+    )
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key")
+
+    assert enriched.url == "https://dorahacks.io/hackathon/agent-economy/detail"
+    assert enriched.description == "From the real event page."
+    assert enriched.prize_text == "USD 5,000"
+
+
+def test_same_domain_iframe_is_not_followed(monkeypatch):
+    """Only an off-domain iframe signals a wrapper — a same-site embed
+    (a video, a map) must not hijack the posted url."""
+    from conftest import FakeResponse
+
+    page = (
+        '<html><body><div class="iframe-wrapper">'
+        '<iframe src="https://example.com/embed/player"></iframe>'
+        "</div></body></html>"
+    )
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse(page))
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, **k: _fake_gemini_json_response({
+            "description": None, "prize_amount": None, "prize_currency": None,
+            "eligibility": None, "is_online": None, "location": None, "links": [],
+        }),
+    )
+
+    original = _h()
+    assert generic_enrich(original, gemini_api_key="fake-key").url == original.url
 
 
 def test_blocked_fetch_without_firecrawl_key_returns_unchanged(monkeypatch):
