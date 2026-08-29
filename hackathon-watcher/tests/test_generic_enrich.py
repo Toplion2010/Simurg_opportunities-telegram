@@ -308,6 +308,43 @@ def test_boilerplate_jsonld_description_is_rejected_and_iframe_followed(monkeypa
     assert enriched.ends_at == date(2026, 9, 18)  # wrapper's date still kept
 
 
+def test_jsonld_markdown_description_is_flattened(monkeypatch):
+    """DoraHacks ships markdown in schema.org description; '#' and '**' must
+    not reach the post."""
+    from conftest import FakeResponse
+
+    page = (
+        '<html><head><script type="application/ld+json">'
+        '{"@type":"Event","description":"# The theme\\n\\n**KeeperHub** executes '
+        'deterministically, on demand, with a full auditable record of everything."}'
+        "</script></head><body>x</body></html>"
+    )
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse(page))
+
+    enriched = generic_enrich(_h(), gemini_api_key=None)
+
+    assert enriched.description is not None
+    assert "#" not in enriched.description
+    assert "**" not in enriched.description
+    assert enriched.description.startswith("The theme KeeperHub executes")
+
+
+def test_labelled_prize_pool_is_extracted_from_page_text(monkeypatch):
+    """'Prize Pool 5,000 USD' puts the amount after the label and the currency
+    after the amount — the symbol-first pattern alone never matches it."""
+    from conftest import FakeResponse
+
+    page = (
+        '<html><head><script type="application/ld+json">'
+        '{"@type":"Event","description":"A serious hackathon for agent builders '
+        'with a long enough description to clear the stub guard."}'
+        "</script></head><body>Prize Pool 5,000 USD</body></html>"
+    )
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse(page))
+
+    assert generic_enrich(_h(), gemini_api_key=None).prize_text == "USD 5,000"
+
+
 def test_firecrawl_rewritten_iframe_is_recognised(monkeypatch):
     """Firecrawl rewrites <iframe> to <div data-original-tag="iframe">, so the
     wrapper target has to be found in that shape too."""

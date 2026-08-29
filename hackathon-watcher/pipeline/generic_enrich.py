@@ -40,6 +40,7 @@ from bs4 import BeautifulSoup
 
 import config
 from pipeline.format_prize import _format_amount
+from pipeline.text import strip_markdown
 from sources.base import Hackathon
 from sources.http import get
 
@@ -52,6 +53,26 @@ _LD_JSON_RE = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</s
 _PRIZE_NEAR_WORD_RE = re.compile(
     r"[$€£₹][\d,]+(?:\.\d+)?\s*(?:in\s*)?prizes?(?:\s*pool)?", re.IGNORECASE
 )
+_CURRENCY_CODES = "USD|EUR|GBP|INR|CAD|AUD"
+# "Prize Pool 5,000 USD" (DoraHacks) — the amount trails the label and the
+# currency trails the amount, so the symbol-first pattern above never sees it.
+_PRIZE_LABELLED_RE = re.compile(
+    rf"prizes?\s*pool\s*[:\-]?\s*(?:(?P<sym>[$€£₹])\s*(?P<amt1>[\d,]+(?:\.\d+)?)"
+    rf"|(?P<amt2>[\d,]+(?:\.\d+)?)\s*(?P<code>{_CURRENCY_CODES})\b)",
+    re.IGNORECASE,
+)
+
+
+def _find_prize_in_text(text: str) -> str | None:
+    match = _PRIZE_NEAR_WORD_RE.search(text)
+    if match:
+        return match.group(0).split()[0]
+    match = _PRIZE_LABELLED_RE.search(text)
+    if match:
+        if match.group("sym"):
+            return f"{match.group('sym')}{match.group('amt1')}"
+        return f"{match.group('code').upper()} {match.group('amt2')}"
+    return None
 
 _RESPONSE_SCHEMA = {
     "type": "object",
@@ -113,7 +134,9 @@ def _extract_from_jsonld(event: dict) -> dict:
     raw_description = event.get("description")
     if raw_description:
         text = BeautifulSoup(str(raw_description), "html.parser").get_text(" ", strip=True)
-        text = re.sub(r"\s+", " ", text).strip()
+        # Sites put markdown in this field (DoraHacks ships "# The theme\n\n…"),
+        # which would render as literal '#' and '**' in the post.
+        text = strip_markdown(text)
         # Aggregators synthesise a "description" from the category and format
         # ("Crypto / Blockchain hackathon Online"), which only repeats what the
         # post already shows. Same floor as devevents.py's own guard.
@@ -121,9 +144,9 @@ def _extract_from_jsonld(event: dict) -> dict:
             text = ""
         if text:
             fields["description"] = text[:500]
-            prize_match = _PRIZE_NEAR_WORD_RE.search(text)
-            if prize_match:
-                fields["prize_text"] = prize_match.group(0).split()[0]
+            prize = _find_prize_in_text(text)
+            if prize:
+                fields["prize_text"] = prize
 
     mode = event.get("eventAttendanceMode") or ""
     if "Online" in mode:
@@ -363,6 +386,17 @@ def _extract_all(html: str, hackathon: Hackathon, gemini_api_key: str | None) ->
                 fields = _extract_via_ai(hackathon, text, gemini_api_key)
         except Exception:
             logger.warning("generic_enrich: AI tier failed for %s", hackathon.url, exc_info=True)
+
+    # The prize is often page furniture ("Prize Pool 5,000 USD" in DoraHacks'
+    # header) rather than part of any description, so it needs its own sweep
+    # over the visible text — free, and it runs whichever tier produced the rest.
+    if fields and not fields.get("prize_text"):
+        try:
+            prize = _find_prize_in_text(_page_text(html))
+            if prize:
+                fields["prize_text"] = prize
+        except Exception:
+            logger.warning("generic_enrich: prize sweep failed for %s", hackathon.url, exc_info=True)
 
     return fields
 

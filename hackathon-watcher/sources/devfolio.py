@@ -16,6 +16,7 @@ import re
 from datetime import date, datetime
 
 import config
+from pipeline.text import strip_markdown
 from sources.base import Hackathon, Source
 from sources.http import get
 
@@ -29,9 +30,6 @@ _DATA_SCRIPT_RE = re.compile(
 DESCRIPTION_MAX_CHARS = 400
 # Common markdown noise devfolio organizers' "desc" text carries — stripped
 # rather than rendered, since the Telegram caption is plain text.
-_MD_HEADER_RE = re.compile(r"^#{1,6}\s*", re.M)
-_MD_BOLD_ITALIC_RE = re.compile(r"[*_]{1,3}")
-_MD_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 
 
 def _parse_iso(text: str | None) -> date | None:
@@ -43,11 +41,7 @@ def _parse_iso(text: str | None) -> date | None:
         return None
 
 
-def _strip_markdown(text: str) -> str:
-    text = _MD_LINK_RE.sub(r"\1", text)
-    text = _MD_HEADER_RE.sub("", text)
-    text = _MD_BOLD_ITALIC_RE.sub("", text)
-    return re.sub(r"\s+", " ", text).strip()
+_strip_markdown = strip_markdown
 
 
 def _find_open_hackathons(obj) -> list[dict] | None:
