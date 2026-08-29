@@ -114,6 +114,11 @@ def _extract_from_jsonld(event: dict) -> dict:
     if raw_description:
         text = BeautifulSoup(str(raw_description), "html.parser").get_text(" ", strip=True)
         text = re.sub(r"\s+", " ", text).strip()
+        # Aggregators synthesise a "description" from the category and format
+        # ("Crypto / Blockchain hackathon Online"), which only repeats what the
+        # post already shows. Same floor as devevents.py's own guard.
+        if len(text) < config.DESCRIPTION_MIN_CHARS:
+            text = ""
         if text:
             fields["description"] = text[:500]
             prize_match = _PRIZE_NEAR_WORD_RE.search(text)
@@ -164,6 +169,15 @@ def _firecrawl_page_text(url: str, api_key: str) -> str | None:
 
 _IFRAME_SRC_RE = re.compile(r"<iframe[^>]+src=[\"'](https?://[^\"']+)[\"']", re.IGNORECASE)
 
+# Ordinary embeds (a promo video, a venue map, a signup form) are not the
+# event's real home and must never hijack the posted url.
+_EMBED_HOSTS = (
+    "youtube.com", "youtube-nocookie.com", "youtu.be", "vimeo.com", "loom.com",
+    "google.com", "gstatic.com", "doubleclick.net", "twitter.com", "x.com",
+    "facebook.com", "instagram.com", "spotify.com", "soundcloud.com",
+    "typeform.com", "airtable.com", "calendly.com", "recaptcha.net",
+)
+
 
 def _wrapper_iframe_target(html: str, page_url: str) -> str | None:
     """Some aggregators (dev.events) serve a shell whose only real content is
@@ -174,9 +188,12 @@ def _wrapper_iframe_target(html: str, page_url: str) -> str | None:
     domain = urlsplit(page_url).netloc
     for match in _IFRAME_SRC_RE.finditer(html):
         src = match.group(1)
-        netloc = urlsplit(src).netloc
-        if netloc and netloc != domain and not netloc.endswith(f".{domain}"):
-            return src
+        netloc = urlsplit(src).netloc.lower()
+        if not netloc or netloc == domain or netloc.endswith(f".{domain}"):
+            continue
+        if any(netloc == h or netloc.endswith(f".{h}") for h in _EMBED_HOSTS):
+            continue
+        return src
     return None
 
 
@@ -321,24 +338,8 @@ def _load_page(url: str, firecrawl_api_key: str | None) -> str | None:
     return html or None
 
 
-def generic_enrich(
-    hackathon: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
-) -> Hackathon:
-    html = _load_page(hackathon.url, firecrawl_api_key)
-    if html is None:
-        return hackathon
-
-    # A shell whose only content is an off-domain iframe (dev.events wraps
-    # externally-hosted events this way) has nothing to read and posts a link
-    # that often renders an error — follow it to the real event page once.
-    target = _wrapper_iframe_target(html, hackathon.url)
-    if target and len(_page_text(html)) < config.AI_ENRICH_MIN_PAGE_CHARS:
-        logger.info("generic_enrich: following wrapper iframe %s -> %s", hackathon.url, target)
-        target_html = _load_page(target, firecrawl_api_key)
-        if target_html:
-            hackathon = dataclasses.replace(hackathon, url=target)
-            html = target_html
-
+def _extract_all(html: str, hackathon: Hackathon, gemini_api_key: str | None) -> dict:
+    """Tier 1 (JSON-LD) then, only if it yielded nothing, Tier 2 (Gemini)."""
     fields: dict = {}
     try:
         event = _find_jsonld_event(html)
@@ -354,6 +355,34 @@ def generic_enrich(
                 fields = _extract_via_ai(hackathon, text, gemini_api_key)
         except Exception:
             logger.warning("generic_enrich: AI tier failed for %s", hackathon.url, exc_info=True)
+
+    return fields
+
+
+def generic_enrich(
+    hackathon: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
+) -> Hackathon:
+    html = _load_page(hackathon.url, firecrawl_api_key)
+    if html is None:
+        return hackathon
+
+    fields = _extract_all(html, hackathon, gemini_api_key)
+
+    # No usable description means this page is likely a shell wrapping the
+    # real event site in an off-domain iframe (dev.events does exactly this,
+    # and the link it would post often renders an error). Follow it once and
+    # prefer whatever the real page yields.
+    if not fields.get("description"):
+        target = _wrapper_iframe_target(html, hackathon.url)
+        if target:
+            logger.info("generic_enrich: following wrapper iframe %s -> %s", hackathon.url, target)
+            target_html = _load_page(target, firecrawl_api_key)
+            if target_html:
+                hackathon = dataclasses.replace(hackathon, url=target)
+                target_fields = _extract_all(target_html, hackathon, gemini_api_key)
+                # The wrapper still owns the authoritative dates; let the real
+                # page fill everything it actually found on top of them.
+                fields = {**fields, **{k: v for k, v in target_fields.items() if v}}
 
     if not fields:
         return hackathon

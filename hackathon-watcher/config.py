@@ -91,6 +91,9 @@ AI_ENRICH_TIMEOUT: int = 45
 # the title) not worth sending to Gemini — Firecrawl (if configured) renders
 # the page with real JS execution instead.
 AI_ENRICH_MIN_PAGE_CHARS: int = 200
+# Shorter than this is an aggregator's auto-generated stub, not a real
+# description (dev.events emits "Crypto / Blockchain hackathon Online").
+DESCRIPTION_MIN_CHARS: int = 40
 FIRECRAWL_TIMEOUT: int = 30
 
 # --- HTTP ---

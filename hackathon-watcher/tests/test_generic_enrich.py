@@ -273,6 +273,63 @@ def test_wrapper_iframe_is_followed_to_the_real_event_page(monkeypatch):
     assert enriched.prize_text == "USD 5,000"
 
 
+def test_boilerplate_jsonld_description_is_rejected_and_iframe_followed(monkeypatch):
+    """dev.events' real shape: a JSON-LD block whose description is an
+    auto-generated category stub, plus an iframe holding the real event."""
+    from conftest import FakeResponse
+
+    wrapper = (
+        '<html><head><script type="application/ld+json">'
+        '{"@type":"EducationEvent","description":"Crypto / Blockchain hackathon Online",'
+        '"endDate":"2026-09-18T00:00:00.000+00:00"}'
+        '</script></head><body><div class="iframe-wrapper">'
+        '<iframe src="https://dorahacks.io/hackathon/agent-economy/detail"></iframe>'
+        "</div></body></html>"
+    )
+    real = "<html><body>" + ("Real event content. " * 20) + "</body></html>"
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda url, **k: FakeResponse(real if "dorahacks" in url else wrapper),
+    )
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, **k: _fake_gemini_json_response({
+            "description": "The real hackathon description.", "prize_amount": 5000,
+            "prize_currency": "USD", "eligibility": None, "is_online": None,
+            "location": None, "links": [],
+        }),
+    )
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key")
+
+    assert enriched.description == "The real hackathon description."
+    assert enriched.url == "https://dorahacks.io/hackathon/agent-economy/detail"
+    assert enriched.ends_at == date(2026, 9, 18)  # wrapper's date still kept
+
+
+def test_known_embed_iframe_is_not_followed(monkeypatch):
+    """A promo video embed must never hijack the posted url."""
+    from conftest import FakeResponse
+
+    page = (
+        "<html><body>Sparse page."
+        '<iframe src="https://www.youtube.com/embed/abc123"></iframe>'
+        "</body></html>"
+    )
+    monkeypatch.setattr("pipeline.generic_enrich.get", lambda *a, **k: FakeResponse(page))
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, **k: _fake_gemini_json_response({
+            "description": None, "prize_amount": None, "prize_currency": None,
+            "eligibility": None, "is_online": None, "location": None, "links": [],
+        }),
+    )
+
+    original = _h()
+    assert generic_enrich(original, gemini_api_key="fake-key").url == original.url
+
+
 def test_same_domain_iframe_is_not_followed(monkeypatch):
     """Only an off-domain iframe signals a wrapper — a same-site embed
     (a video, a map) must not hijack the posted url."""
