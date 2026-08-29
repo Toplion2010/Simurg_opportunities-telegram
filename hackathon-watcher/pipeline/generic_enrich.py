@@ -167,7 +167,9 @@ def _firecrawl_page_text(url: str, api_key: str) -> str | None:
     return _firecrawl_page(url, api_key)[0]
 
 
-_IFRAME_SRC_RE = re.compile(r"<iframe[^>]+src=[\"'](https?://[^\"']+)[\"']", re.IGNORECASE)
+# Firecrawl rewrites <iframe> into <div data-original-tag="iframe"> (keeping
+# src), so both shapes have to be recognised.
+_IFRAME_SELECTOR = 'iframe[src], [data-original-tag="iframe"][src]'
 
 # Ordinary embeds (a promo video, a venue map, a signup form) are not the
 # event's real home and must never hijack the posted url.
@@ -186,8 +188,14 @@ def _wrapper_iframe_target(html: str, page_url: str) -> str | None:
     if not html:
         return None
     domain = urlsplit(page_url).netloc
-    for match in _IFRAME_SRC_RE.finditer(html):
-        src = match.group(1)
+    try:
+        candidates = BeautifulSoup(html, "html.parser").select(_IFRAME_SELECTOR)
+    except Exception:
+        return None
+    for tag in candidates:
+        src = (tag.get("src") or "").strip()
+        if not src.startswith(("http://", "https://")):
+            continue
         netloc = urlsplit(src).netloc.lower()
         if not netloc or netloc == domain or netloc.endswith(f".{domain}"):
             continue

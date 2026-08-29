@@ -308,6 +308,37 @@ def test_boilerplate_jsonld_description_is_rejected_and_iframe_followed(monkeypa
     assert enriched.ends_at == date(2026, 9, 18)  # wrapper's date still kept
 
 
+def test_firecrawl_rewritten_iframe_is_recognised(monkeypatch):
+    """Firecrawl rewrites <iframe> to <div data-original-tag="iframe">, so the
+    wrapper target has to be found in that shape too."""
+    from conftest import FakeResponse
+
+    wrapper = (
+        '<html><body><div class="iframe-wrapper">'
+        '<div data-original-tag="iframe" src="https://dorahacks.io/hackathon/agent-economy/detail">'
+        "</div></div></body></html>"
+    )
+    real = "<html><body>" + ("Real event content. " * 20) + "</body></html>"
+
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.get",
+        lambda url, **k: FakeResponse(real if "dorahacks" in url else wrapper),
+    )
+    monkeypatch.setattr(
+        "pipeline.generic_enrich.requests.post",
+        lambda url, **k: _fake_gemini_json_response({
+            "description": "Found through the rewritten iframe.", "prize_amount": None,
+            "prize_currency": None, "eligibility": None, "is_online": None,
+            "location": None, "links": [],
+        }),
+    )
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key")
+
+    assert enriched.url == "https://dorahacks.io/hackathon/agent-economy/detail"
+    assert enriched.description == "Found through the rewritten iframe."
+
+
 def test_known_embed_iframe_is_not_followed(monkeypatch):
     """A promo video embed must never hijack the posted url."""
     from conftest import FakeResponse
