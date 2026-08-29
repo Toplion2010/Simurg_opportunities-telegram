@@ -82,7 +82,10 @@ IMAGE_GEN_RETRY_SCHEDULE: tuple[float, ...] = (0, 3, 8)
 AI_ENRICH_ENABLED: bool = True
 GEMINI_TEXT_MODEL: str = "gemini-3.6-flash"
 AI_ENRICH_PAGE_CHARS: int = 6000  # page text truncation before sending to Gemini
-AI_ENRICH_TIMEOUT: int = 20
+# 20s proved too tight in production — the model reliably answers, but read
+# timeouts were the single largest cause of items posting without any
+# description (2 of 3 enrichment failures in an all-source audit run).
+AI_ENRICH_TIMEOUT: int = 45
 # Below this many visible characters, a raw fetch is treated as a JS-only
 # shell (confirmed live on ethglobal.com and kaggle.com: ~15-20 chars, just
 # the title) not worth sending to Gemini — Firecrawl (if configured) renders

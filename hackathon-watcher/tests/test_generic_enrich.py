@@ -209,6 +209,41 @@ def test_firecrawl_failure_falls_back_to_raw_ai_extraction(monkeypatch):
     assert enriched.description == "fallback description"
 
 
+def test_blocked_fetch_falls_through_to_firecrawl(monkeypatch):
+    """A site that 403s this bot's user agent (dev.events does) is still
+    readable through Firecrawl's browser infrastructure."""
+    from conftest import FakeResponse
+
+    def _raise(*a, **k):
+        raise ConnectionError("403 Forbidden")
+
+    monkeypatch.setattr("pipeline.generic_enrich.get", _raise)
+
+    def _fake_post(url, **kwargs):
+        if "firecrawl" in url:
+            return FakeResponse(json.dumps({"data": {"markdown": "Real content behind the 403."}}))
+        return _fake_gemini_json_response({
+            "description": "recovered via firecrawl", "prize_amount": None,
+            "prize_currency": None, "eligibility": None, "is_online": None,
+            "location": None, "links": [],
+        })
+
+    monkeypatch.setattr("pipeline.generic_enrich.requests.post", _fake_post)
+
+    enriched = generic_enrich(_h(), gemini_api_key="fake-key", firecrawl_api_key="fc-key")
+
+    assert enriched.description == "recovered via firecrawl"
+
+
+def test_blocked_fetch_without_firecrawl_key_returns_unchanged(monkeypatch):
+    def _raise(*a, **k):
+        raise ConnectionError("403 Forbidden")
+
+    monkeypatch.setattr("pipeline.generic_enrich.get", _raise)
+    original = _h()
+    assert generic_enrich(original, gemini_api_key="fake-key", firecrawl_api_key=None) == original
+
+
 def test_ai_tier_skipped_without_api_key(monkeypatch):
     from conftest import FakeResponse
 

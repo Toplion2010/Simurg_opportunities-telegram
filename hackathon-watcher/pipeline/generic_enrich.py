@@ -273,6 +273,11 @@ def _extract_via_ai(hackathon: Hackathon, page_text: str, api_key: str) -> dict:
 def generic_enrich(
     hackathon: Hackathon, gemini_api_key: str | None, firecrawl_api_key: str | None = None
 ) -> Hackathon:
+    # A failed fetch is not the end of the road: sites that block this bot's
+    # user agent outright (dev.events 403s it) still render fine through
+    # Firecrawl's browser infrastructure, so fall through with empty html
+    # rather than giving up — the thin-page branch below picks it up.
+    html = ""
     try:
         response = get(
             hackathon.url, timeout=config.ENRICH_DETAIL_TIMEOUT, retries=config.ENRICH_DETAIL_RETRIES
@@ -280,8 +285,12 @@ def generic_enrich(
         response.raise_for_status()
         html = response.text
     except Exception:
-        logger.warning("generic_enrich: fetch failed for %s", hackathon.url, exc_info=True)
-        return hackathon
+        if not firecrawl_api_key:
+            logger.warning("generic_enrich: fetch failed for %s", hackathon.url, exc_info=True)
+            return hackathon
+        logger.warning(
+            "generic_enrich: fetch failed for %s, trying Firecrawl render", hackathon.url
+        )
 
     fields: dict = {}
     try:
@@ -293,7 +302,7 @@ def generic_enrich(
 
     if not fields and gemini_api_key and config.AI_ENRICH_ENABLED:
         try:
-            text = _page_text(html)
+            text = _page_text(html) if html else ""
             if len(text) < config.AI_ENRICH_MIN_PAGE_CHARS and firecrawl_api_key:
                 try:
                     rendered = _firecrawl_page_text(hackathon.url, firecrawl_api_key)
