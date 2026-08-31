@@ -161,6 +161,12 @@
     "title": "Build On-Device LLMs for Laptop Hardware",
     "url": "https://adtc-2026.devpost.com"
   },
+  "build ship shape amazon developer|2026-08-31": {
+    "ends_at": "2026-10-23",
+    "first_seen": "2026-08-31",
+    "title": "Build, Ship, Shape: Amazon Developer Hackathon",
+    "url": "https://amazonappdev2026.devpost.com"
+  },
   "build speech recognition systems for caribbean voices|2025-11-17": {
     "ends_at": "2026-12-07",
     "first_seen": "2026-08-23",
@@ -322,6 +328,12 @@
     "first_seen": "2026-08-24",
     "title": "Fund My Crazy by Google",
     "url": "https://google-ai-workshop-hackathon.devpost.com"
+  },
+  "gator quant hacks|2026-10-02": {
+    "ends_at": "2026-10-04",
+    "first_seen": "2026-08-31",
+    "title": "Gator Quant Hacks",
+    "url": "https://www.gqhacks.com"
   },
   "generate synthetic humanitarian survey responses|2026-08-01": {
     "ends_at": "2026-11-14",
@@ -598,6 +610,12 @@
     "first_seen": "2026-08-24",
     "title": "Segment Lesions in Whole-Body Scans",
     "url": "https://autopet-v.grand-challenge.org"
+  },
+  "speed fall classic|2026-08-31": {
+    "ends_at": "2026-09-26",
+    "first_seen": "2026-08-31",
+    "title": "SPEED Fall Classic",
+    "url": "https://prometheus-fall-classic.devpost.com"
   },
   "speed virgo challenge|2026-08-31": {
     "ends_at": "2026-09-19",
