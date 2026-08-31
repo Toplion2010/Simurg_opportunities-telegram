@@ -599,6 +599,12 @@
     "title": "Segment Lesions in Whole-Body Scans",
     "url": "https://autopet-v.grand-challenge.org"
   },
+  "speed virgo challenge|2026-08-31": {
+    "ends_at": "2026-09-19",
+    "first_seen": "2026-08-31",
+    "title": "SPEED Virgo Challenge",
+    "url": "https://virgo.devpost.com"
+  },
   "syntax summit|2026-07-18": {
     "ends_at": "2026-09-05",
     "first_seen": "2026-08-23",
