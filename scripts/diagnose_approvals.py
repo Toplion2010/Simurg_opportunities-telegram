@@ -282,6 +282,11 @@ async def check_hackathon_channel(token: str, settings: Settings) -> None:
             print(f"  getMe FAILED: {me.get('description')!r}")
             return
         bot_id = me["result"]["id"]
+        bot_username = me["result"].get("username")
+        # Printed BEFORE the membership call, which fails outright when the bot
+        # is not in the channel — and "which bot do I add?" is precisely what
+        # you need answered in that case.
+        print(f"  bot        @{bot_username} (id={bot_id}) — this is the one to add")
 
         member = await call("getChatMember", chat_id=chat_id, user_id=bot_id)
         if not member.get("ok"):
@@ -291,7 +296,7 @@ async def check_hackathon_channel(token: str, settings: Settings) -> None:
         result = member["result"]
         status = result.get("status")
         can_post = result.get("can_post_messages")
-        print(f"  bot @{me['result'].get('username')} status={status} can_post_messages={can_post}")
+        print(f"  status     {status} can_post_messages={can_post}")
         if status == "administrator" and can_post:
             print("  -> OK: the bot can publish here.")
         else:
