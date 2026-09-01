@@ -196,10 +196,18 @@ def _report(label: str, rows: list) -> None:
         print("    would be NULL just as often.")
     else:
         print(f"    Locations are populated ({1 - no_signal / total:.0%} non-blank, non-online).")
-        print(f"    Matcher hit rate over those: {matched_rows / (total - no_signal):.0%}.")
-        print("    >=60% of what YOU read as KZ in the unmatched list above -> ship as-is.")
-        print("    Systematically unusable strings -> that is the one result that would")
-        print("    justify a schema change.")
+        # NOT recall. This number cannot tell "the matcher missed a KZ location"
+        # apart from "the location simply is not KZ", and most of a global feed
+        # is the latter. Recall is only readable off the unmatched list below.
+        print(f"    KZ SHARE of populated locations: {matched_rows / (total - no_signal):.0%}")
+        print("    (this is a property of the sources, NOT the matcher's hit rate)")
+        print()
+        print("    Now read the UNMATCHED list above and count how many YOU read as")
+        print("    Kazakhstan. That count is the only measure of what the matcher is")
+        print("    missing:")
+        print("      ~none missed        -> recall is fine, ship as-is")
+        print("      some missed         -> add those tokens to src/core/geo.py, re-run")
+        print("      systematically bad  -> the one result that justifies a schema change")
 
 
 async def check_geo(settings: Settings) -> None:
