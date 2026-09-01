@@ -53,6 +53,11 @@ jobs:
           TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          # Optional third channel: KZ hackathons publish here as well as to
+          # the audience channels above. Unset expands to "" and Settings()
+          # coerces that back to 0 (feature off), so this line is safe to merge
+          # before the secret exists.
+          DEST_CHANNEL_ID_HACKATHON: ${{ secrets.DEST_CHANNEL_ID_HACKATHON }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           ENVIRONMENT: production

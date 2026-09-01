@@ -6,11 +6,15 @@ Simurg publishes to two channels today, split by audience: `DEST_CHANNEL_ID_SCHO
 `DEST_CHANNEL_ID_UNIVERSITY`. Hackathons are the operator's highest-interest category and
 currently sit mixed in with scholarships and internships in both.
 
-This plan adds a **third channel that is category-routed, not audience-routed**, and moves
-hackathons into it exclusively.
+This plan adds a **third channel that is category-routed, not audience-routed**.
 
-**Decision already taken:** hackathons publish to the hackathon channel **only** — they
-leave school and university entirely.
+> **SUPERSEDED — routing is additive, nothing moves.** This plan's original decision
+> (hackathons publish to the hackathon channel *only*, leaving school and university) was
+> reversed by `.claude/plans/build-a-free-serverless-purrfect-bunny.md`, which shipped
+> instead: a **Kazakhstan** hackathon publishes to the hackathon channel *in addition to*
+> its normal audience channels. The false decision and the "hackathons have moved"
+> announcement have been deleted from this file rather than left to be shipped by mistake.
+> The config/CI reasoning below is still sound and was reused.
 
 > **Prerequisite, not a dependency.** The triage plan (`PLAN_TRIAGE.md`) is independent.
 > This one can ship before, after, or without it. If the triage plan ships first, the
@@ -293,17 +297,6 @@ a category-tag list would contain exactly one working tag.
 >    both current plans.
 >
 > Option 2 is the safe default; option 1 is better if you will genuinely do it.
-
-### Announcement for the two existing channels — REQUIRED
-
-Hackathons will disappear from school and university. Without notice that reads as the
-channel getting worse. Post in both:
-
-> **📢 Хакатоны переехали**
->
-> Теперь все хакатоны выходят в отдельном канале — так их проще не пропустить, а этот канал остаётся про стипендии, стажировки и гранты.
->
-> 👉 @simurg_hackathons
 
 ### Promo copy — for posting in student chats and university groups
 

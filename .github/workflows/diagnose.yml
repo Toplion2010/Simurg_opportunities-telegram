@@ -31,5 +31,9 @@ jobs:
           TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          # Read by check_hackathon_channel to confirm the secret matches the
+          # channel it resolves. Empty before the secret exists, which the check
+          # handles by falling back to the public @username.
+          DEST_CHANNEL_ID_HACKATHON: ${{ secrets.DEST_CHANNEL_ID_HACKATHON }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -m scripts.diagnose_approvals

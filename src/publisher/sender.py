@@ -5,8 +5,9 @@ from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
 from src.core.config import Settings
-from src.core.enums import Audience, OpportunityStatus
+from src.core.enums import Audience, Category, OpportunityStatus
 from src.core.exceptions import PublishError
+from src.core.geo import match_kazakhstan
 from src.core.logging import get_logger
 from src.db.models.opportunity import Opportunity
 from src.publisher.formatter import format_opportunity
@@ -37,15 +38,52 @@ class OpportunitySender:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    def _resolve_targets(self, audience: Audience) -> list[int]:
+    def _resolve_targets(self, opp: Opportunity) -> list[int]:
         school = self._settings.DEST_CHANNEL_ID_SCHOOL
         university = self._settings.DEST_CHANNEL_ID_UNIVERSITY
         # Total over the 3 Audience members — 'none' structurally can't exist here.
-        if audience == Audience.school:
-            return [school]
-        if audience == Audience.university:
-            return [university]
-        return [school, university]  # both
+        if opp.audience == Audience.school:
+            targets = [school]
+        elif opp.audience == Audience.university:
+            targets = [university]
+        else:
+            targets = [school, university]  # both
+
+        # Extras go LAST, so if a rate limit hits mid-loop in publish() the
+        # audience channels are already out and only the optional leg is lost.
+        for chat_id in self._extra_channels(opp):
+            # A fat-fingered secret equal to the school or university id would
+            # otherwise double-post the same card to that channel.
+            if chat_id not in targets:
+                targets.append(chat_id)
+        return targets
+
+    def _extra_channels(self, opp: Opportunity) -> list[int]:
+        """Dedicated channels an opportunity ALSO belongs in.
+
+        Never replaces audience routing — a failure here must not cost the
+        school/university post (see the ``if not result.succeeded`` guard in
+        publish()). An unset channel is deliberately a silent no-op rather than
+        an error: nothing is stranded by it, since the audience channels still
+        receive the post either way.
+
+        Reading opp.category/opp.location after a commit is safe —
+        create_session_factory sets expire_on_commit=False (src/db/session.py:7).
+        """
+        chat_id = self._settings.DEST_CHANNEL_ID_HACKATHON
+        if not chat_id or opp.category != Category.Hackathon:
+            return []
+        token = match_kazakhstan(opp.location)
+        if not token:
+            return []
+        # The matched token, so a misroute is diagnosable from this line alone.
+        logger.info(
+            "hackathon_channel_routed",
+            opp_id=opp.id,
+            location=opp.location,
+            matched=token,
+        )
+        return [chat_id]
 
     async def publish(self, opp: Opportunity, bot: Bot) -> PublishResult:
         # format_opportunity trims the About section to fit _CAPTION_LIMIT when
@@ -55,7 +93,7 @@ class OpportunitySender:
         # follow-up message below.
         caption = format_opportunity(opp)
         photo_caption = format_opportunity(opp, max_length=_CAPTION_LIMIT)
-        targets = self._resolve_targets(opp.audience)
+        targets = self._resolve_targets(opp)
 
         # Generate the card ONCE — Gemini + Playwright render is expensive and
         # non-deterministic per call, so a "both" post must reuse one image.
@@ -102,6 +140,11 @@ class OpportunitySender:
             opp_id=opp.id,
             title=opp.title,
             audience=opp.audience.value,
+            # category/targets are the only after-the-fact evidence of WHERE a
+            # post went, which matters now that routing is no longer a pure
+            # function of audience.
+            category=opp.category.value if opp.category else None,
+            targets=targets,
             succeeded=result.succeeded,
             failed=[c for c, _ in result.failed],
         )

@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # Destination channels — audience-based routing (school vs university)
     DEST_CHANNEL_ID_SCHOOL: int
     DEST_CHANNEL_ID_UNIVERSITY: int
+    # Category-based routing, layered ON TOP of the audience channels above: a
+    # Kazakhstan hackathon also goes here (src/publisher/sender.py). 0 = off,
+    # and a sentinel default rather than a bare int because botcheck.yml and
+    # vercelcheck.yml boot Settings() with fake env that has no such variable.
+    DEST_CHANNEL_ID_HACKATHON: int = 0
 
     # LLM — Groq (primary) or OpenAI-compatible
     GROQ_API_KEY: str = ""
@@ -109,6 +114,18 @@ class Settings(BaseSettings):
             return v
         import json
         return json.loads(v)
+
+    @field_validator("DEST_CHANNEL_ID_HACKATHON", mode="before")
+    @classmethod
+    def blank_channel_to_off(cls, v: str | int | None) -> str | int:
+        # A missing ${{ secrets.X }} expands to the EMPTY STRING in GitHub
+        # Actions and the env var is still set, so pydantic gets int("") and
+        # Settings() raises at boot — killing every batch and drain run, not
+        # just this feature. Coerce blank back to the "off" sentinel so the
+        # workflow env lines can merge before the secret exists.
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return 0
+        return v
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
