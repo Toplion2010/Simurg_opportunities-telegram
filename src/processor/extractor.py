@@ -210,17 +210,30 @@ class FieldExtractor:
             relevance_profile=settings.RELEVANCE_PROFILE,
         )
 
-        # Groq client (OpenAI-compatible)
-        self._llm_client = openai.AsyncOpenAI(
-            api_key=settings.GROQ_API_KEY,
-            base_url=settings.GROQ_BASE_URL,
-        )
+        # Groq client (OpenAI-compatible), built on FIRST USE rather than here.
+        #
+        # openai.AsyncOpenAI() raises at construction when no api_key is set,
+        # and PipelineFactory builds a FieldExtractor unconditionally. That made
+        # a Groq key mandatory for every caller that merely *constructs* the
+        # pipeline — including the web collector, which supplies already
+        # structured DTOs and never calls extract() at all. Deferring the client
+        # keeps the key a requirement of using the LLM, not of importing it.
+        self._llm_client_instance: openai.AsyncOpenAI | None = None
         self._llm_model = settings.GROQ_MODEL
 
         # Separate OpenAI client used only for embeddings (optional)
         self._embed_client: openai.AsyncOpenAI | None = None
         if settings.OPENAI_API_KEY:
             self._embed_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+
+    @property
+    def _llm_client(self) -> openai.AsyncOpenAI:
+        if self._llm_client_instance is None:
+            self._llm_client_instance = openai.AsyncOpenAI(
+                api_key=self._settings.GROQ_API_KEY,
+                base_url=self._settings.GROQ_BASE_URL,
+            )
+        return self._llm_client_instance
 
     @retry(
         retry=retry_if_exception_type((openai.RateLimitError, openai.APIError)),
