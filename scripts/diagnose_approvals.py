@@ -305,6 +305,66 @@ async def check_hackathon_channel(token: str, settings: Settings) -> None:
             print("     Manage -> Administrators -> Add Admin -> the bot -> Post Messages.")
 
 
+async def check_routing_preview(settings: Settings) -> None:
+    """Where would publish() actually send each hackathon, right now?
+
+    Runs the REAL _resolve_targets over real rows with the real Settings, and
+    sends nothing. This is the one link the other checks cannot cover on their
+    own: the matcher can be right AND the secret can be right while the two are
+    still not wired to each other.
+
+    Chat ids print as *** once they are registered secrets, so the target COUNT
+    and the hackathon_channel flag are what carry the information here.
+    """
+    # Imported here, not at module scope, so the checks above still run in
+    # environments without aiogram installed.
+    from src.publisher.sender import OpportunitySender
+
+    sender = OpportunitySender(settings)
+    engine = create_async_engine(settings.DATABASE_URL)
+    try:
+        async with engine.connect() as conn:
+            rows = (
+                await conn.execute(
+                    select(
+                        Opportunity.id,
+                        Opportunity.location,
+                        Opportunity.audience,
+                        Opportunity.category,
+                    ).where(Opportunity.category == Category.Hackathon)
+                )
+            ).all()
+    finally:
+        await engine.dispose()
+
+    print()
+    print(f"=== routing preview — Hackathon rows (n={len(rows)}) ===")
+    if not settings.DEST_CHANNEL_ID_HACKATHON:
+        print("  DEST_CHANNEL_ID_HACKATHON is 0 -> nothing can route. Feature is off.")
+
+    routed = 0
+    for row in rows:
+        # Transient, never added to a session: _resolve_targets reads only these.
+        opp = Opportunity(
+            id=row.id,
+            location=row.location,
+            audience=row.audience,
+            category=row.category,
+        )
+        targets = sender._resolve_targets(opp)
+        hit = bool(settings.DEST_CHANNEL_ID_HACKATHON) and (
+            settings.DEST_CHANNEL_ID_HACKATHON in targets
+        )
+        routed += hit
+        print(
+            f"  id={row.id:<5} targets={len(targets)}  "
+            f"hackathon_channel={'YES' if hit else 'no '}  {row.location!r}"
+        )
+
+    print()
+    print(f"  -> {routed} of {len(rows)} hackathon rows would ALSO reach the hackathons channel.")
+
+
 async def check_gemini_models(api_key: str) -> None:
     """List image-capable models, so a 503 fallback chain uses real model names."""
     print("\n=== Gemini models supporting image output ===")
@@ -329,6 +389,7 @@ async def main() -> None:
     await check_db(settings)
     await check_geo(settings)
     await check_hackathon_channel(os.environ["BOT_TOKEN"], settings)
+    await check_routing_preview(settings)
     if settings.GEMINI_API_KEY:
         await check_gemini_models(settings.GEMINI_API_KEY)
 
