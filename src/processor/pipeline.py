@@ -10,7 +10,7 @@ from src.processor.age import parse_min_age
 from src.processor.classifier import CategoryClassifier
 from src.processor.cleaner import TextCleaner
 from src.processor.deduplicator import Deduplicator
-from src.processor.extractor import FieldExtractor
+from src.processor.extractor import FieldExtractor, OpportunityDTO
 from src.processor.source_link import build_source_url
 from src.processor.vision import ImageReader
 
@@ -41,31 +41,57 @@ class ProcessingPipeline:
         raw: RawMessage,
         media_path: str | None = None,
         source_channel: SourceChannel | None = None,
+        dtos: list[OpportunityDTO] | None = None,
+        source_url: str | None = None,
     ) -> list[Opportunity]:
-        if not raw.text:
+        """Turn one raw item into Opportunity rows.
+
+        ``dtos`` lets a caller supply already-structured fields and SKIP the LLM
+        extractor entirely. The web collector uses this: its catalogs expose
+        JSON-LD and a REST API, so an extraction call would spend Groq's
+        free-tier budget re-deriving fields we were handed. Everything after
+        extraction — classification, the Job drop, the audience default, the age
+        gate, dedup, the row build — is shared by both paths on purpose, so a
+        scraped opportunity is governed by exactly the same rules as a
+        Telegram one.
+
+        ``source_url`` overrides the t.me permalink for sources that have their
+        own canonical page.
+        """
+        if dtos is None and not raw.text:
             return []
 
-        source_url = build_source_url(source_channel, raw.telegram_msg_id)
+        if source_url is None:
+            source_url = build_source_url(source_channel, raw.telegram_msg_id)
+
+        source_label = None
+        if source_channel is not None:
+            source_label = source_channel.identifier or source_channel.username
 
         results: list[Opportunity] = []
         try:
-            clean_text = self._cleaner.clean(raw.text)
+            if dtos is None:
+                clean_text = self._cleaner.clean(raw.text)
 
-            # Read any attached poster image so facts shown only on the image
-            # (prize amounts, deadlines, eligibility) reach the extractor too.
-            extraction_input = clean_text
-            if media_path:
-                image_text = await self._image_reader.read(media_path)
-                if image_text:
-                    extraction_input = (
-                        f"{clean_text}\n\n"
-                        "[Text and details read from the post's attached poster image "
-                        "(treat these as facts too — the caption may omit them):]\n"
-                        f"{image_text}"
-                    )
-                    logger.info("image_text_extracted", raw_id=raw.id, chars=len(image_text))
+                # Read any attached poster image so facts shown only on the image
+                # (prize amounts, deadlines, eligibility) reach the extractor too.
+                extraction_input = clean_text
+                if media_path:
+                    image_text = await self._image_reader.read(media_path)
+                    if image_text:
+                        extraction_input = (
+                            f"{clean_text}\n\n"
+                            "[Text and details read from the post's attached poster image "
+                            "(treat these as facts too — the caption may omit them):]\n"
+                            f"{image_text}"
+                        )
+                        logger.info("image_text_extracted", raw_id=raw.id, chars=len(image_text))
 
-            dtos = await self._extractor.extract(extraction_input)
+                dtos = await self._extractor.extract(extraction_input)
+            else:
+                # Pre-structured input. The age gate below still needs a text
+                # blob to regex over; the DTO's own fields are all we have.
+                extraction_input = raw.text or ""
 
             for dto in dtos:
                 if not dto.is_opportunity:
@@ -114,10 +140,22 @@ class ProcessingPipeline:
                     )
                     audience = RawAudience.university
 
+                hash_key = self._deduplicator.make_hash(dto)
                 if await self._deduplicator.check(dto, self._opp_repo):
+                    # Logged because this `continue` is the ONLY place
+                    # cross-source overlap is observable. Without it there is no
+                    # way to answer "what does a new source actually add that
+                    # the other 40 didn't", which is the stop rule for keeping
+                    # a source at all (PLAN_SOURCE_AUDIT.md:227-232).
+                    logger.info(
+                        "duplicate_skipped",
+                        raw_id=raw.id,
+                        title=dto.title,
+                        hash=hash_key,
+                        source=source_label,
+                    )
                     continue
 
-                hash_key = self._deduplicator.make_hash(dto)
                 opp = Opportunity(
                     raw_message_id=raw.id,
                     title=dto.title,

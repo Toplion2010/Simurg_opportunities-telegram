@@ -1,0 +1,42 @@
+[
+ {
+  "id": 33,
+  "name": "Club",
+  "slug": "club"
+ },
+ {
+  "id": 34,
+  "name": "College Course",
+  "slug": "college-course"
+ },
+ {
+  "id": 35,
+  "name": "Competition",
+  "slug": "competition"
+ },
+ {
+  "id": 36,
+  "name": "Program",
+  "slug": "program"
+ },
+ {
+  "id": 37,
+  "name": "Research",
+  "slug": "research"
+ },
+ {
+  "id": 38,
+  "name": "Scholarship",
+  "slug": "scholarship"
+ },
+ {
+  "id": 39,
+  "name": "Summer Program",
+  "slug": "summer-program"
+ },
+ {
+  "id": 102,
+  "name": "Volunteer Opportunity",
+  "slug": "volunteer-opportunity"
+ }
+]

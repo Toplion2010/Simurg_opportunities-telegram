@@ -1,0 +1,22 @@
+[
+ {
+  "id": 57,
+  "name": "Advanced",
+  "slug": "advanced"
+ },
+ {
+  "id": 55,
+  "name": "Beginner",
+  "slug": "beginner"
+ },
+ {
+  "id": 56,
+  "name": "Intermediate",
+  "slug": "intermediate"
+ },
+ {
+  "id": 58,
+  "name": "Varies",
+  "slug": "varies"
+ }
+]

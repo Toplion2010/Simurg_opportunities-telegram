@@ -1,0 +1,101 @@
+name: Scrape web opportunity catalogs
+
+on:
+  schedule:
+    # Once a day, 08:00 Astana (UTC+5). Deliberately infrequent: the per-run cap
+    # is WEB_MAX_ITEMS_PER_RUN (40), and hammering two small volunteer-run sites
+    # harder buys nothing — the backlog is finite and shrinks either way.
+    - cron: "13 3 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Only this registry key (extracurricularhub | sirel). Blank = all."
+        required: false
+        default: ""
+      limit:
+        description: "Items per source this run. Blank = WEB_MAX_ITEMS_PER_RUN (40)."
+        required: false
+        default: ""
+
+concurrency:
+  # Shared with batch.yml and drain.yml. This job never publishes, so it cannot
+  # double-post — but it writes to the same database that batch.yml migrates,
+  # and an ALTER running under an active writer is not worth the risk.
+  group: simurg-runtime
+  cancel-in-progress: false
+
+jobs:
+  webscan:
+    runs-on: ubuntu-latest
+    # 40 items/source at ~1s pacing plus SIREL's 18-page listing walk against a
+    # site that answers in ~4s. Comfortable headroom, not an expected duration.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # The [scrape] extra pulls curl_cffi, which is REQUIRED for sirel.org:
+          # its WAF fingerprints the TLS handshake, so httpx and urllib get 403
+          # where curl gets 200. Without the extra that source yields nothing.
+          pip install -e ".[scrape]"
+
+      # No `playwright install` here on purpose: this routine never renders a
+      # card. Cards are rendered at publish time by drain.yml.
+
+      - name: Run database migrations
+        # 0006 makes source_channels.telegram_id nullable and adds kind /
+        # identifier / cursor. Without it every query below fails on a missing
+        # column. batch.yml migrates the same way; whichever runs first wins and
+        # the other is a no-op.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+        run: alembic upgrade head
+
+      - name: Seed web source rows
+        # Idempotent: adds missing rows, reactivates existing ones, never
+        # duplicates. Runs every time because there is no other way to execute
+        # it — this project has no local run path, so a one-off manual step
+        # would be a step nobody can perform.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+        run: python -m scripts.seed_web_sources
+
+      - name: Scrape and ingest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          # Required by Settings() but unused on this path — the web collector
+          # touches no Telegram account and no LLM provider.
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          DEST_CHANNEL_ID_HACKATHON: ${{ secrets.DEST_CHANNEL_ID_HACKATHON }}
+          ENVIRONMENT: production
+          LOCAL_DEV: "false"
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.source }}" ]; then ARGS="$ARGS --source ${{ inputs.source }}"; fi
+          if [ -n "${{ inputs.limit }}" ]; then ARGS="$ARGS --limit ${{ inputs.limit }}"; fi
+          python -m src.routines.web_collector $ARGS
