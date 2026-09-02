@@ -33,7 +33,7 @@ The repo is **public**, so Actions minutes are unlimited/free.
 |---|---|---|
 | `batch.yml` | cron `7 1,5,9,13,17 * * *` + manual | Collect → process → publish. Sets `SIMURG_SKIP_DRAIN=true`. |
 | `drain.yml` | cron `*/10` + manual | Apply admin taps → publish. **Sole `getUpdates` consumer.** |
-| `diagnose.yml` | manual only | Read-only health check (webhook state, pending count, DB status, Gemini models, KZ geo signal in `location`). |
+| `diagnose.yml` | manual only | Read-only health check (webhook state, pending count, DB status, Gemini models, KZ geo signal in `location`, hackathons-channel access, and a routing preview showing which rows would reach which channels). |
 | `preview.yml` | manual only | Renders real cards, uploads JPEGs as artifacts, publishes nothing. |
 
 `batch.yml` and `drain.yml` share `concurrency: group: simurg-runtime` so they can
