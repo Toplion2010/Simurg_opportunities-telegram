@@ -331,6 +331,8 @@ async def check_routing_preview(settings: Settings) -> None:
                         Opportunity.location,
                         Opportunity.audience,
                         Opportunity.category,
+                        Opportunity.status,
+                        Opportunity.title,
                     ).where(Opportunity.category == Category.Hackathon)
                 )
             ).all()
@@ -343,6 +345,7 @@ async def check_routing_preview(settings: Settings) -> None:
         print("  DEST_CHANNEL_ID_HACKATHON is 0 -> nothing can route. Feature is off.")
 
     routed = 0
+    actionable: list[str] = []
     for row in rows:
         # Transient, never added to a session: _resolve_targets reads only these.
         opp = Opportunity(
@@ -356,13 +359,27 @@ async def check_routing_preview(settings: Settings) -> None:
             settings.DEST_CHANNEL_ID_HACKATHON in targets
         )
         routed += hit
+        status = getattr(row.status, "value", row.status)
         print(
-            f"  id={row.id:<5} targets={len(targets)}  "
+            f"  id={row.id:<5} {str(status):<10} targets={len(targets)}  "
             f"hackathon_channel={'YES' if hit else 'no '}  {row.location!r}"
         )
+        # A row that is BOTH still awaiting approval and would route is the only
+        # kind that can prove the feature end to end -- approving it publishes
+        # to all three channels. Everything else is already published or
+        # rejected and can never demonstrate anything.
+        if hit and status == "pending":
+            actionable.append(f"#{row.id} {row.title!r} — {row.location!r}")
 
     print()
     print(f"  -> {routed} of {len(rows)} hackathon rows would ALSO reach the hackathons channel.")
+    if actionable:
+        print()
+        print("  -- PENDING and would route: approve one of these to prove it live --")
+        for line in actionable:
+            print(f"    {line}")
+    elif routed:
+        print("  (all of them already published or rejected -- nothing to approve yet)")
 
 
 async def check_gemini_models(api_key: str) -> None:
