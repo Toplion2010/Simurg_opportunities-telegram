@@ -33,7 +33,7 @@ The repo is **public**, so Actions minutes are unlimited/free.
 |---|---|---|
 | `batch.yml` | cron `7 1,5,9,13,17 * * *` + manual | Collect → process → publish. Sets `SIMURG_SKIP_DRAIN=true`. |
 | `drain.yml` | cron `*/10` + manual | Apply admin taps → publish. **Sole `getUpdates` consumer.** |
-| `diagnose.yml` | manual only | Read-only health check (webhook state, pending count, DB status, Gemini models). |
+| `diagnose.yml` | manual only | Read-only health check (webhook state, pending count, DB status, Gemini models, KZ geo signal in `location`). |
 | `preview.yml` | manual only | Renders real cards, uploads JPEGs as artifacts, publishes nothing. |
 
 `batch.yml` and `drain.yml` share `concurrency: group: simurg-runtime` so they can
@@ -47,7 +47,28 @@ gh workflow run diagnose.yml --ref main
 gh workflow run preview.yml --ref main -f count=4
 gh run list --workflow=drain.yml --limit 10 --json createdAt,event,conclusion
 gh run view <id> --log | grep -E "approval_recorded|admin_updates_drained|opportunity_published"
+gh run view <id> --log | grep -E "hackathon_channel_routed|scheduled_partial_publish"
 ```
+
+### Where a post goes
+
+Two layers, and the second is **additive** — it never replaces the first:
+
+1. **Audience** (`DEST_CHANNEL_ID_SCHOOL` / `..._UNIVERSITY`) — always applies.
+2. **Category** (`DEST_CHANNEL_ID_HACKATHON`) — a `Hackathon` whose `location`
+   matches Kazakhstan (`src/core/geo.py`) *also* goes to the hackathons channel.
+   Unset or `0` turns it off silently; nothing is stranded by that.
+
+The extras are appended last, so a rate limit on the third send cannot cost the
+school/university post. A post that reached only some of its channels is marked
+published and never retried, so `publish_scheduled` messages the admin with the
+chat ids that failed — that warning is the only signal a leg went missing.
+
+**Escape hatch for a matcher miss:** routing is evaluated at *publish* time, so
+editing an opportunity from the queue before approving it fixes any miss with no
+code change — `✏️ Edit` → **Location** to make the country explicit ("Almaty,
+Kazakhstan"), or → **Category** when a KZ datathon/CTF was classified as
+`Competition` rather than `Hackathon`.
 
 ---
 

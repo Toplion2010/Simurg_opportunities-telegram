@@ -39,16 +39,26 @@ async def publish_scheduled(
         identities = {opp.id: (opp.id, opp.title or "Untitled") for opp in due}
 
         failures: list[str] = []
+        partials: list[str] = []
         for opp in due:
             opp_id, title = identities[opp.id]
             try:
                 result = await sender.publish(opp, bot)
                 await session.commit()
                 if result.failed:
+                    failed_ids = [c for c, _ in result.failed]
                     logger.warning(
                         "scheduled_partial_publish",
                         opp_id=opp_id,
-                        failed=[c for c, _ in result.failed],
+                        failed=failed_ids,
+                    )
+                    # The row is already marked published, so this leg is never
+                    # retried. Naming the channel that dropped it is the only
+                    # way the admin learns without reading CI logs — and with
+                    # category routing layered on audience routing, a silently
+                    # missing third post is easy to never notice.
+                    partials.append(
+                        f"#{opp_id} {title}: sent to {result.succeeded}, FAILED {failed_ids}"
                     )
             except Exception as e:
                 logger.exception("scheduled_publish_error", opp_id=opp_id)
@@ -56,16 +66,24 @@ async def publish_scheduled(
                 failures.append(f"#{opp_id} {title}: {type(e).__name__}: {e}")
 
         # An approved post that never reaches the channel is the one failure the
-        # admin must not have to read CI logs to discover.
-        if failures:
+        # admin must not have to read CI logs to discover. A post that reached
+        # only some of its channels counts: it is marked published and will
+        # never be retried.
+        if failures or partials:
             from src.core.notify import notify_admins
 
-            await notify_admins(
-                bot,
-                settings.ADMIN_IDS,
-                "⚠️ Failed to publish {} approved opportunit{}:\n{}".format(
-                    len(failures),
-                    "y" if len(failures) == 1 else "ies",
-                    "\n".join(f"• {f}" for f in failures[:10]),
-                ),
-            )
+            lines: list[str] = []
+            if failures:
+                lines.append(
+                    "⚠️ Failed to publish {} approved opportunit{}:".format(
+                        len(failures), "y" if len(failures) == 1 else "ies"
+                    )
+                )
+                lines += [f"• {f}" for f in failures[:10]]
+            if partials:
+                lines.append(
+                    "⚠️ Published to only SOME channels ({}, not retried):".format(len(partials))
+                )
+                lines += [f"• {p}" for p in partials[:10]]
+
+            await notify_admins(bot, settings.ADMIN_IDS, "\n".join(lines))

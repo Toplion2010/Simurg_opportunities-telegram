@@ -60,6 +60,9 @@ jobs:
           TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          # Optional third channel for KZ hackathons; see drain.yml. Empty when
+          # the secret is unset, which Settings() reads as "off".
+          DEST_CHANNEL_ID_HACKATHON: ${{ secrets.DEST_CHANNEL_ID_HACKATHON }}
           # Tried routing extraction through Gemini's OpenAI-compat endpoint
           # (https://generativelanguage.googleapis.com/v1beta/openai/) to
           # dodge Groq's ~100k tokens/day free-tier wall. Every single call
