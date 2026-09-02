@@ -1,0 +1,132 @@
+[
+ {
+  "id": 53,
+  "name": "Aerospace",
+  "slug": "aerospace"
+ },
+ {
+  "id": 82,
+  "name": "Artificial Intelligence",
+  "slug": "artificial-intelligence"
+ },
+ {
+  "id": 86,
+  "name": "Biology",
+  "slug": "biology"
+ },
+ {
+  "id": 94,
+  "name": "Biomedicine",
+  "slug": "biomedicine"
+ },
+ {
+  "id": 100,
+  "name": "Biotechnology",
+  "slug": "biotechnology"
+ },
+ {
+  "id": 108,
+  "name": "Chemistry",
+  "slug": "chemistry"
+ },
+ {
+  "id": 78,
+  "name": "Computer Science",
+  "slug": "computer-science"
+ },
+ {
+  "id": 97,
+  "name": "Cybersecurity",
+  "slug": "cybersecurity"
+ },
+ {
+  "id": 84,
+  "name": "Engineering",
+  "slug": "engineering"
+ },
+ {
+  "id": 101,
+  "name": "Environmental Science",
+  "slug": "environmental-science"
+ },
+ {
+  "id": 87,
+  "name": "General",
+  "slug": "general"
+ },
+ {
+  "id": 106,
+  "name": "Geography",
+  "slug": "geography"
+ },
+ {
+  "id": 54,
+  "name": "Hacking",
+  "slug": "hacking"
+ },
+ {
+  "id": 112,
+  "name": "Marine Biology",
+  "slug": "marine-biology"
+ },
+ {
+  "id": 89,
+  "name": "Mathematics",
+  "slug": "mathematics"
+ },
+ {
+  "id": 95,
+  "name": "Medicine",
+  "slug": "medicine"
+ },
+ {
+  "id": 111,
+  "name": "Neuroscience",
+  "slug": "neuroscience"
+ },
+ {
+  "id": 105,
+  "name": "Physics",
+  "slug": "physics"
+ },
+ {
+  "id": 107,
+  "name": "Psychology",
+  "slug": "psychology"
+ },
+ {
+  "id": 52,
+  "name": "Robotics",
+  "slug": "robotics"
+ },
+ {
+  "id": 85,
+  "name": "Science",
+  "slug": "science"
+ },
+ {
+  "id": 51,
+  "name": "Science Research",
+  "slug": "science-research"
+ },
+ {
+  "id": 113,
+  "name": "STEM Entrpreunership",
+  "slug": "stem-entrpreunership"
+ },
+ {
+  "id": 98,
+  "name": "Synthetic Biology",
+  "slug": "synthetic-biology"
+ },
+ {
+  "id": 93,
+  "name": "Technology",
+  "slug": "technology"
+ },
+ {
+  "id": 104,
+  "name": "Writing",
+  "slug": "writing"
+ }
+]

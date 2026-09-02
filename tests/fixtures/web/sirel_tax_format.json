@@ -1,0 +1,17 @@
+[
+ {
+  "id": 42,
+  "name": "Hybrid",
+  "slug": "hybrid"
+ },
+ {
+  "id": 40,
+  "name": "In Person",
+  "slug": "in-person"
+ },
+ {
+  "id": 41,
+  "name": "Remote",
+  "slug": "remote"
+ }
+]

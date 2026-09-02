@@ -1,0 +1,113 @@
+[
+ {
+  "id": 3994,
+  "slug": "national-science-bee",
+  "link": "https://sirel.org/program/national-science-bee/",
+  "title": {
+   "rendered": "National Science Bee"
+  },
+  "content": {
+   "rendered": "<p>The National Science Bee is a quiz competition for students in grades 5-8 that tests their knowledge of science concepts across various disciplines. Participants compete at local, regional, and national levels, fostering a passion for science and encouraging academic excellence.</p>\n",
+   "protected": false
+  },
+  "excerpt": {
+   "rendered": "<p>The National Science Bee is a quiz competition for students in grades 5-8 that tests their knowledge of science concepts across various disciplines. Participants compete at local, regional, and national levels, fostering a passion for science and encouraging academic excellence.</p>\n",
+   "protected": false
+  },
+  "grade": [
+   309
+  ],
+  "subject-area": [
+   87
+  ],
+  "skill-level": [
+   57
+  ],
+  "duration": [
+   110
+  ],
+  "tuition": [
+   43
+  ],
+  "format": [
+   42
+  ],
+  "type-of-activity": [
+   35
+  ]
+ },
+ {
+  "id": 3993,
+  "slug": "junior-solar-sprint",
+  "link": "https://sirel.org/program/junior-solar-sprint/",
+  "title": {
+   "rendered": "Junior Solar Sprint"
+  },
+  "content": {
+   "rendered": "<p>The Junior Solar Sprint is a competition that challenges students to design, build, and race solar-powered cars. Participants learn about renewable energy, engineering principles, and teamwork while applying their creativity and problem-solving skills in a fun and educational environment.</p>\n",
+   "protected": false
+  },
+  "excerpt": {
+   "rendered": "<p>The Junior Solar Sprint is a competition that challenges students to design, build, and race solar-powered cars. Participants learn about renewable energy, engineering principles, and teamwork while applying their creativity and problem-solving skills in a fun and educational environment.</p>\n",
+   "protected": false
+  },
+  "grade": [
+   309
+  ],
+  "subject-area": [
+   101
+  ],
+  "skill-level": [
+   56
+  ],
+  "duration": [
+   81
+  ],
+  "tuition": [
+   43
+  ],
+  "format": [
+   41
+  ],
+  "type-of-activity": [
+   35
+  ]
+ },
+ {
+  "id": 3992,
+  "slug": "mathcounts",
+  "link": "https://sirel.org/program/mathcounts/",
+  "title": {
+   "rendered": "Mathcounts"
+  },
+  "content": {
+   "rendered": "<p>Mathcounts is a national middle school mathematics competition that promotes problem-solving and critical thinking skills. Students participate in individual and team challenges, enhancing their mathematical abilities while fostering a love for math through engaging and competitive activities.</p>\n",
+   "protected": false
+  },
+  "excerpt": {
+   "rendered": "<p>Mathcounts is a national middle school mathematics competition that promotes problem-solving and critical thinking skills. Students participate in individual and team challenges, enhancing their mathematical abilities while fostering a love for math through engaging and competitive activities.</p>\n",
+   "protected": false
+  },
+  "grade": [
+   309
+  ],
+  "subject-area": [
+   89
+  ],
+  "skill-level": [
+   56
+  ],
+  "duration": [
+   110
+  ],
+  "tuition": [
+   43
+  ],
+  "format": [
+   41
+  ],
+  "type-of-activity": [
+   35
+  ]
+ }
+]

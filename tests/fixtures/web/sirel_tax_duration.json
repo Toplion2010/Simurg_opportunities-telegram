@@ -1,0 +1,67 @@
+[
+ {
+  "id": 110,
+  "name": "1 day",
+  "slug": "1-day"
+ },
+ {
+  "id": 60,
+  "name": "1 Month",
+  "slug": "1-month"
+ },
+ {
+  "id": 45,
+  "name": "1 Week",
+  "slug": "1-week"
+ },
+ {
+  "id": 114,
+  "name": "1 year",
+  "slug": "1-year"
+ },
+ {
+  "id": 61,
+  "name": "2 Months",
+  "slug": "2-months"
+ },
+ {
+  "id": 59,
+  "name": "2 Week",
+  "slug": "2-week"
+ },
+ {
+  "id": 79,
+  "name": "2 weeks",
+  "slug": "2-weeks"
+ },
+ {
+  "id": 62,
+  "name": "3 Months",
+  "slug": "3-months"
+ },
+ {
+  "id": 103,
+  "name": "4 months",
+  "slug": "4-months"
+ },
+ {
+  "id": 81,
+  "name": "6 months",
+  "slug": "6-months"
+ },
+ {
+  "id": 109,
+  "name": "6 weeks",
+  "slug": "6-weeks"
+ },
+ {
+  "id": 90,
+  "name": "Indefinite/Long Term",
+  "slug": "indefinite-long-term"
+ },
+ {
+  "id": 88,
+  "name": "Less than a week",
+  "slug": "less-than-a-week"
+ }
+]

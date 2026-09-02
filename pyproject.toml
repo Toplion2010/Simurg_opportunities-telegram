@@ -22,6 +22,18 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
+# Web-catalog scraping (src/collector/web/, run by webscan.yml).
+#
+# sirel.org's WAF fingerprints the TLS handshake, not the headers: curl gets
+# 200 while httpx and urllib get 403 from the same IP, with the same
+# User-Agent, at the same moment (verified directly). curl_cffi presents a
+# browser TLS fingerprint and gets 200.
+#
+# Kept OUT of the base dependencies deliberately: it ships a compiled libcurl,
+# and botcheck.yml / vercelcheck.yml both assert that heavy packages do not
+# leak into the bot and serverless bundles. Only webscan.yml installs this
+# extra; src/collector/web/http.py falls back to httpx when it is absent.
+scrape = ["curl_cffi>=0.7"]
 
 [project.scripts]
 simurg = "src.main:main"

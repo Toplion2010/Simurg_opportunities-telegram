@@ -1,0 +1,32 @@
+[
+ {
+  "id": 311,
+  "name": "10th",
+  "slug": "10th"
+ },
+ {
+  "id": 312,
+  "name": "11th",
+  "slug": "11th"
+ },
+ {
+  "id": 313,
+  "name": "12th",
+  "slug": "12th"
+ },
+ {
+  "id": 310,
+  "name": "9th",
+  "slug": "9th"
+ },
+ {
+  "id": 314,
+  "name": "College",
+  "slug": "college"
+ },
+ {
+  "id": 309,
+  "name": "Middle School",
+  "slug": "middle-school"
+ }
+]

@@ -99,6 +99,39 @@ class Settings(BaseSettings):
     BACKGROUND_REFRESH_SECONDS: int = 300
     BACKGROUND_HISTORY_SIZE: int = 20
 
+    # Web collector — scraped opportunity catalogs (src/collector/web/).
+    # A second collector KIND alongside Telegram; see src/collector/web/README
+    # notes in base.py for the source contract.
+    #
+    # Items per run, per source. Deliberately small: ExtracurricularHub alone
+    # has ~1,760 listings, and a full first pass at this rate takes ~48 days.
+    # That is the point — it keeps the admin queue reviewable and means a bad
+    # parse costs 40 junk rows, not 1,760. Raise it via the workflow's --limit
+    # input for a one-off backfill once the parse looks right.
+    WEB_MAX_ITEMS_PER_RUN: int = 40
+    # Pause between detail-page fetches. These are small, volunteer-run sites.
+    WEB_FETCH_SLEEP_SECONDS: float = 1.0
+    WEB_REQUEST_TIMEOUT_SECONDS: float = 20.0
+    WEB_REQUEST_RETRIES: int = 2
+    # sirel.org returns 403 to a default library user-agent and 200 to a browser
+    # one, so this has to look like a browser — but it still names the project
+    # and a contact URL, because an aggregator that identifies itself is what
+    # keeps this legible to the sites as traffic rather than as an attack.
+    WEB_USER_AGENT: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 "
+        "(+https://t.me/simurg_opportunities; student-opportunity aggregator)"
+    )
+    # A paid in-person program is admitted anyway when the fee is at or below
+    # this (USD) — the "or a small fee" limb of the admission rule.
+    WEB_SMALL_FEE_USD: float = 50.0
+    # OFF by default and it must stay that way without a token budget attached.
+    # Groq's free tier is ~100k tokens/day and already near ~87k; routing even
+    # the admitted subset of ~1,900 catalog items through extractor.py would
+    # starve the Telegram pipeline, which is the core product. Web sources are
+    # structured enough to build a DTO deterministically (see to_dto.py).
+    WEB_INGEST_USE_LLM: bool = False
+
     # Feature flags
     ENABLE_EMBEDDING_DEDUP: bool = False
     SIMILARITY_THRESHOLD: float = 0.92
