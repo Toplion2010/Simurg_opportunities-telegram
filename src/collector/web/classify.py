@@ -75,7 +75,10 @@ _RELEVANCE_TERMS: list[tuple[int, str]] = [
     (5, r"computer science|artificial intelligence|\bai\b|machine learning|"
         r"cybersecurity|robotic|hackathon|programming|software|data science|"
         r"\bhacking\b|informatics|\bcoding\b|competitive programming"),
-    (5, r"mathematic|\bmath\b|olympiad|entrepreneur|startup|\bbusiness\b"),
+    # math misses real program names -- Mathcounts, Mathletes,
+    # MathWorks -- and the repair path often has only a title to go on.
+    # Prefix match, minus the given-name forms.
+    (5, r"\bmath(?!ew|ias)\w*|olympiad|entrepreneur|startup|\bbusiness\b"),
     (4, r"engineering|physics|aerospace|technology|\bstem\b|biotech|"
         r"synthetic biology|neuroscience|science research|\binnovation\b"),
     (3, r"\bscience\b|biology|chemistry|medicine|biomedic|environmental|"
@@ -95,12 +98,24 @@ _DEFAULT_REASON = "no profile keywords matched"
 
 def category_from(item) -> Category | None:
     """The source's taxonomy first, the title's shape second."""
-    for subject in item.subjects:
+    return category_from_parts(item.title, item.description, item.subjects)
+
+
+def category_from_parts(
+    title: str | None, description: str | None, subjects: list[str] | None = None
+) -> Category | None:
+    """Same rules, from loose parts.
+
+    Exists so already-ingested rows can be re-classified in place: an
+    Opportunity keeps title and description but not the source taxonomy, so it
+    falls through to the title rules.
+    """
+    for subject in subjects or []:
         hit = _TAXONOMY_TO_CATEGORY.get((subject or "").strip().lower())
         if hit is not None:
             return hit
 
-    haystack = " ".join(filter(None, [item.title, item.description]))
+    haystack = " ".join(filter(None, [title, description]))
     for pattern, category in _TITLE_RULES:
         if pattern.search(haystack):
             return category
@@ -115,8 +130,14 @@ def relevance_from(item) -> tuple[int, str]:
     an art one. The reason names the matched text so a wrong score is
     diagnosable from the queue card itself.
     """
+    return relevance_from_parts(item.title, item.description, item.subjects)
+
+
+def relevance_from_parts(
+    title: str | None, description: str | None, subjects: list[str] | None = None
+) -> tuple[int, str]:
     haystack = " ".join(
-        filter(None, [item.title, " ".join(item.subjects), item.description])
+        filter(None, [title, " ".join(subjects or []), description])
     )
     best: tuple[int, str] | None = None
     for score, pattern in _RELEVANCE_RULES:
