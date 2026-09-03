@@ -129,6 +129,17 @@ class Settings(BaseSettings):
     # structured enough to build a DTO deterministically (see to_dto.py).
     WEB_INGEST_USE_LLM: bool = False
 
+    # Daily digest (src/routines/daily_digest.py) — surfaces the best pending
+    # opportunities once a day instead of leaving the whole queue to manual
+    # browsing. Score is src/core/scoring.py's 0-100 (coolness + fit).
+    DIGEST_MIN_SCORE: int = 90
+    AUTO_APPROVE_SCORE: int = 95
+    DAILY_DIGEST_SIZE: int = 5
+    # Ceiling on actual channel posts per day, enforced in
+    # publisher/scheduler.py regardless of whether a row was auto-approved
+    # today or approved manually on an earlier day.
+    DAILY_PUBLISH_CAP: int = 7
+
     # Feature flags
     ENABLE_EMBEDDING_DEDUP: bool = False
     SIMILARITY_THRESHOLD: float = 0.92

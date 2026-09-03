@@ -1,0 +1,60 @@
+name: Daily digest
+
+# Once a day: surface the best still-undigested pending opportunities,
+# auto-approve the very best (drain.yml publishes them within ~25 min), push
+# the rest to the admins for a manual yes/no. See src/routines/daily_digest.py.
+on:
+  schedule:
+    # 08:00 Astana (UTC+5) = 03:00 UTC.
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  # Shared with batch.yml/drain.yml: this writes opportunities.status and
+  # .digested_at, and drain.yml's publish step reads status — never let them
+  # race.
+  group: simurg-runtime
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+        run: alembic upgrade head
+
+      - name: Run daily digest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+          DEST_CHANNEL_ID_HACKATHON: ${{ secrets.DEST_CHANNEL_ID_HACKATHON }}
+          ENVIRONMENT: production
+          LOCAL_DEV: "false"
+        run: python -m src.routines.daily_digest
