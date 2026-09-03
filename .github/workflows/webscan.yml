@@ -16,6 +16,12 @@ on:
         description: "Items per source this run. Blank = WEB_MAX_ITEMS_PER_RUN (40)."
         required: false
         default: ""
+      repair:
+        description: "Repair rows ingested before the classify/funding fixes: dry_run | apply | off"
+        required: false
+        default: "off"
+        type: choice
+        options: ["off", "dry_run", "apply"]
 
 concurrency:
   # Shared with batch.yml and drain.yml. This job never publishes, so it cannot
@@ -79,6 +85,27 @@ jobs:
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
         run: python -m scripts.seed_web_sources
+
+      - name: Repair previously ingested rows
+        # Manual-dispatch only: the scheduled run leaves `repair` at "off", so
+        # the daily cron can never touch existing rows. Re-classifies pending
+        # web opportunities in place and frees pre-fix rejects for a second
+        # look. Never touches anything an admin has approved or published.
+        if: inputs.repair == 'dry_run' || inputs.repair == 'apply'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
+          DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
+        run: |
+          if [ "${{ inputs.repair }}" = "apply" ]; then
+            python -m scripts.rescan_web_items --apply
+          else
+            python -m scripts.rescan_web_items
+          fi
 
       - name: Scrape and ingest
         env:

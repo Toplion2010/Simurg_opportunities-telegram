@@ -110,3 +110,32 @@ def test_dto_carries_both_so_the_card_renders():
 def test_relevance_is_always_in_range():
     for t in ("Art Camp", "Computer Science Olympiad", "Qqq", "Volunteer Choir"):
         assert 1 <= build_dto(item(title=t)).relevance <= 5
+
+
+# --- re-classifying already-ingested rows --------------------------------
+
+
+def test_parts_helpers_work_without_the_source_taxonomy():
+    """An Opportunity row keeps title and description but not `subjects`, so
+    the repair path must reach the same answer from the title alone."""
+    from src.collector.web.classify import category_from_parts, relevance_from_parts
+
+    assert category_from_parts("Student Leadership Academy", None) == Category.SummerProgram
+    assert category_from_parts("Princeton Math Contest", None) == Category.Competition
+    score, reason = relevance_from_parts("Mathcounts", None)
+    assert score == 5 and "math" in reason
+
+
+def test_parts_helpers_tolerate_missing_text():
+    from src.collector.web.classify import category_from_parts, relevance_from_parts
+
+    assert category_from_parts(None, None) is None
+    assert relevance_from_parts(None, None) == (2, "no profile keywords matched")
+
+
+def test_item_and_parts_agree():
+    it = item(title="AI Research Institute", subjects=["Research"])
+    from src.collector.web.classify import category_from_parts, relevance_from_parts
+
+    assert relevance_from(it) == relevance_from_parts(it.title, it.description, it.subjects)
+    assert category_from(it) == category_from_parts(it.title, it.description, it.subjects)
