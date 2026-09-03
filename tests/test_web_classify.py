@@ -1,13 +1,15 @@
-"""Category and relevance derived from the source's own taxonomy.
+"""Category derived from the source's own taxonomy.
 
-Both were originally left None. Real queue cards then rendered as
-"🏷 Unknown" with no star line — and, worse, NULL relevance sorts last in
-get_pending, so every scraped item queued behind every Telegram item forever.
+Originally left None. Real queue cards then rendered as "🏷 Unknown", while
+SIREL's own type-of-activity taxonomy already carried the answer.
+
+Relevance moved to src/core/scoring.py, shared with the Telegram pipeline —
+see tests/test_scoring.py.
 """
 import pytest
 
 from src.collector.web.base import WebItem
-from src.collector.web.classify import category_from, relevance_from
+from src.collector.web.classify import category_from, category_from_parts
 from src.collector.web.to_dto import build_dto
 from src.core.enums import Category
 
@@ -17,9 +19,6 @@ def item(**kw) -> WebItem:
                 page_url="https://cat.example/p/x")
     base.update(kw)
     return WebItem(**base)
-
-
-# --- category from the source taxonomy -----------------------------------
 
 
 @pytest.mark.parametrize(
@@ -59,86 +58,28 @@ def test_unmatched_title_stays_none_for_the_classifier():
     assert category_from(item(title="Qqq Wwwzzz", subjects=[])) is None
 
 
-# --- relevance against the operator's profile ----------------------------
+# --- re-classifying already-ingested rows --------------------------------
 
 
-@pytest.mark.parametrize(
-    "subject,score",
-    [
-        ("Computer Science", 5), ("Artificial Intelligence", 5),
-        ("Cybersecurity", 5), ("Robotics", 5), ("Mathematics", 5),
-        ("Engineering", 4), ("Physics", 4),
-        ("Biology", 3), ("Medicine", 3),
-        ("Writing", 2),
-    ],
-)
-def test_sirel_subject_areas_score_against_the_profile(subject, score):
-    assert relevance_from(item(subjects=[subject]))[0] == score
+def test_parts_helper_works_without_the_source_taxonomy():
+    """An Opportunity row keeps title and description but not `subjects`, so
+    the repair path must reach the same answer from the title alone."""
+    assert category_from_parts("Student Leadership Academy", None) == Category.SummerProgram
+    assert category_from_parts("Princeton Math Contest", None) == Category.Competition
 
 
-def test_highest_signal_wins_not_the_first():
-    # A robotics camp that also does art is a robotics opportunity.
-    score, reason = relevance_from(item(title="Robotics and Art Summer Camp"))
-    assert score == 5
-    assert "robotic" in reason
+def test_parts_helper_tolerates_missing_text():
+    assert category_from_parts(None, None) is None
 
 
-def test_unmatched_gets_a_conservative_default_not_null():
-    # NULL is what buried these items; 2 is the extractor's own
-    # "little tech/business" and still sorts above a real off-profile 1.
-    score, reason = relevance_from(item(title="Qqq Wwwzzz"))
-    assert score == 2
-    assert reason == "no profile keywords matched"
-
-
-def test_reason_names_the_matched_text():
-    _, reason = relevance_from(item(subjects=["Computer Science"]))
-    assert "computer science" in reason
+def test_item_and_parts_agree():
+    it = item(title="AI Research Institute", subjects=["Research"])
+    assert category_from(it) == category_from_parts(it.title, it.description, it.subjects)
 
 
 # --- end to end through the DTO ------------------------------------------
 
 
-def test_dto_carries_both_so_the_card_renders():
+def test_dto_category_renders():
     dto = build_dto(item(title="AI Research Institute", subjects=["Research"]))
     assert dto.category == Category.Research
-    assert dto.relevance == 5
-    assert dto.relevance_reason
-    assert len(dto.relevance_reason) <= 120
-
-
-def test_relevance_is_always_in_range():
-    for t in ("Art Camp", "Computer Science Olympiad", "Qqq", "Volunteer Choir"):
-        assert 1 <= build_dto(item(title=t)).relevance <= 5
-
-
-# --- re-classifying already-ingested rows --------------------------------
-
-
-def test_parts_helpers_work_without_the_source_taxonomy():
-    """An Opportunity row keeps title and description but not `subjects`, so
-    the repair path must reach the same answer from the title alone."""
-    from src.collector.web.classify import category_from_parts, relevance_from_parts
-
-    assert category_from_parts("Student Leadership Academy", None) == Category.SummerProgram
-    assert category_from_parts("Princeton Math Contest", None) == Category.Competition
-    # "Mathcounts" is a real listing whose title is the only signal once the
-    # source taxonomy is gone -- math would not have matched it.
-    score, reason = relevance_from_parts("Mathcounts", None)
-    assert score == 5 and "math" in reason
-    assert relevance_from_parts("Mathew Scholars Fund", None)[0] != 5
-
-
-def test_parts_helpers_tolerate_missing_text():
-    from src.collector.web.classify import category_from_parts, relevance_from_parts
-
-    assert category_from_parts(None, None) is None
-    assert relevance_from_parts(None, None) == (2, "no profile keywords matched")
-
-
-def test_item_and_parts_agree():
-    it = item(title="AI Research Institute", subjects=["Research"])
-    from src.collector.web.classify import category_from_parts, relevance_from_parts
-
-    assert relevance_from(it) == relevance_from_parts(it.title, it.description, it.subjects)
-    assert category_from(it) == category_from_parts(it.title, it.description, it.subjects)

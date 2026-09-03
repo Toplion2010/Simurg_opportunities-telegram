@@ -80,10 +80,6 @@ Each opportunity object has these fields:
   be a short excerpt of the whole thing.
 - min_age: integer age floor, ONLY if explicitly stated ("18+", "ages 18-25"). Null
   otherwise — never infer from education level.
-- relevance: 1-5 fit to profile ({relevance_profile}). 5=core fit, 4=adjacent
-  STEM/business, 3=general with real tech/business content, 2=little tech/business,
-  1=off-profile (art, sports, generic volunteering). Judge by content, not label.
-- relevance_reason: reason phrase, under 120 characters.
 
 Rules:
 - Use null for any field you cannot find in the text
@@ -154,6 +150,11 @@ class OpportunityDTO(BaseModel):
     extra_notes: str | None = None
     source_excerpt: str | None = None
     min_age: int | None = None
+    # No longer asked of the LLM (removed from the prompt above — it was pure
+    # profile-fit judgement and cost prompt tokens). Both fields stay on the
+    # model because src/processor/pipeline.py sets them after extraction, from
+    # the shared 1-10 rubric in src/core/scoring.py — see that module's
+    # docstring for why reachability is now part of the score.
     relevance: int | None = None
     relevance_reason: str | None = None
 
@@ -179,13 +180,16 @@ class OpportunityDTO(BaseModel):
     @field_validator("relevance", mode="before")
     @classmethod
     def validate_relevance(cls, v: object) -> object:
+        # 1-10, not 1-5 — widened alongside src/core/scoring.py's rubric.
+        # Nothing sets this via the LLM anymore, but OpportunityDTO is
+        # constructed directly in tests and elsewhere, so the guard stays.
         if v is None:
             return None
         try:
             rating = int(v)
         except (TypeError, ValueError):
             return None
-        if not (1 <= rating <= 5):
+        if not (1 <= rating <= 10):
             logger.warning("relevance_out_of_range", value=v)
             return None
         return rating
@@ -205,10 +209,7 @@ class ExtractionResult(BaseModel):
 class FieldExtractor:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._system_prompt = _SYSTEM_PROMPT_TEMPLATE.format(
-            categories=_CATEGORIES,
-            relevance_profile=settings.RELEVANCE_PROFILE,
-        )
+        self._system_prompt = _SYSTEM_PROMPT_TEMPLATE.format(categories=_CATEGORIES)
 
         # Groq client (OpenAI-compatible), built on FIRST USE rather than here.
         #

@@ -48,11 +48,28 @@ def test_category_still_falls_through_to_the_classifier_when_unknowable():
 def test_relevance_is_rated_so_items_are_not_buried():
     # Originally left None to avoid faking an LLM judgement. But NULL relevance
     # sorts LAST in get_pending, so ~1,900 scraped items would queue behind
-    # every Telegram item permanently. The score is keyword-derived and
-    # relevance_reason says so on the card.
+    # every Telegram item permanently. Now 1-10 (src/core/scoring.py, shared
+    # with the Telegram pipeline — see tests/test_scoring.py for the rubric
+    # itself), computed from the item's real is_online/cost_amount fields.
     dto = build_dto(item())
-    assert 1 <= dto.relevance <= 5
+    assert 1 <= dto.relevance <= 10
     assert dto.relevance_reason
+
+
+def test_online_item_scores_at_the_top_of_its_fit_tier():
+    dto = build_dto(item(is_online=True, title="Robotics competition"))
+    assert dto.relevance == 10
+
+
+def test_funding_signals_from_the_second_look_feed_the_score():
+    """An item admitted only because collector/web/fetcher.py found aid on the
+    official page must score as funded too — the catalog record itself never
+    mentions it (that's the whole reason the second look exists)."""
+    dto = build_dto(
+        item(is_online=False, cost_amount=5000.0, title="Robotics summer program"),
+        funding_signals=["scholarship"],
+    )
+    assert dto.relevance >= 6  # R3 (partial funding) + core fit, at minimum
 
 
 def test_card_fields_respect_their_caps():

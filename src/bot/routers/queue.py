@@ -36,9 +36,15 @@ def _stars_line(opp: Opportunity) -> str | None:
     # not a low one.
     if opp.relevance is None:
         return None
-    stars = "⭐" * opp.relevance + "☆" * (5 - opp.relevance)
+    # relevance is 1-10 (src/core/scoring.py); the glyph count stays a
+    # readable 5 stars, compressed from the 10-point score, but the number
+    # shown is always the honest /10 — only the star GLYPH is compressed.
+    # ceil, not round(): round()'s banker's rounding collapses 5 and 6 (and
+    # 8 and 9) to the same glyph count; ceil pairs cleanly, 1-2 -> 1 star.
+    filled = math.ceil(opp.relevance / 2)
+    stars = "⭐" * filled + "☆" * (5 - filled)
     reason = f" · {opp.relevance_reason}" if opp.relevance_reason else ""
-    return f"{stars} {opp.relevance}/5{reason}"
+    return f"{stars} {opp.relevance}/10{reason}"
 
 
 def _tags_line(opp: Opportunity) -> str:

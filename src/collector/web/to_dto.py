@@ -8,14 +8,9 @@ catalogs already state as structured data — and starve the Telegram pipeline,
 which is the core product.
 
 So: map the fields straight across, and compose the prose fields from those
-facts with fixed templates. What we cannot do deterministically we leave None:
-
-  category   — left None on purpose. CategoryClassifier already does a free
-               keyword pass (src/processor/classifier.py), and a wrong guess
-               here would route an item to the wrong channel.
-  relevance  — left None. It is the LLM's profile-fit judgement; faking a
-               number would corrupt the queue's ranking. Unrated items sort
-               last, which is the correct place for unreviewed scraped input.
+facts with fixed templates. Category comes from the source's own taxonomy
+(src/collector/web/classify.py) and relevance from the shared 1-10 rubric
+(src/core/scoring.py) — both computed here, not asked of an LLM.
 
 Card copy from this path is plainer than the LLM's. That is an accepted
 trade, and the admin queue's Edit flow (src/bot/routers/edit.py) is the
@@ -24,7 +19,8 @@ escape hatch for any individual item worth polishing.
 import re
 
 from src.collector.web.base import WebItem
-from src.collector.web.classify import category_from, relevance_from
+from src.collector.web.classify import category_from
+from src.core.scoring import score as reachability_score
 from src.processor.age import parse_min_age
 from src.processor.extractor import OpportunityDTO
 
@@ -134,11 +130,32 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
     description = _description(item)
     where = _location(item)
 
+    category = category_from(item)
+
+    # `funding_signals` (from the official-page second look, see
+    # collector/web/fetcher.py) are appended to the text the scorer reads —
+    # otherwise an item admitted ONLY because aid was found on its own site
+    # would still score as unfunded, since the catalog record itself never
+    # mentions it (see src/core/scoring.py's note that catalogs are prose-free
+    # on funding).
+    score_text = " ".join(
+        filter(
+            None,
+            [
+                item.title,
+                item.description,
+                item.eligibility,
+                item.organizer,
+                ", ".join(funding_signals) if funding_signals else None,
+            ],
+        )
+    )
+    relevance, relevance_reason = reachability_score(
+        item.is_online, item.cost_amount, item.country, score_text
+    )
+
     # Age floor from whatever the catalog stated, using the SAME parser the
     # Telegram path uses — a second age parser would drift from the age gate.
-    category = category_from(item)
-    relevance, relevance_reason = relevance_from(item)
-
     min_age = parse_min_age(" ".join(filter(None, [item.eligibility, item.title])))
 
     # card_summary must be one self-contained sentence under 130 chars. Build a
@@ -198,9 +215,9 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         extra_notes=extra_notes,
         source_excerpt=_fit(description, 400),
         min_age=min_age,
-        # Keyword-derived, NOT an LLM judgement — relevance_reason says so on
-        # the queue card. Left NULL these items sorted behind every Telegram
-        # item forever (get_pending puts NULL relevance last).
+        # 1-10, reachability + fit — src/core/scoring.py, shared with the
+        # Telegram pipeline. relevance_reason names both tiers so a score is
+        # auditable straight off the queue card.
         relevance=relevance,
         relevance_reason=relevance_reason,
     )
