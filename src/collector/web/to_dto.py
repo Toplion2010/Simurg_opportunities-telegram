@@ -24,6 +24,7 @@ escape hatch for any individual item worth polishing.
 import re
 
 from src.collector.web.base import WebItem
+from src.collector.web.classify import category_from, relevance_from
 from src.processor.age import parse_min_age
 from src.processor.extractor import OpportunityDTO
 
@@ -123,13 +124,21 @@ def _description(item: WebItem) -> str:
     return " ".join([f"{sentence}." if sentence else "", *extras]).strip()
 
 
-def build_dto(item: WebItem) -> OpportunityDTO:
+def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> OpportunityDTO:
+    """``funding_signals`` are terms found on the opportunity's OFFICIAL page
+    (see collector/web/fetcher._funding_on_official_page). They are the only
+    reason an expensive in-person programme is admitted at all, so they are
+    surfaced to the admin rather than kept in the run log — the reviewer needs
+    to see why a $18,195 programme is in the queue."""
     cost = _cost_text(item)
     description = _description(item)
     where = _location(item)
 
     # Age floor from whatever the catalog stated, using the SAME parser the
     # Telegram path uses — a second age parser would drift from the age gate.
+    category = category_from(item)
+    relevance, relevance_reason = relevance_from(item)
+
     min_age = parse_min_age(" ".join(filter(None, [item.eligibility, item.title])))
 
     # card_summary must be one self-contained sentence under 130 chars. Build a
@@ -146,6 +155,17 @@ def build_dto(item: WebItem) -> OpportunityDTO:
     rewards = None
     if cost and cost.lower() == "free":
         rewards = "Free to enter"
+    elif funding_signals:
+        rewards = f"Financial aid available ({', '.join(funding_signals[:3])})"
+
+    extra_notes = None
+    if funding_signals:
+        extra_notes = (
+            "Cost is listed as "
+            f"{cost or 'unstated'}, but the official site mentions: "
+            f"{', '.join(funding_signals)}. Verify the amount and the deadline "
+            "for aid before publishing."
+        )
 
     additional_links = []
     if item.apply_url and item.page_url and item.apply_url != item.page_url:
@@ -156,7 +176,10 @@ def build_dto(item: WebItem) -> OpportunityDTO:
     return OpportunityDTO(
         is_opportunity=True,
         title=item.title,
-        category=None,  # see module docstring — CategoryClassifier decides
+        # From the source's own taxonomy (see collector/web/classify.py).
+        # None only when neither the taxonomy nor the title says anything,
+        # in which case CategoryClassifier still gets its free pass.
+        category=category,
         audience=_audience(item),
         deadline=item.deadline,
         eligibility=item.eligibility,
@@ -172,9 +195,12 @@ def build_dto(item: WebItem) -> OpportunityDTO:
         card_eligibility=_fit(item.eligibility, 90),
         card_rewards=_fit(rewards or cost, 90),
         additional_links=additional_links,
-        extra_notes=None,
+        extra_notes=extra_notes,
         source_excerpt=_fit(description, 400),
         min_age=min_age,
-        relevance=None,  # see module docstring
-        relevance_reason=None,
+        # Keyword-derived, NOT an LLM judgement — relevance_reason says so on
+        # the queue card. Left NULL these items sorted behind every Telegram
+        # item forever (get_pending puts NULL relevance last).
+        relevance=relevance,
+        relevance_reason=relevance_reason,
     )

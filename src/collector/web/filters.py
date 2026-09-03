@@ -23,6 +23,7 @@ import re
 REASON_ADMITTED = "admitted"
 REASON_CITIZENSHIP = "citizenship_or_residency_bar"
 REASON_UNFUNDED_IN_PERSON = "in_person_priced_no_funding"
+REASON_FUNDED_OFFICIAL = "funding_found_on_official_site"
 REASON_CLOSED = "applications_closed"
 
 # These catalogs keep listings up after the fact and say so in the deadline
@@ -80,6 +81,23 @@ _FUNDING_PATTERNS = [
     r"грант",
 ]
 _FUNDING_RE = re.compile("|".join(_FUNDING_PATTERNS), re.IGNORECASE)
+
+
+def find_funding(text: str | None) -> list[str]:
+    """Distinct funding signals present in `text`, lowercased and deduped.
+
+    Split out from admits() because the catalogs themselves are nearly
+    prose-free: across 45 real ExtracurricularHub listings, ZERO contained any
+    funding language, so this limb of the rule could never fire on catalog data
+    alone. It has to be run against the OFFICIAL page — where, in a 6-of-6
+    sample of items the filter had rejected, every single one turned out to
+    offer a scholarship, need-based aid, or both.
+
+    Kept pure: the caller does the fetching (see collector/web/fetcher.py).
+    """
+    if not text:
+        return []
+    return sorted({m.group(0).lower() for m in _FUNDING_RE.finditer(text)})
 
 
 def _haystack(item) -> str:

@@ -125,6 +125,12 @@ class Settings(BaseSettings):
     # A paid in-person program is admitted anyway when the fee is at or below
     # this (USD) — the "or a small fee" limb of the admission rule.
     WEB_SMALL_FEE_USD: float = 50.0
+    # Above that fee, one extra request to the opportunity's OWN site decides
+    # it, because the catalogs are prose-free and never mention aid: across 45
+    # real listings ZERO contained funding language, while 6 of 6 of the items
+    # this filter had rejected turned out to offer a scholarship or need-based
+    # aid on their official page. Bounded per run — it is a request each.
+    WEB_FUNDING_CHECK_MAX_PER_RUN: int = 15
     # OFF by default and it must stay that way without a token budget attached.
     # Groq's free tier is ~100k tokens/day and already near ~87k; routing even
     # the admitted subset of ~1,900 catalog items through extractor.py would
