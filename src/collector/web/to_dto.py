@@ -9,7 +9,7 @@ which is the core product.
 
 So: map the fields straight across, and compose the prose fields from those
 facts with fixed templates. Category comes from the source's own taxonomy
-(src/collector/web/classify.py) and relevance from the shared 1-10 rubric
+(src/collector/web/classify.py) and relevance from the shared 0-100 score
 (src/core/scoring.py) — both computed here, not asked of an LLM.
 
 Card copy from this path is plainer than the LLM's. That is an accepted
@@ -215,9 +215,9 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         extra_notes=extra_notes,
         source_excerpt=_fit(description, 400),
         min_age=min_age,
-        # 1-10, reachability + fit — src/core/scoring.py, shared with the
-        # Telegram pipeline. relevance_reason names both tiers so a score is
-        # auditable straight off the queue card.
+        # 0-100, coolness (reachability) + fit — src/core/scoring.py, shared
+        # with the Telegram pipeline. relevance_reason names both components
+        # so a score is auditable straight off the queue card.
         relevance=relevance,
         relevance_reason=relevance_reason,
     )

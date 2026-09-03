@@ -10,12 +10,13 @@ Runs read-only by default and prints exactly what it would change. Pass
 Three separate problems, three different remedies -- and neither deletes
 anything a human has acted on:
 
-  1. RELEVANCE, for EVERY pending row, both sources. The 1-10 rubric
-     (src/core/scoring.py) replaced two older, incompatible schemes at once:
-     Telegram rows carried a 1-5 LLM judgement that is simply a different
-     scale now, and web rows carried a 1-5 keyword score with no reachability
-     signal in it at all. Neither means what the new number means, so every
-     pending row is rescored, not just the ones that happen to be NULL.
+  1. RELEVANCE, for EVERY pending row, both sources. The 0-100 score
+     (src/core/scoring.py: coolness 0-60 + fit 0-40) replaced an earlier 1-10
+     table, which itself had replaced two older, incompatible schemes:
+     Telegram rows carried a 1-5 LLM judgement, web rows carried a 1-5
+     keyword score with no reachability signal in it at all. Neither means
+     what the new number means, so every pending row is rescored, not just
+     the ones that happen to be NULL.
 
      Recomputed from the row's own stored TEXT (location, cost, eligibility)
      -- an Opportunity does not retain the source's structured is_online /
@@ -137,7 +138,7 @@ async def run(apply: bool) -> int:
                     rescored += 1
                     old_label = str(old_relevance) if old_relevance is not None else "None"
                     print(
-                        f"  RELEVANCE  #{opp.id:<5} {old_label} -> {opp.relevance}/10  "
+                        f"  RELEVANCE  #{opp.id:<5} {old_label} -> {opp.relevance}/100  "
                         f"({opp.relevance_reason})  {(opp.title or '')[:40]}"
                     )
 

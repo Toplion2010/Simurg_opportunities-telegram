@@ -153,7 +153,7 @@ class OpportunityDTO(BaseModel):
     # No longer asked of the LLM (removed from the prompt above — it was pure
     # profile-fit judgement and cost prompt tokens). Both fields stay on the
     # model because src/processor/pipeline.py sets them after extraction, from
-    # the shared 1-10 rubric in src/core/scoring.py — see that module's
+    # the shared 0-100 score in src/core/scoring.py — see that module's
     # docstring for why reachability is now part of the score.
     relevance: int | None = None
     relevance_reason: str | None = None
@@ -180,7 +180,7 @@ class OpportunityDTO(BaseModel):
     @field_validator("relevance", mode="before")
     @classmethod
     def validate_relevance(cls, v: object) -> object:
-        # 1-10, not 1-5 — widened alongside src/core/scoring.py's rubric.
+        # 0-100 — src/core/scoring.py's coolness(0-60) + fit(0-40) score.
         # Nothing sets this via the LLM anymore, but OpportunityDTO is
         # constructed directly in tests and elsewhere, so the guard stays.
         if v is None:
@@ -189,7 +189,7 @@ class OpportunityDTO(BaseModel):
             rating = int(v)
         except (TypeError, ValueError):
             return None
-        if not (1 <= rating <= 10):
+        if not (0 <= rating <= 100):
             logger.warning("relevance_out_of_range", value=v)
             return None
         return rating
