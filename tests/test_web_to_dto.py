@@ -6,6 +6,7 @@ or corrupt the admin queue's ranking.
 """
 from src.collector.web.base import WebItem
 from src.collector.web.to_dto import build_dto
+from src.core.enums import Category
 
 
 def item(**kwargs) -> WebItem:
@@ -32,18 +33,26 @@ def test_apply_link_falls_back_to_the_catalog_page():
     assert dto.additional_links == []
 
 
-def test_category_is_left_for_the_classifier():
-    # A wrong guess here routes an item to the wrong channel; the free keyword
-    # classifier runs downstream either way.
-    assert build_dto(item()).category is None
+def test_category_comes_from_the_source_taxonomy():
+    # Originally left None on the theory that CategoryClassifier would fill it.
+    # In practice queue cards rendered "Unknown", because that classifier reads
+    # title + description and catalog titles carry none of its keywords — while
+    # the source had already told us the type outright.
+    assert build_dto(item(subjects=["Competition"])).category is Category.Competition
 
 
-def test_relevance_is_left_unrated():
-    # Faking a profile-fit score would corrupt the queue ordering. Unrated
-    # items sort last, which is right for unreviewed scraped input.
+def test_category_still_falls_through_to_the_classifier_when_unknowable():
+    assert build_dto(item(title="Qqq Wwwzzz")).category is None
+
+
+def test_relevance_is_rated_so_items_are_not_buried():
+    # Originally left None to avoid faking an LLM judgement. But NULL relevance
+    # sorts LAST in get_pending, so ~1,900 scraped items would queue behind
+    # every Telegram item permanently. The score is keyword-derived and
+    # relevance_reason says so on the card.
     dto = build_dto(item())
-    assert dto.relevance is None
-    assert dto.relevance_reason is None
+    assert 1 <= dto.relevance <= 5
+    assert dto.relevance_reason
 
 
 def test_card_fields_respect_their_caps():
