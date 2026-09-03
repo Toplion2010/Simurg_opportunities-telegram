@@ -122,8 +122,11 @@ def test_parts_helpers_work_without_the_source_taxonomy():
 
     assert category_from_parts("Student Leadership Academy", None) == Category.SummerProgram
     assert category_from_parts("Princeton Math Contest", None) == Category.Competition
+    # "Mathcounts" is a real listing whose title is the only signal once the
+    # source taxonomy is gone -- math would not have matched it.
     score, reason = relevance_from_parts("Mathcounts", None)
     assert score == 5 and "math" in reason
+    assert relevance_from_parts("Mathew Scholars Fund", None)[0] != 5
 
 
 def test_parts_helpers_tolerate_missing_text():

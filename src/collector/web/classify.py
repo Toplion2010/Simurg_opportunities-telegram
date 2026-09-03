@@ -75,7 +75,10 @@ _RELEVANCE_TERMS: list[tuple[int, str]] = [
     (5, r"computer science|artificial intelligence|\bai\b|machine learning|"
         r"cybersecurity|robotic|hackathon|programming|software|data science|"
         r"\bhacking\b|informatics|\bcoding\b|competitive programming"),
-    (5, r"mathematic|\bmath\b|olympiad|entrepreneur|startup|\bbusiness\b"),
+    # math misses real program names -- Mathcounts, Mathletes,
+    # MathWorks -- and the repair path often has only a title to go on.
+    # Prefix match, minus the given-name forms.
+    (5, r"\bmath(?!ew|ias)\w*|olympiad|entrepreneur|startup|\bbusiness\b"),
     (4, r"engineering|physics|aerospace|technology|\bstem\b|biotech|"
         r"synthetic biology|neuroscience|science research|\binnovation\b"),
     (3, r"\bscience\b|biology|chemistry|medicine|biomedic|environmental|"
