@@ -107,3 +107,26 @@ def test_description_still_used_when_title_alone_is_silent():
     # signal at all, the description fallback must still work exactly as
     # before. "Elevate" alone matches nothing in _TITLE_PATTERNS.
     assert category_from_parts("Elevate", "A hackathon for students.") == Category.Hackathon
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Amgen Scholars Program",
+        "UMB CURE Scholars Program",
+        "Welch Summer Scholar Program",
+        "National Merit Scholarship",
+    ],
+)
+def test_scholars_and_scholarship_both_match(title):
+    """\bscholarship\b alone missed a very common naming pattern -- "___
+    Scholars Program" -- and these titles ALSO contain the generic "Program"
+    catch-all keyword. Once title-only started outranking description (see
+    the previous fix), that combination flipped real Scholarship rows to
+    SummerProgram on a live repair run."""
+    assert category_from_parts(title, None) == Category.Scholarship
+
+
+def test_scholarly_is_not_scholarship():
+    # Word-boundary check: "Scholarly" must not match "Scholar(s)".
+    assert category_from_parts("A Scholarly Journal", None) != Category.Scholarship
