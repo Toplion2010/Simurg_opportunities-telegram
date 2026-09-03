@@ -45,7 +45,13 @@ _TITLE_PATTERNS: list[tuple[str, Category]] = [
     (r"\bolympiad\b", Category.Olympiad),
     (r"\b(?:internship|intern)\b", Category.Internship),
     (r"\bfellowship\b", Category.Fellowship),
-    (r"\bscholarship\b", Category.Scholarship),
+    # "Scholars"/"Scholar" (no "-ship") is a very common naming pattern for
+    # these programs -- "Amgen Scholars Program", "UMB CURE Scholars
+    # Program", "Welch Summer Scholar Program" -- and none of them matched
+    # \bscholarship\b. Caught live: after title started outranking
+    # description, those fell through to the generic "Program" catch-all
+    # below and got overwritten FROM Scholarship TO SummerProgram.
+    (r"\bscholarships?\b|\bscholars?\b", Category.Scholarship),
     (r"\bgrant\b", Category.Grant),
     (r"\b(?:conference|symposium|summit)\b", Category.Conference),
     (r"\b(?:competition|contest|challenge|tournament|award|prize|bee|bowl)\b",
