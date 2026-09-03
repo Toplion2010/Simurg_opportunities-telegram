@@ -123,7 +123,12 @@ def _description(item: WebItem) -> str:
     return " ".join([f"{sentence}." if sentence else "", *extras]).strip()
 
 
-def build_dto(item: WebItem) -> OpportunityDTO:
+def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> OpportunityDTO:
+    """``funding_signals`` are terms found on the opportunity's OFFICIAL page
+    (see collector/web/fetcher._funding_on_official_page). They are the only
+    reason an expensive in-person programme is admitted at all, so they are
+    surfaced to the admin rather than kept in the run log — the reviewer needs
+    to see why a $18,195 programme is in the queue."""
     cost = _cost_text(item)
     description = _description(item)
     where = _location(item)
@@ -146,6 +151,17 @@ def build_dto(item: WebItem) -> OpportunityDTO:
     rewards = None
     if cost and cost.lower() == "free":
         rewards = "Free to enter"
+    elif funding_signals:
+        rewards = f"Financial aid available ({', '.join(funding_signals[:3])})"
+
+    extra_notes = None
+    if funding_signals:
+        extra_notes = (
+            "Cost is listed as "
+            f"{cost or 'unstated'}, but the official site mentions: "
+            f"{', '.join(funding_signals)}. Verify the amount and the deadline "
+            "for aid before publishing."
+        )
 
     additional_links = []
     if item.apply_url and item.page_url and item.apply_url != item.page_url:
@@ -172,7 +188,7 @@ def build_dto(item: WebItem) -> OpportunityDTO:
         card_eligibility=_fit(item.eligibility, 90),
         card_rewards=_fit(rewards or cost, 90),
         additional_links=additional_links,
-        extra_notes=None,
+        extra_notes=extra_notes,
         source_excerpt=_fit(description, 400),
         min_age=min_age,
         relevance=None,  # see module docstring

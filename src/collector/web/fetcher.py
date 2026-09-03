@@ -13,12 +13,19 @@ The scrapers are synchronous (httpx.Client). That is deliberate: this runs as a
 short-lived batch job with nothing else on the loop, and a sync client keeps
 the per-request pacing in http.Fetcher trivially correct.
 """
+import html
+import re
 from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.collector.web.filters import admits
+from src.collector.web.filters import (
+    REASON_FUNDED_OFFICIAL,
+    REASON_UNFUNDED_IN_PERSON,
+    admits,
+    find_funding,
+)
 from src.collector.web.http import Fetcher
 from src.collector.web.registry import enabled_sources, get_source_class
 from src.collector.web.to_dto import build_dto
@@ -70,6 +77,30 @@ async def fetch_web_items(
     return payloads
 
 
+_TAG_RE = re.compile(r"<[^>]+>")
+_SCRIPT_RE = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
+# Enough of a page to cover a "Tuition & Aid" section without holding a whole
+# marketing site in memory.
+_FUNDING_PAGE_CHARS = 200_000
+
+
+def _funding_on_official_page(fetcher, item) -> list[str]:
+    """Funding signals stated on the opportunity's own site.
+
+    Never raises: a fetch failure means we learned nothing, and the item keeps
+    whatever verdict the catalog data alone produced.
+    """
+    try:
+        page = fetcher.get(item.apply_url).text[:_FUNDING_PAGE_CHARS]
+    except Exception:
+        logger.info(
+            "web_funding_check_failed", external_id=item.external_id, url=item.apply_url
+        )
+        return []
+    text = html.unescape(_TAG_RE.sub(" ", _SCRIPT_RE.sub(" ", page)))
+    return find_funding(text)
+
+
 async def _collect_one(
     settings,
     raw_repo: RawMessageRepository,
@@ -84,6 +115,21 @@ async def _collect_one(
         retries=settings.WEB_REQUEST_RETRIES,
         sleep_seconds=settings.WEB_FETCH_SLEEP_SECONDS,
     )
+    try:
+        return await _collect_with(settings, raw_repo, row, key, config, cap, fetcher)
+    finally:
+        fetcher.close()
+
+
+async def _collect_with(
+    settings,
+    raw_repo: RawMessageRepository,
+    row: SourceChannel,
+    key: str,
+    config: dict,
+    cap: int,
+    fetcher: Fetcher,
+) -> list[dict[str, Any]]:
     try:
         source_cls = get_source_class(config["module"])
         source = source_cls(fetcher)
@@ -110,15 +156,40 @@ async def _collect_one(
         # A source that breaks entirely must not cost the rest of the run.
         logger.exception("web_source_failed", source=key)
         return []
-    finally:
-        fetcher.close()
 
     payloads: list[dict[str, Any]] = []
     rejected = 0
+    second_looks = 0
     now = datetime.now(tz=timezone.utc).isoformat()
     for item in items:
         admitted, reason = admits(item, small_fee_usd=settings.WEB_SMALL_FEE_USD)
-        dto = build_dto(item)
+
+        # Second look: an in-person programme priced above the small-fee
+        # threshold is only genuinely out of reach if nobody will pay for it,
+        # and the catalogs never say. Their records are essentially prose-free,
+        # so the funding limb of the admission rule can only be evaluated
+        # against the OFFICIAL page. Bounded per run, because it costs one
+        # extra request per candidate.
+        funding: list[str] = []
+        if (
+            not admitted
+            and reason == REASON_UNFUNDED_IN_PERSON
+            and item.apply_url
+            and second_looks < settings.WEB_FUNDING_CHECK_MAX_PER_RUN
+        ):
+            second_looks += 1
+            funding = _funding_on_official_page(fetcher, item)
+            if funding:
+                admitted, reason = True, REASON_FUNDED_OFFICIAL
+                logger.info(
+                    "web_funding_found",
+                    source=key,
+                    external_id=item.external_id,
+                    cost=item.cost_amount,
+                    signals=funding,
+                )
+
+        dto = build_dto(item, funding_signals=funding)
 
         if not admitted:
             rejected += 1
