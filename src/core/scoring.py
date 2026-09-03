@@ -1,68 +1,75 @@
-"""A 1-10 relevance score combining reachability and profile fit.
+"""A 0-100 relevance score combining reachability ("coolness") and profile fit.
 
 Used by both collector pipelines (Telegram via src/processor/pipeline.py, web
 catalogs via src/collector/web/to_dto.py) so an opportunity's rank in the
-admin queue means the same thing regardless of where it came from. Lives in
-core/ rather than processor/ or collector/web/ for the same reason geo.py
-does: both siblings need it, and neither should import from the other.
+admin queue -- and now the daily digest's auto-approve/review split -- means
+the same thing regardless of where it came from. Lives in core/ rather than
+processor/ or collector/web/ for the same reason geo.py does: both siblings
+need it, and neither should import from the other.
 
-Two axes, kept genuinely independent:
+Replaces an earlier 1-10 table (reachability tier x fit tier, 16 cells) that
+was too coarse once the job became "pick the real top 5 out of hundreds of
+pending rows a day" rather than just "sort a queue a human browses by hand".
+Both axes are now continuous point totals instead of table lookups, so ties
+are rare.
 
-  REACHABILITY -- can a Kazakh student actually get there. Four tiers,
-  worst-first:
+  COOLNESS (0-60) -- can a Kazakh student actually get there, and how good
+  is the deal. Built on the same reachability tiers as before (R1..R4, see
+  reachability_tier()), plus a continuous bonus for how strong the signal is
+  within that tier:
 
-    R1  in-person, priced, unfunded, not Kazakhstan-local. Normally
-        unreachable for web items (collector.web.filters.admits() already
-        rejects this combination before scoring ever runs) but real for
-        Telegram, which has no such gate.
-    R2  in-person, free or a small fee, no funding language at all -- the
-        student would cover travel and lodging entirely themselves. Also the
-        conservative default when online-ness and cost are both genuinely
-        unknown: unknown must not be scored as though it were confirmed
-        online, the way the admission GATE is allowed to (that gate optimizes
-        for "worth a human looking at"; this optimizes for "how good is it").
-    R3  in-person, PARTIAL funding -- a funding term matches (scholarship,
-        financial aid, fee waiver, stipend...) but not full coverage, and the
-        opportunity is not itself located in Kazakhstan.
-    R4  online (or hybrid with an online track), OR in-person with FULL
-        funding (travel and lodging both covered -- "fully funded", "all
-        expenses paid", or a travel-term and a lodging-term both present), OR
-        in-person AND located in Kazakhstan AND (funded or free/cheap) --
-        local means there is no flight to fund in the first place, so partial
-        funding that excludes travel is moot.
+    R1 (floor 0)   in-person, priced, unfunded, not Kazakhstan-local -- or
+                   the citizenship/residency bar. No bonus; this is the
+                   score floor.
+    R2 (floor 15)  free/cheap in-person with no funding language, or
+                   genuinely unknown online-ness AND cost. Bonus (0-10)
+                   scales with how far under WEB_SMALL_FEE_USD the (known)
+                   cost is; an unknown cost gets a flat mid-range bonus.
+    R3 (floor 30)  partial funding, not Kazakhstan-local. Bonus (0-15) scales
+                   with how many distinct funding signals were found
+                   (find_funding()) -- "scholarship" alone reads weaker than
+                   "scholarship, financial aid, stipend" together.
+    R4 (floor 45)  online, OR fully funded, OR Kazakhstan-local and
+                   funded/cheap. Bonus is at its max (+15) for online or full
+                   funding, slightly less (+12) for the KZ-local case, since
+                   a local program still costs the price of a bus ticket at
+                   worst.
 
-  A citizenship/residency bar (the same regex the admission gate uses) clamps
-  reachability to R1 rather than causing a rejection -- consistent with
-  relevance being sort-only, never a reject signal (see queue.py's own
-  "Triage fields ... never auto-reject" comment). This is the first time that
-  bar means anything for Telegram-sourced items at all, since admits() only
-  ever ran against web items.
+  The tier ranges never overlap (R1=0, R2=15-25, R3=37-45, R4=57-60), so
+  coolness alone already orders every reachability outcome correctly.
 
-  FIT -- the extractor's own four bands, unchanged wording: Core(4) /
-  Adjacent-STEM-business(3) / General-with-real-content(2) / Off-profile(1).
-  Keyword-derived for BOTH sources (no LLM call) so an item's fit score means
-  the same thing whether it came from Telegram or a scraped catalog.
+  FIT (0-40) -- how well the opportunity matches THIS profile specifically:
+  competitive programmer (Codeforces, ICPC finalist), AI/ML builder and
+  researcher (computer vision, NLP), founder, full-stack engineer. Chess,
+  pure math olympiads and sports are real CV lines but are NOT this
+  profile's focus -- they score as off-profile (0) regardless of what else
+  co-occurs in the same text. Four tiers, each a fixed base plus up to +6
+  for multiple distinct signals at the winning tier:
 
-The two combine through a small monotonic table, not a formula -- every score
-1-10 appears in the table below at least once, and each cell is individually
-auditable:
+    4 (base 34)  AI/ML, competitive programming, hackathons, founder/startup,
+                 and CS/tech-context-gated research programs.
+    3 (base 22)  adjacent software engineering (web/mobile/full-stack, data
+                 science/engineering, open source).
+    2 (base 10)  loosely related -- STEM, "tech program", generic
+                 innovation/product language with no CS/AI keyword alongside.
+    1 (base 0)   everything else, explicitly including chess, math olympiad
+                 and sports terms. A bare "competition" is not enough signal
+                 by itself to reach tier 4 -- only the specific CS/AI/
+                 competitive-programming terms above do.
 
-           Core  Adjacent  General  Off-profile
-    R4      10      9         7         6
-    R3       8      6         5         3
-    R2       5      4         3         2
-    R1       3      2         2         1
+`score()` returns COOLNESS + FIT (0-100) and a reason naming both
+components' rationale, auditable straight off a queue card or a daily digest
+push, e.g.:
+
+    "cool 51/60 (fully funded) + fit 34/40 (core: computer vision, hackathon)"
 """
 import re
 
 # --- funding & citizenship regexes ---------------------------------------
-# Owned here now; src/collector/web/filters.py imports _CITIZENSHIP_RE and
+# Owned here; src/collector/web/filters.py imports _CITIZENSHIP_RE and
 # find_funding back rather than redefining them, so the admission gate and
 # the score always agree on what "funded" and "citizens only" mean.
 
-# A hard legal bar, not a preference. The NSF-REU family ("US citizens,
-# nationals, or permanent residents") is the single highest-volume exclusion
-# in the web catalogs, and no amount of funding lifts it.
 _CITIZENSHIP_PATTERNS = [
     r"u\.?\s?s\.?\s+citizens?",
     r"united states citizens?",
@@ -79,9 +86,9 @@ _CITIZENSHIP_PATTERNS = [
 ]
 _CITIZENSHIP_RE = re.compile("|".join(_CITIZENSHIP_PATTERNS), re.IGNORECASE)
 
-# Any funding mention at all -- covers both partial (R3) and full (R4)
-# coverage; _FULL_FUNDING_PHRASES_RE below narrows to the subset that also
-# covers travel and lodging.
+# Any funding mention at all -- covers both partial and full coverage;
+# _FULL_FUNDING_PHRASES_RE below narrows to the subset that also covers
+# travel and lodging.
 _FUNDING_PATTERNS = [
     r"scholarship",
     r"financial aid",
@@ -173,9 +180,7 @@ _USD_MARKER_RE = re.compile(r"\$|usd|dollars?", re.IGNORECASE)
 # A number next to one of these means the amount is almost certainly NOT USD.
 # The Kazakhstan-local case is exactly why this matters: "5000 KZT" is roughly
 # $10, but a currency-blind parse reads it as $5000 and scores a cheap, local,
-# reachable item as unaffordable -- worse than not knowing at all, since
-# reachability_tier's small_fee_usd comparison assumes every cost_amount is in
-# dollars.
+# reachable item as unaffordable -- worse than not knowing at all.
 _NON_USD_MARKER_RE = re.compile(
     r"kzt|тенге|₸|rub|руб|₽|eur|€|gbp|£|\bkr\b", re.IGNORECASE
 )
@@ -183,11 +188,9 @@ _NON_USD_MARKER_RE = re.compile(
 
 def infer_cost_amount(cost_text: str | None) -> float | None:
     """Best-effort numeric cost from a free-text field like "Free", "$50",
-    "Paid", "$1,200/session". Lower fidelity than a scraped source's real
-    cost_amount by design -- a messy string that does not parse returns None
-    (unknown), which is the safe direction for scoring, never the expensive
-    direction. A number found next to a non-USD currency marker ALSO returns
-    None rather than a wrong number -- see the Kazakhstan note above.
+    "Paid", "$1,200/session". A messy string that does not parse, or a
+    number next to a non-USD currency marker, returns None (unknown) rather
+    than a wrong number -- the safe direction for scoring.
     """
     if not cost_text or not cost_text.strip():
         return None
@@ -257,60 +260,165 @@ def reachability_tier(
     return (R1, _REACH_LABELS[R1])
 
 
-# --- fit ---------------------------------------------------------------
+# --- coolness (0-60) --------------------------------------------------------
 
-# Profile fit, using the SAME 1-5 language the extractor prompt used to
-# define directly (now computed here instead of asked of the LLM -- see
-# src/processor/extractor.py's removal of the relevance field):
-#   4 = core fit, 3 = adjacent STEM/business, 2 = general with real content,
-#   1 = off-profile.
-_FIT_TERMS: list[tuple[int, str]] = [
-    (4, r"computer science|artificial intelligence|\bai\b|machine learning|"
-        r"cybersecurity|robotic|hackathon|programming|software|data science|"
-        r"\bhacking\b|informatics|\bcoding\b|competitive programming|"
-        # math misses real program names -- Mathcounts, Mathletes, MathWorks
-        # -- and the repair path often has only a title to go on. Prefix
-        # match, minus the given-name forms.
-        r"\bmath(?!ew|ias)\w*|olympiad|entrepreneur|startup|\bbusiness\b"),
-    (3, r"engineering|physics|aerospace|technology|\bstem\b|biotech|"
-        r"synthetic biology|neuroscience|science research|\binnovation\b"),
-    (2, r"\bscience\b|biology|chemistry|medicine|biomedic|environmental|"
-        r"marine|geography|psychology|\bgeneral\b|economics|finance|"
-        r"writing|debate|model un|journalism|policy|history|philosoph|"
-        r"leadership|language"),
-    (1, r"\bart\b|\barts\b|music|theat|dance|sport|athlet|film|photograph|choir"),
-]
-_FIT_RULES = [(s, re.compile(p, re.IGNORECASE)) for s, p in _FIT_TERMS]
+_REACH_FLOOR = {R1: 0, R2: 15, R3: 30, R4: 45}
+_REACH_BONUS_MAX = 15
 
-# Nothing matched. 2 is "general with real content", the honest reading of a
-# listing whose subject we could not identify -- still above genuine
-# off-profile.
-_DEFAULT_FIT = 2
-_DEFAULT_FIT_REASON = "no profile keywords matched"
+
+def coolness_score(
+    is_online: bool | None,
+    cost_amount: float | None,
+    location: str | None,
+    text: str,
+    small_fee_usd: float = 50.0,
+) -> tuple[int, str]:
+    """(score 0-60, reason). Continuous version of reachability_tier(): the
+    tier sets a floor, a same-tier bonus separates a strong signal (fully
+    funded, $0 fee) from a weak one (one funding phrase, $45 of a $50 cap).
+    """
+    text = text or ""
+    tier, label = reachability_tier(is_online, cost_amount, location, text, small_fee_usd)
+    floor = _REACH_FLOOR[tier]
+
+    if tier == R1:
+        return (floor, label)
+
+    if tier == R4:
+        bonus = _REACH_BONUS_MAX if label in ("online", "fully funded") else 12
+    elif tier == R3:
+        signals = find_funding(text)
+        bonus = min(_REACH_BONUS_MAX, 5 + 2 * len(signals))
+    else:  # R2
+        if cost_amount is not None and small_fee_usd > 0:
+            cheapness = max(0.0, 1 - min(cost_amount, small_fee_usd) / small_fee_usd)
+            bonus = round(10 * cheapness)
+        else:
+            bonus = 5  # unknown cost: a flat, middling bonus, not a guess
+
+    return (floor + bonus, label)
+
+
+# --- fit (0-40) --------------------------------------------------------
+
+# Profile: competitive programmer (Codeforces, ICPC finalist), AI/ML builder
+# and researcher (computer vision, NLP, forensics), founder, full-stack
+# engineer. Chess, pure math olympiads and sports are real CV lines but are
+# NOT this profile's focus -- they must read as off-profile even when they
+# share text with something that genuinely is.
+_TIER4_KEYWORD_RE = re.compile(
+    r"machine learning|artificial intelligence|computer vision|\bnlp\b|"
+    r"deep learning|neural network|\bllm\b|generative ai|ai research|\bai\b|"
+    r"\bicpc\b|\bioi\b|codeforces|competitive programming|algorithmic contest|"
+    r"\balgorithm\b|"
+    r"\bhackathons?\b|\bhack\b|"
+    r"\bstartups?\b|\bfounders?\b|entrepreneurship|\baccelerators?\b|\bincubators?\b",
+    re.IGNORECASE,
+)
+# Research only counts as core fit alongside a CS/tech context -- "research
+# program" alone says nothing about the field it's in.
+_RESEARCH_PHRASE_RE = re.compile(
+    r"research (?:intern(?:ship)?|program(?:me)?|fellowship)", re.IGNORECASE
+)
+_TECH_CONTEXT_RE = re.compile(
+    r"computer science|\bsoftware\b|\btechnology\b|\btech\b|\bengineering\b|"
+    r"informatics|programming|\bcs\b|\bdata\b|\bcoding\b|artificial intelligence|"
+    r"machine learning|\bai\b",
+    re.IGNORECASE,
+)
+
+_TIER3_KEYWORD_RE = re.compile(
+    r"software engineer(?:ing)?|web development|full[- ]stack|mobile development|"
+    r"data science|data engineering|open source",
+    re.IGNORECASE,
+)
+
+_TIER2_KEYWORD_RE = re.compile(
+    r"\bstem\b|tech(?:nology)? program|\binnovation\b|\bproduct\b",
+    re.IGNORECASE,
+)
+
+# Explicit off-profile terms, purely so a real "why is this 0" reason exists
+# instead of the generic no-match fallback -- functionally both are base 0.
+_TIER1_KEYWORD_RE = re.compile(
+    r"\bchess\b|math(?:ematical)? olympiad|\bsports?\b|\bathlet\w*|\bfootball\b|"
+    r"\bbasketball\b|\btennis\b|\bswimming\b",
+    re.IGNORECASE,
+)
+
+_TIER_BASE = {4: 34, 3: 22, 2: 10, 1: 0}
+_FIT_BONUS_MAX = 6
+_MAX_LISTED_MATCHES = 3
 
 
 def fit_tier(text: str) -> tuple[int, str]:
-    """(tier 1-4, reason). Takes the HIGHEST-scoring signal present, not the
-    first: a "Robotics and Art Camp" is a robotics opportunity that also does
-    art, not an art one."""
-    best: tuple[int, str] | None = None
-    for tier, pattern in _FIT_RULES:
-        match = pattern.search(text)
-        if match and (best is None or tier > best[0]):
-            best = (tier, match.group(0).strip().lower())
-    if best is None:
-        return (_DEFAULT_FIT, _DEFAULT_FIT_REASON)
-    return best
+    """(tier 1-4, reason). Highest-scoring signal present, not the first."""
+    text = text or ""
+
+    match4 = _TIER4_KEYWORD_RE.search(text)
+    if match4:
+        return (4, match4.group(0).strip().lower())
+
+    research_match = _RESEARCH_PHRASE_RE.search(text)
+    if research_match and _TECH_CONTEXT_RE.search(text):
+        return (4, research_match.group(0).strip().lower())
+
+    match3 = _TIER3_KEYWORD_RE.search(text)
+    if match3:
+        return (3, match3.group(0).strip().lower())
+
+    match2 = _TIER2_KEYWORD_RE.search(text)
+    if match2:
+        return (2, match2.group(0).strip().lower())
+
+    match1 = _TIER1_KEYWORD_RE.search(text)
+    if match1:
+        return (1, f"off-profile: {match1.group(0).strip().lower()}")
+
+    return (1, "no profile keywords matched")
+
+
+def fit_score(text: str) -> tuple[int, str]:
+    """(score 0-40, reason). Fixed tier base + up to +6 for multiple distinct
+    signals at the winning tier -- a listing naming several core-fit
+    keywords outranks one that barely qualifies."""
+    text = text or ""
+    tier, label = fit_tier(text)
+    base = _TIER_BASE[tier]
+
+    if tier == 4:
+        matches = {m.group(0).strip().lower() for m in _TIER4_KEYWORD_RE.finditer(text)}
+        research_match = _RESEARCH_PHRASE_RE.search(text)
+        if research_match and _TECH_CONTEXT_RE.search(text):
+            matches.add(research_match.group(0).strip().lower())
+    elif tier == 3:
+        matches = {m.group(0).strip().lower() for m in _TIER3_KEYWORD_RE.finditer(text)}
+    elif tier == 2:
+        matches = {m.group(0).strip().lower() for m in _TIER2_KEYWORD_RE.finditer(text)}
+    else:
+        matches = set()
+
+    bonus = min(_FIT_BONUS_MAX, 2 * max(0, len(matches) - 1))
+    value = base + bonus
+
+    if matches:
+        shown = sorted(matches)[:_MAX_LISTED_MATCHES]
+        suffix = ", ..." if len(matches) > _MAX_LISTED_MATCHES else ""
+        prefix = {4: "core", 3: "adjacent", 2: "general"}[tier]
+        reason = f"{prefix}: {', '.join(shown)}{suffix}"
+    else:
+        reason = label
+
+    return (value, reason)
 
 
 # --- combined score ------------------------------------------------------
 
-_SCORE_TABLE: dict[tuple[int, int], int] = {
-    (R4, 4): 10, (R4, 3): 9, (R4, 2): 7, (R4, 1): 6,
-    (R3, 4): 8,  (R3, 3): 6, (R3, 2): 5, (R3, 1): 3,
-    (R2, 4): 5,  (R2, 3): 4, (R2, 2): 3, (R2, 1): 2,
-    (R1, 4): 3,  (R1, 3): 2, (R1, 2): 2, (R1, 1): 1,
-}
+# Opportunity.relevance_reason is a String(120) column. Assignment on an
+# already-constructed OpportunityDTO (src/processor/pipeline.py's Telegram
+# path) bypasses pydantic validators entirely, so length has to be enforced
+# here to be safe for both callers.
+_MAX_REASON_LEN = 120
 
 
 def score(
@@ -320,13 +428,14 @@ def score(
     text: str,
     small_fee_usd: float = 50.0,
 ) -> tuple[int, str]:
-    """(score 1-10, reason). `text` should include title, description and
+    """(score 0-100, reason). `text` should include title, description and
     eligibility at minimum -- everywhere funding, citizenship and fit
     keywords might appear."""
     text = text or ""
-    reach, reach_label = reachability_tier(
-        is_online, cost_amount, location, text, small_fee_usd
-    )
-    fit, fit_label = fit_tier(text)
-    value = _SCORE_TABLE[(reach, fit)]
-    return (value, f"{reach_label} + keyword: {fit_label}")
+    cool, cool_label = coolness_score(is_online, cost_amount, location, text, small_fee_usd)
+    fit, fit_label = fit_score(text)
+    value = cool + fit
+    reason = f"cool {cool}/60 ({cool_label}) + fit {fit}/40 ({fit_label})"
+    if len(reason) > _MAX_REASON_LEN:
+        reason = reason[: _MAX_REASON_LEN - 3] + "..."
+    return (value, reason)

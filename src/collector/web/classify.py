@@ -8,7 +8,7 @@ us outright that the item is a `type-of-activity: Program`. The data was
 collected into WebItem.subjects and then ignored.
 
 Relevance scoring lives in src/core/scoring.py now, shared with the Telegram
-pipeline -- see that module's docstring for why it moved and how the 1-10
+pipeline -- see that module's docstring for why it moved and how the 0-100 score
 rubric works.
 """
 import re

@@ -19,7 +19,7 @@ opportunity IN Kazakhstan" for hackathon-channel routing. This answers "can a
 Kazakh student GET to this". Keep them separate.
 
 `_CITIZENSHIP_RE` and `find_funding` live in src/core/scoring.py now, shared
-with the 1-10 relevance rubric -- so the admission gate and the score always
+with the 0-100 relevance score -- so the admission gate and the score always
 agree on what "funded" and "citizens only" mean, rather than drifting apart as
 two copies of the same regex.
 """

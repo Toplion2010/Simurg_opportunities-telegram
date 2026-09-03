@@ -31,31 +31,31 @@ def test_unrated_row_omits_stars_and_source():
 def test_fully_populated_row_shows_everything():
     opp = _make_opp(
         deadline="March 1, 2026",
-        relevance=8,
-        relevance_reason="online + keyword: ai",
+        relevance=78,
+        relevance_reason="cool 44/60 (online) + fit 34/40 (core: ai)",
         min_age=18,
         source_url="https://t.me/somechannel/42",
         category=Category.Hackathon,
     )
     card = _card_text(opp)
-    # relevance is 1-10 (src/core/scoring.py); the star GLYPH count is
-    # ceil(relevance/2) so it stays a readable 5 stars, but the number shown
-    # is always the honest /10.
-    assert "⭐⭐⭐⭐☆ 8/10 · online + keyword: ai" in card
+    # relevance is 0-100 (src/core/scoring.py); the star GLYPH count is
+    # ceil(relevance/20) so it stays a readable 5 stars, but the number shown
+    # is always the honest /100.
+    assert "⭐⭐⭐⭐☆ 78/100 · cool 44/60 (online) + fit 34/40 (core: ai)" in card
     assert "🏷 Hackathon · 🔞 18+" in card
     assert 'https://t.me/somechannel/42' in card
     assert "🔞 18+" in card
     assert "March 1, 2026" in card
 
 
-def test_star_glyph_count_is_ceil_of_relevance_over_two():
-    # round()'s banker's rounding would collapse 5&6 and 8&9 to identical
-    # glyph counts; ceil() pairs cleanly (1-2->1, 3-4->2, ..., 9-10->5).
-    cases = {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4, 9: 5, 10: 5}
+def test_star_glyph_count_is_ceil_of_relevance_over_twenty():
+    # round()'s banker's rounding would collapse boundary values to identical
+    # glyph counts; ceil() pairs cleanly (1-20->1, 21-40->2, ..., 81-100->5).
+    cases = {0: 0, 1: 1, 20: 1, 21: 2, 40: 2, 41: 3, 60: 3, 61: 4, 80: 4, 81: 5, 100: 5}
     for relevance, filled in cases.items():
         card = _card_text(_make_opp(relevance=relevance, relevance_reason=None))
         assert card.count("⭐") == filled, f"relevance={relevance}"
-        assert f"{relevance}/10" in card
+        assert f"{relevance}/100" in card
 
 
 def test_min_age_under_18_has_no_badge():
