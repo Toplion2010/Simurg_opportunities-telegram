@@ -106,6 +106,44 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self._session.execute(stmt)
         return {(cat.value if cat else None): count for cat, count in result.all()}
 
+    async def get_digest_candidates(self, min_score: int, limit: int) -> list[Opportunity]:
+        """Best pending, not-yet-digested opportunities for a daily digest run.
+
+        Best-first by score, then soonest deadline, then oldest first —
+        `deadline` is a free-text field (not always a real date), so this
+        sorts it lexically as a best-effort tiebreak rather than parsing it;
+        NULL/unparseable deadlines simply sort after ones that look dated.
+        `digested_at IS NULL` is what keeps a row from being surfaced twice
+        across days, or twice by a re-dispatch of the same day's workflow.
+        """
+        stmt = (
+            select(Opportunity)
+            .where(
+                Opportunity.status == OpportunityStatus.pending,
+                Opportunity.digested_at.is_(None),
+                Opportunity.relevance >= min_score,
+            )
+            .order_by(
+                Opportunity.relevance.desc(),
+                Opportunity.deadline.is_(None).asc(),
+                Opportunity.deadline.asc(),
+                Opportunity.created_at.asc(),
+            )
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_published_since(self, since: datetime) -> int:
+        from sqlalchemy import func
+
+        stmt = select(func.count()).select_from(Opportunity).where(
+            Opportunity.status == OpportunityStatus.published,
+            Opportunity.published_at >= since,
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one()
+
     async def get_recently_published(self, since: datetime) -> list[Opportunity]:
         stmt = (
             select(Opportunity)

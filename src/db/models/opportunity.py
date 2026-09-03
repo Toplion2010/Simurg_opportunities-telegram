@@ -109,6 +109,11 @@ class Opportunity(Base):
     scheduled_at: Mapped[datetime | None]
     published_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    # Stamped the moment a pending row is selected into a daily digest run
+    # (src/routines/daily_digest.py) — auto-approved or pushed for review.
+    # Keeps a later same-day run from re-selecting it, and marks it a
+    # surfaced candidate even if it later gets rejected.
+    digested_at: Mapped[datetime | None]
 
     raw_message: Mapped["RawMessage | None"] = relationship(back_populates="opportunities")
     tags: Mapped[list["Tag"]] = relationship(  # noqa: F821
