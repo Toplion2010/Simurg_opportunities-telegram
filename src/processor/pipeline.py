@@ -1,6 +1,8 @@
 from src.core.enums import Audience, Category, OpportunityStatus, RawAudience
 from src.core.exceptions import ProcessingError
 from src.core.logging import get_logger
+from src.core.scoring import infer_cost_amount, infer_is_online
+from src.core.scoring import score as reachability_score
 from src.db.models.opportunity import Opportunity
 from src.db.models.raw_message import RawMessage
 from src.db.models.source_channel import SourceChannel
@@ -105,6 +107,21 @@ class ProcessingPipeline:
                 if dto.category == Category.Job:
                     logger.info("job_skipped", raw_id=raw.id, title=dto.title)
                     continue
+
+                # Web-sourced dtos already carry a relevance from to_dto.py,
+                # computed from the item's REAL is_online/cost_amount fields
+                # — higher fidelity than anything derivable from free text, so
+                # it is never overwritten here. Only Telegram dtos (no
+                # structured fields to begin with) reach this branch.
+                if dto.relevance is None:
+                    is_online = infer_is_online(dto.location)
+                    cost_amount = infer_cost_amount(dto.cost)
+                    score_text = " ".join(
+                        filter(None, [dto.title, dto.description, dto.eligibility, dto.organizer])
+                    )
+                    dto.relevance, dto.relevance_reason = reachability_score(
+                        is_online, cost_amount, dto.location, score_text
+                    )
 
                 # null/invalid -> both. No keyword guessing: "students" alone is too
                 # ambiguous (school vs university) to classify by keyword.
