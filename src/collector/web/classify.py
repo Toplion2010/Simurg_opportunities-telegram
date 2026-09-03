@@ -40,28 +40,31 @@ _TAXONOMY_TO_CATEGORY: dict[str, Category] = {
 # processor/classifier._KEYWORD_PATTERNS: these are words that appear in
 # catalog LISTING titles ("...Academy", "...Challenge") and would be far too
 # loose to apply to free-text Telegram posts.
+# Every noun form is plural-tolerant (trailing s?, or academy/academies for
+# the one irregular plural). None of them originally were, and it bit twice
+# in the same live run: "IBM Internships" and "Amgen Scholars Program" both
+# fell through their intended pattern (singular-only) to a worse fallback --
+# a real ingested category regressed to Research, another to the generic
+# SummerProgram catch-all -- purely because a program's title happened to use
+# the plural form, which is the ordinary way to name these things ("...
+# Internships", "... Scholarships", "... Competitions"). "research" and
+# "summer" are left alone -- neither pluralizes as a program-title word.
 _TITLE_PATTERNS: list[tuple[str, Category]] = [
-    (r"\bhackathon\b", Category.Hackathon),
-    (r"\bolympiad\b", Category.Olympiad),
-    (r"\b(?:internship|intern)\b", Category.Internship),
-    (r"\bfellowship\b", Category.Fellowship),
-    # "Scholars"/"Scholar" (no "-ship") is a very common naming pattern for
-    # these programs -- "Amgen Scholars Program", "UMB CURE Scholars
-    # Program", "Welch Summer Scholar Program" -- and none of them matched
-    # \bscholarship\b. Caught live: after title started outranking
-    # description, those fell through to the generic "Program" catch-all
-    # below and got overwritten FROM Scholarship TO SummerProgram.
+    (r"\bhackathons?\b", Category.Hackathon),
+    (r"\bolympiads?\b", Category.Olympiad),
+    (r"\b(?:internships?|interns?)\b", Category.Internship),
+    (r"\bfellowships?\b", Category.Fellowship),
     (r"\bscholarships?\b|\bscholars?\b", Category.Scholarship),
-    (r"\bgrant\b", Category.Grant),
-    (r"\b(?:conference|symposium|summit)\b", Category.Conference),
-    (r"\b(?:competition|contest|challenge|tournament|award|prize|bee|bowl)\b",
-     Category.Competition),
+    (r"\bgrants?\b", Category.Grant),
+    (r"\b(?:conferences?|symposiums?|summits?)\b", Category.Conference),
+    (r"\b(?:competitions?|contests?|challenges?|tournaments?|awards?|prizes?|"
+     r"bees?|bowls?)\b", Category.Competition),
     (r"\bresearch\b", Category.Research),
-    (r"\b(?:accelerator|incubator)\b", Category.Accelerator),
-    (r"\bexchange\b", Category.Exchange),
-    (r"\bvolunteer\b", Category.Volunteer),
-    (r"\b(?:summer|camp|academy|institute|bootcamp|workshop|program|programme)\b",
-     Category.SummerProgram),
+    (r"\b(?:accelerators?|incubators?)\b", Category.Accelerator),
+    (r"\bexchanges?\b", Category.Exchange),
+    (r"\bvolunteers?\b", Category.Volunteer),
+    (r"\b(?:summer|camps?|academ(?:y|ies)|institutes?|bootcamps?|workshops?|"
+     r"programs?|programmes?)\b", Category.SummerProgram),
 ]
 _TITLE_RULES = [(re.compile(p, re.IGNORECASE), c) for p, c in _TITLE_PATTERNS]
 
