@@ -79,6 +79,18 @@ def category_from_parts(
         if hit is not None:
             return hit
 
+    # Title alone, first. Caught live: "Amazon Future Engineers Scholarship"
+    # was reclassified as Internship because its DESCRIPTION happens to
+    # mention "a paid internship at Amazon" as a bundled perk, and
+    # "internship" sits earlier than "scholarship" in _TITLE_PATTERNS. A
+    # program's own title is a much stronger signal than an incidental word
+    # in its prose, so it gets first, exclusive refusal.
+    if title:
+        for pattern, category in _TITLE_RULES:
+            if pattern.search(title):
+                return category
+
+    # Title alone matched nothing -- fall back to title+description together.
     haystack = " ".join(filter(None, [title, description]))
     for pattern, category in _TITLE_RULES:
         if pattern.search(haystack):
