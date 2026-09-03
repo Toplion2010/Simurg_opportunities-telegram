@@ -84,11 +84,18 @@ async def run(apply: bool) -> int:
             fixed = 0
             for opp in opps:
                 changed = False
-                if opp.category is None:
-                    category = category_from_parts(opp.title, opp.description)
-                    if category is not None:
-                        opp.category = category
-                        changed = True
+                # Overwrite, not just fill. Rows created before the
+                # classifier's word-boundary fix carry actively WRONG values --
+                # anything containing "International" was filed as an
+                # Internship. Safe here because the scope is pending,
+                # unreviewed, web-sourced rows only, and the old value is
+                # printed alongside the new one so the change is auditable.
+                category = category_from_parts(opp.title, opp.description)
+                if category is not None and category != opp.category:
+                    was = opp.category.value if opp.category else "None"
+                    print(f"  CATEGORY  #{opp.id:<5} {was} -> {category.value}")
+                    opp.category = category
+                    changed = True
                 if opp.relevance is None:
                     opp.relevance, opp.relevance_reason = relevance_from_parts(
                         opp.title, opp.description
