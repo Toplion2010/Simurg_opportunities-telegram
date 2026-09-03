@@ -130,3 +130,32 @@ def test_scholars_and_scholarship_both_match(title):
 def test_scholarly_is_not_scholarship():
     # Word-boundary check: "Scholarly" must not match "Scholar(s)".
     assert category_from_parts("A Scholarly Journal", None) != Category.Scholarship
+
+
+@pytest.mark.parametrize(
+    "title,expected",
+    [
+        ("IBM Internships", Category.Internship),
+        ("Regional Hackathons", Category.Hackathon),
+        ("State Olympiads", Category.Olympiad),
+        ("Research Fellowships", Category.Fellowship),
+        ("Travel Grants Program", Category.Grant),
+        ("Robotics Competitions", Category.Competition),
+        ("Coding Challenges", Category.Competition),
+        ("Spelling Bees", Category.Competition),
+        ("Startup Accelerators", Category.Accelerator),
+        ("Business Incubators", Category.Accelerator),
+        ("Student Exchanges", Category.Exchange),
+        ("Summer Camps", Category.SummerProgram),
+        ("STEM Academies", Category.SummerProgram),
+        ("Coding Bootcamps", Category.SummerProgram),
+        ("Design Workshops", Category.SummerProgram),
+    ],
+)
+def test_plural_program_titles_match(title, expected):
+    """None of the title patterns originally tolerated a plural, and it bit
+    live: "IBM Internships" fell through its own pattern to whatever the
+    description happened to mention (Research), regressing a category that
+    was correct at ingest time. This is the ordinary way to name a program
+    ("... Internships", "... Competitions"), not an edge case."""
+    assert category_from_parts(title, None) == expected
