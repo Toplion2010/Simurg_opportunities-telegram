@@ -83,3 +83,27 @@ def test_item_and_parts_agree():
 def test_dto_category_renders():
     dto = build_dto(item(title="AI Research Institute", subjects=["Research"]))
     assert dto.category == Category.Research
+
+
+def test_title_wins_over_an_incidental_word_in_the_description():
+    """Caught live, about to write bad data on a real repair run: "Amazon
+    Future Engineers Scholarship" reclassified as Internship because its
+    description mentions "a paid internship at Amazon" as a bundled perk.
+    "internship" sits earlier than "scholarship" in _TITLE_PATTERNS, and the
+    old single-pass match scanned title+description together, so the
+    description's incidental word beat the title's own explicit label."""
+    title = "Amazon Future Engineers Scholarship"
+    description = (
+        "Amazon offers this scholarship to students from underserved backgrounds "
+        "interested in pursuing computer science and engineering degrees. Winners "
+        "receive scholarship funds and a paid internship at Amazon to gain "
+        "industry experience."
+    )
+    assert category_from_parts(title, description) == Category.Scholarship
+
+
+def test_description_still_used_when_title_alone_is_silent():
+    # The fix is title-FIRST, not title-ONLY -- when the title carries no
+    # signal at all, the description fallback must still work exactly as
+    # before. "Elevate" alone matches nothing in _TITLE_PATTERNS.
+    assert category_from_parts("Elevate", "A hackathon for students.") == Category.Hackathon
