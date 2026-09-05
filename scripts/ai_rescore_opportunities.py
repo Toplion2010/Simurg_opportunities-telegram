@@ -44,7 +44,11 @@ from src.db.models.opportunity import Opportunity
 from src.db.session import create_session_factory
 
 _MAX_REASON_LEN = 120  # Opportunity.relevance_reason is a String(120) column.
-_CONCURRENCY = 5  # stays well under Groq's free-tier per-minute request cap.
+# Sequential, not concurrent: a first pass at 5-way concurrency hit Groq's
+# free-tier per-minute request cap on the very first batch (9 of 10 calls
+# failed, most as 429s). One request at a time, paced, actually finishes
+# instead of retrying into the same wall.
+_REQUEST_PACING_SECONDS = 2.0
 
 _SYSTEM_PROMPT = """You are scoring a study/opportunity listing for a specific student profile \
 using a strict 3-axis rubric. Score EXACTLY as specified -- this is a rubric to apply, not a \
@@ -141,7 +145,14 @@ async def _score_one(client: openai.AsyncOpenAI, model: str, opp: Opportunity) -
         ],
         response_format={"type": "json_object"},
         temperature=0.1,
-        max_tokens=300,
+        # gpt-oss-120b is a reasoning model -- its chain-of-thought counts
+        # against max_tokens before the JSON is emitted, so a low budget here
+        # truncates mid-reasoning and Groq's json_object validator rejects
+        # the incomplete output. reasoning_effort keeps that chain-of-thought
+        # short in the first place rather than just hoping the token budget
+        # covers whatever length it picks.
+        max_tokens=1024,
+        extra_body={"reasoning_effort": "low"},
     )
     raw = response.choices[0].message.content or "{}"
     return _LlmScore.model_validate(json.loads(raw))
@@ -166,18 +177,18 @@ async def run(apply: bool, limit: int | None) -> int:
                 stmt = stmt.limit(limit)
             opps = (await session.execute(stmt)).scalars().all()
 
-            sem = asyncio.Semaphore(_CONCURRENCY)
             failures: list[tuple[int, str]] = []
             changed = 0
 
-            async def handle(opp: Opportunity) -> None:
-                nonlocal changed
-                async with sem:
-                    try:
-                        result = await _score_one(client, model, opp)
-                    except (openai.RateLimitError, openai.APIError, json.JSONDecodeError, ValidationError) as e:
-                        failures.append((opp.id, str(e)[:120]))
-                        return
+            for i, opp in enumerate(opps):
+                if i > 0:
+                    await asyncio.sleep(_REQUEST_PACING_SECONDS)
+
+                try:
+                    result = await _score_one(client, model, opp)
+                except (openai.RateLimitError, openai.APIError, json.JSONDecodeError, ValidationError) as e:
+                    failures.append((opp.id, str(e)[:300]))
+                    continue
 
                 total = result.coolness + result.fit + result.prestige
                 reason = (
@@ -195,8 +206,6 @@ async def run(apply: bool, limit: int | None) -> int:
                 if apply:
                     opp.relevance = total
                     opp.relevance_reason = reason
-
-            await asyncio.gather(*(handle(opp) for opp in opps))
 
             print(f"\n{changed} of {len(opps)} pending opportunities would change score.")
             if failures:
