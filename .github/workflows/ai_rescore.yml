@@ -25,11 +25,14 @@ jobs:
   ai-rescore:
     runs-on: ubuntu-latest
     # Sequential, paced calls (one request every ~2s to stay under Groq's
-    # free-tier per-minute cap). Real-world latency on the free-tier
-    # reasoning model runs ~15-20s/call on top of that pacing, so 484 rows
-    # is ~2-2.5 hours end to end -- a first run at timeout-minutes: 60 only
-    # got through 131 rows before being cancelled.
-    timeout-minutes: 180
+    # free-tier per-minute cap). Groq also caps this model at a per-day
+    # (rolling) token budget -- once a run exhausts it, each subsequent
+    # call waits out Groq's suggested retry time (see _groq_wait), so a
+    # single run scoring hundreds of backlog rows can span the full
+    # 6-hour hard cap GitHub puts on hosted-runner jobs. Set the job
+    # timeout to that cap; re-dispatching (rows are skipped once scored)
+    # picks up where an exhausted run leaves off.
+    timeout-minutes: 360
 
     steps:
       - uses: actions/checkout@v4

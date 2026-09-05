@@ -27,6 +27,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -62,6 +63,16 @@ _REQUEST_PACING_SECONDS = 2.0
 # loses the current partial batch, and skip already-AI-scored rows up front
 # so a rerun resumes rather than redoing finished work.
 _COMMIT_BATCH_SIZE = 20
+
+# Groq's free tier also caps openai/gpt-oss-120b at a per-day (rolling
+# window) token budget separate from the per-minute cap -- once it's
+# exhausted, 429s name the exact wait ("...on tokens per day (TPD): ...
+# Please try again in 1m48.432s."). The default exponential backoff gives
+# up (max 90s wait, 6 attempts) long before that window reopens, so most
+# rows would be wrongly reported as failed. Parse the hint and wait exactly
+# that long instead, capped so one stuck row can't stall the whole run.
+_RETRY_AFTER_RE = re.compile(r"try again in (?:(?P<minutes>\d+)m)?(?P<seconds>[\d.]+)s")
+_MAX_RATE_LIMIT_WAIT_SECONDS = 300.0
 
 _SYSTEM_PROMPT = """You are scoring a study/opportunity listing for a specific student profile \
 using a strict 3-axis rubric. Score EXACTLY as specified -- this is a rubric to apply, not a \
@@ -143,10 +154,20 @@ def _opportunity_text(opp: dict) -> str:
     return "\n".join(lines)
 
 
+def _groq_wait(retry_state):
+    exc = retry_state.outcome.exception() if retry_state.outcome else None
+    if isinstance(exc, openai.RateLimitError):
+        m = _RETRY_AFTER_RE.search(str(exc))
+        if m:
+            wait_s = (int(m.group("minutes") or 0) * 60) + float(m.group("seconds")) + 1
+            return min(wait_s, _MAX_RATE_LIMIT_WAIT_SECONDS)
+    return wait_exponential(multiplier=2, min=4, max=90)(retry_state)
+
+
 @retry(
     retry=retry_if_exception_type((openai.RateLimitError, openai.APIError)),
-    stop=stop_after_attempt(6),
-    wait=wait_exponential(multiplier=2, min=4, max=90),
+    stop=stop_after_attempt(8),
+    wait=_groq_wait,
     reraise=True,
 )
 async def _score_one(client: openai.AsyncOpenAI, model: str, opp: dict) -> _LlmScore:
