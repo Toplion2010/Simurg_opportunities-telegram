@@ -1,11 +1,13 @@
-"""The shared 0-100 relevance score (src/core/scoring.py): coolness (0-60,
-reachability) + fit (0-40, profile match).
+"""The shared 0-100 relevance score (src/core/scoring.py): coolness (0-40,
+reachability) + fit (0-40, profile match) + prestige (0-20, selectivity/
+brand/prize).
 
 Used by both collector pipelines. The reachability axis is unchanged from
 the 1-10 rubric this replaced — only how it's turned into points changed,
-from a table lookup to a continuous tier-floor-plus-bonus. Fit is rewritten
-around a specific profile (competitive programming, AI/ML, founder,
-full-stack) rather than generic STEM.
+from a table lookup to a continuous tier-floor-plus-bonus, itself scaled
+down from an original 0-60 budget to 0-40 to make room for prestige. Fit is
+rewritten around a specific profile (competitive programming, AI/ML,
+founder, full-stack) rather than generic STEM.
 """
 import pytest
 
@@ -19,6 +21,7 @@ from src.core.scoring import (
     fit_tier,
     infer_cost_amount,
     infer_is_online,
+    prestige_score,
     reachability_tier,
     score,
 )
@@ -133,20 +136,20 @@ def test_coolness_citizenship_bar_is_zero_even_online():
 
 def test_coolness_online_maxes_the_score():
     value, _ = coolness_score(True, None, None, "")
-    assert value == 60
+    assert value == 40
 
 
 def test_coolness_fully_funded_maxes_the_score():
     value, _ = coolness_score(False, 5000.0, "Boston, US", "This program is fully funded.")
-    assert value == 60
+    assert value == 40
 
 
 def test_coolness_kazakhstan_local_is_below_full_funding():
     # A local program still costs the price of a bus ticket at worst — the
     # bonus is strong but not the absolute max online/fully-funded gets.
     value, _ = coolness_score(False, 0.0, "Almaty, Kazakhstan", "Robotics workshop")
-    assert value == 57
-    assert value < 60
+    assert value == 38
+    assert value < 40
 
 
 def test_coolness_partial_funding_scales_with_distinct_signal_count():
@@ -154,21 +157,21 @@ def test_coolness_partial_funding_scales_with_distinct_signal_count():
     two_signals, _ = coolness_score(
         False, 2500.0, "Boston, US", "A scholarship and a stipend are available."
     )
-    assert one_signal == 37  # floor 30 + (5 + 2*1)
-    assert two_signals == 39  # floor 30 + (5 + 2*2)
+    assert one_signal == 25  # round((floor 30 + (5 + 2*1)) / 1.5)
+    assert two_signals == 26  # round((floor 30 + (5 + 2*2)) / 1.5)
 
 
 def test_coolness_free_in_person_beats_a_fee_near_the_cap():
     free, _ = coolness_score(False, 0.0, "Boston, US", "Art camp", small_fee_usd=50.0)
     near_cap, _ = coolness_score(False, 45.0, "Boston, US", "Art camp", small_fee_usd=50.0)
-    assert free == 25  # floor 15 + 10
-    assert near_cap == 16  # floor 15 + round(10 * 0.1)
+    assert free == 17  # round((floor 15 + 10) / 1.5)
+    assert near_cap == 11  # round((floor 15 + round(10 * 0.1)) / 1.5)
     assert free > near_cap
 
 
 def test_coolness_unknown_cost_gets_a_flat_middling_bonus():
     value, _ = coolness_score(None, None, None, "Robotics club")
-    assert value == 20  # floor 15 + flat 5
+    assert value == 13  # round((floor 15 + flat 5) / 1.5)
 
 
 @pytest.mark.parametrize(
@@ -182,9 +185,9 @@ def test_coolness_unknown_cost_gets_a_flat_middling_bonus():
         (None, None, None, ""),
     ],
 )
-def test_coolness_never_leaves_its_0_to_60_range(is_online, cost, location, text):
+def test_coolness_never_leaves_its_0_to_40_range(is_online, cost, location, text):
     value, _ = coolness_score(is_online, cost, location, text)
-    assert 0 <= value <= 60
+    assert 0 <= value <= 40
 
 
 # --- fit tiers: profile-specific (competitive programming, AI/ML, founder,
@@ -300,6 +303,90 @@ def test_fit_score_never_leaves_its_0_to_40_range(text):
     assert 0 <= value <= 40
 
 
+# --- prestige_score: selectivity, brand recognition, prize/output language -
+
+
+def test_prestige_flagship_institution_alone():
+    value, reason = prestige_score("MIT summer research program")
+    assert 14 <= value <= 20
+    assert "MIT" in reason
+
+
+def test_prestige_flagship_numeric_selectivity_alone():
+    value, reason = prestige_score("Only 20 spots available this year.")
+    assert 14 <= value <= 20
+    assert "20 spots" in reason
+
+
+def test_prestige_flagship_bonus_for_additional_distinct_signals():
+    one_signal, _ = prestige_score("MIT summer program")
+    two_signals, _ = prestige_score("MIT summer program, 15% acceptance rate")
+    assert one_signal == 14
+    assert two_signals == 16  # base 14 + 2*(2-1)
+
+
+def test_prestige_flagship_caps_at_twenty():
+    value, _ = prestige_score(
+        "MIT and Stanford host this, only 20 spots, 5% acceptance rate, $5000 cash prize"
+    )
+    assert value == 20
+
+
+def test_prestige_notable_prize_without_institution():
+    value, reason = prestige_score("Winners receive a $500 cash prize.")
+    assert 7 <= value <= 13
+    assert value < 14
+
+
+def test_prestige_notable_vague_selectivity_without_a_number():
+    value, reason = prestige_score("Admission is highly selective.")
+    assert 7 <= value <= 13
+    assert "highly selective" in reason
+
+
+def test_prestige_notable_non_flagship_org_name():
+    value, reason = prestige_score("Hosted by Riverside Community College.")
+    assert 7 <= value <= 13
+    assert "college" in reason.lower()
+
+
+def test_prestige_generic_has_no_signals():
+    value, reason = prestige_score("Open enrollment webinar, no cap on registrations.")
+    assert value == 0
+    assert reason == "no institution/selectivity/prize signals"
+
+
+def test_prestige_handles_none_text():
+    value, reason = prestige_score(None)
+    assert value == 0
+    assert reason
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "",
+        "MIT and Stanford, 15% acceptance, $5000 prize, highly selective",
+        "Riverside Community College hosts a webinar",
+        "Open enrollment, no cap",
+    ],
+)
+def test_prestige_never_leaves_its_0_to_20_range(text):
+    value, _ = prestige_score(text)
+    assert 0 <= value <= 20
+
+
+def test_prestige_signals_do_not_leak_into_fit_or_coolness():
+    # A bare institution name with no funding/location language and no
+    # profile keyword must not inflate fit or coolness -- prestige is a
+    # separate axis from both.
+    text = "MIT hosts an event."
+    fit_value, _ = fit_score(text)
+    cool_value, _ = coolness_score(False, 5000.0, "Boston, US", text)
+    assert fit_value == 0
+    assert cool_value == 0
+
+
 # --- infer_is_online / infer_cost_amount (unchanged by this rewrite) ------
 
 
@@ -341,11 +428,36 @@ def test_infer_cost_amount_ignores_non_usd_currency():
 # --- end to end: score() ----------------------------------------------
 
 
-def test_score_combines_coolness_and_fit():
+def test_score_combines_coolness_fit_and_prestige():
     value, reason = score(True, None, None, "AI hackathon")
-    assert value == 60 + 36
-    assert "cool 60/60" in reason
-    assert "fit 36/40" in reason
+    cool, _ = coolness_score(True, None, None, "AI hackathon")
+    fit, _ = fit_score("AI hackathon")
+    prestige, _ = prestige_score("AI hackathon")
+    assert value == cool + fit + prestige
+    assert f"cool {cool}/40" in reason
+    assert f"fit {fit}/40" in reason
+    assert f"prestige {prestige}/20" in reason
+
+
+def test_score_citizenship_bar_clamps_only_coolness_not_fit_or_prestige():
+    # Deliberate behavior: the citizenship/residency bar zeroes coolness
+    # (see reachability_tier R1) but fit and prestige compute normally and
+    # still contribute to the total, so a citizenship-barred but otherwise
+    # excellent opportunity surfaces low-ranked instead of vanishing.
+    text = (
+        "Open only to U.S. citizens. AI hackathon at MIT, 15% acceptance rate, "
+        "$5000 cash prize."
+    )
+    value, reason = score(False, 0.0, None, text)
+    cool, _ = coolness_score(False, 0.0, None, text)
+    fit, _ = fit_score(text)
+    prestige, _ = prestige_score(text)
+    assert cool == 0
+    assert fit > 0
+    assert prestige > 0
+    assert value == fit + prestige
+    assert "citizenship" in reason
+    assert "cool 0/40" in reason
 
 
 def test_score_is_always_in_the_0_to_100_range():
@@ -369,7 +481,7 @@ def test_score_handles_none_text():
 def test_kazakhstan_local_priced_in_tenge_still_gets_the_local_override():
     value, reason = score(False, infer_cost_amount("5000 KZT"), "Almaty, Kazakhstan", "Art Workshop")
     assert "Kazakhstan" in reason
-    assert value >= 57  # coolness alone is already >= the R4 floor + KZ bonus
+    assert value >= 38  # coolness alone is already >= the R4 floor + KZ bonus
 
 
 def test_score_reason_never_exceeds_the_relevance_reason_column_limit():
