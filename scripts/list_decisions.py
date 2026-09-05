@@ -27,6 +27,7 @@ except Exception:
 from sqlalchemy import select
 
 from src.core.config import Settings
+from src.core.decisions import is_auto_approval
 from src.core.enums import OpportunityStatus
 from src.db.base import create_engine
 from src.db.models.opportunity import Opportunity
@@ -61,11 +62,7 @@ async def run() -> int:
                 status = opp.status.value
                 counts[status] = counts.get(status, 0) + 1
 
-                is_auto = (
-                    status in ("approved", "published")
-                    and opp.digested_at is not None
-                    and opp.scheduled_at == opp.digested_at
-                )
+                is_auto = is_auto_approval(opp)
                 if status in ("approved", "published"):
                     if is_auto:
                         counts["auto_approved"] += 1
