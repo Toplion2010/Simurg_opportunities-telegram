@@ -189,13 +189,17 @@ async def _flush_updates(session_factory, updates: list[tuple[int, int, str]]) -
         await session.commit()
 
 
-async def run(apply: bool, limit: int | None) -> int:
+async def run(apply: bool, limit: int | None, count_only: bool = False) -> int:
     settings = Settings()
-    if not settings.GROQ_API_KEY:
+    if not count_only and not settings.GROQ_API_KEY:
         print("GROQ_API_KEY not set -- nothing to do.")
         return 1
 
-    client = openai.AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url=settings.GROQ_BASE_URL)
+    client = (
+        None
+        if count_only
+        else openai.AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url=settings.GROQ_BASE_URL)
+    )
     model = settings.GROQ_MODEL
 
     engine = create_engine(settings)
@@ -217,6 +221,11 @@ async def run(apply: bool, limit: int | None) -> int:
             if limit:
                 stmt = stmt.limit(limit)
             opps = (await session.execute(stmt)).scalars().all()
+
+            if count_only:
+                print(f"{len(opps)} pending opportunities still need AI scoring.")
+                return 0
+
             rows = [
                 {
                     "id": o.id,
@@ -291,8 +300,13 @@ def main() -> int:
     parser.add_argument(
         "--limit", type=int, default=None, help="Only score this many pending rows (for testing)."
     )
+    parser.add_argument(
+        "--count-only",
+        action="store_true",
+        help="Print how many pending rows still need AI scoring and exit -- no LLM calls.",
+    )
     args = parser.parse_args()
-    return asyncio.run(run(args.apply, args.limit))
+    return asyncio.run(run(args.apply, args.limit, args.count_only))
 
 
 if __name__ == "__main__":
