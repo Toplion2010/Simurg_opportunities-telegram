@@ -20,9 +20,11 @@ jobs:
   ai-rescore:
     runs-on: ubuntu-latest
     # Sequential, paced calls (one request every ~2s to stay under Groq's
-    # free-tier per-minute cap) -- 484 pending rows is ~20 minutes of pacing
-    # alone, before request latency and retries.
-    timeout-minutes: 60
+    # free-tier per-minute cap). Real-world latency on the free-tier
+    # reasoning model runs ~15-20s/call on top of that pacing, so 484 rows
+    # is ~2-2.5 hours end to end -- a first run at timeout-minutes: 60 only
+    # got through 131 rows before being cancelled.
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v4

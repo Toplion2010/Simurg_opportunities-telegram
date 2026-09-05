@@ -9,9 +9,13 @@ Usage:
 
 Runs read-only by default and prints exactly what it would change. Pass
 --apply to write relevance/relevance_reason for every pending row the LLM
-successfully scored. Rows the LLM call fails or returns malformed JSON for
-are left untouched and reported at the end -- a bad LLM response must never
-blank out a working regex score.
+successfully scored, committing every _COMMIT_BATCH_SIZE rows so a timeout
+or cancellation only loses the current partial batch. Rows already scored
+by this script (relevance_reason starting with "AI: ") are skipped on the
+next run, so re-dispatching after an interruption resumes rather than
+redoing finished work. Rows the LLM call fails or returns malformed JSON
+for are left untouched and reported at the end -- a bad LLM response must
+never blank out a working regex score.
 
 Uses the same Groq (OpenAI-compatible) client and model already wired into
 src/processor/extractor.py's FieldExtractor for Telegram field extraction --
@@ -34,7 +38,7 @@ except Exception:
 
 import openai
 from pydantic import BaseModel, ValidationError, field_validator
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.core.config import Settings
@@ -44,11 +48,20 @@ from src.db.models.opportunity import Opportunity
 from src.db.session import create_session_factory
 
 _MAX_REASON_LEN = 120  # Opportunity.relevance_reason is a String(120) column.
+_AI_MARKER = "AI: "  # prefix so a rerun can skip rows this script already wrote
 # Sequential, not concurrent: a first pass at 5-way concurrency hit Groq's
 # free-tier per-minute request cap on the very first batch (9 of 10 calls
 # failed, most as 429s). One request at a time, paced, actually finishes
 # instead of retrying into the same wall.
 _REQUEST_PACING_SECONDS = 2.0
+# Real-world latency (reasoning model, free tier) runs ~15-20s/call even with
+# reasoning_effort=low, on top of the pacing sleep -- a first 484-row --apply
+# run only got through 131 rows in the 60-minute job timeout and was killed,
+# and since commit() only ran once at the very end, all 131 rows of work were
+# lost. Commit every _COMMIT_BATCH_SIZE rows instead so a timeout/cancel only
+# loses the current partial batch, and skip already-AI-scored rows up front
+# so a rerun resumes rather than redoing finished work.
+_COMMIT_BATCH_SIZE = 20
 
 _SYSTEM_PROMPT = """You are scoring a study/opportunity listing for a specific student profile \
 using a strict 3-axis rubric. Score EXACTLY as specified -- this is a rubric to apply, not a \
@@ -172,13 +185,24 @@ async def run(apply: bool, limit: int | None) -> int:
 
     try:
         async with session_factory() as session:
-            stmt = select(Opportunity).where(Opportunity.status == OpportunityStatus.pending)
+            stmt = (
+                select(Opportunity)
+                .where(Opportunity.status == OpportunityStatus.pending)
+                .where(
+                    or_(
+                        Opportunity.relevance_reason.is_(None),
+                        ~Opportunity.relevance_reason.like(f"{_AI_MARKER}%"),
+                    )
+                )
+                .order_by(Opportunity.id)
+            )
             if limit:
                 stmt = stmt.limit(limit)
             opps = (await session.execute(stmt)).scalars().all()
 
             failures: list[tuple[int, str]] = []
             changed = 0
+            pending_commit = 0
 
             for i, opp in enumerate(opps):
                 if i > 0:
@@ -192,7 +216,7 @@ async def run(apply: bool, limit: int | None) -> int:
 
                 total = result.coolness + result.fit + result.prestige
                 reason = (
-                    f"cool {result.coolness}/40 ({result.coolness_reason}) + "
+                    f"{_AI_MARKER}cool {result.coolness}/40 ({result.coolness_reason}) + "
                     f"fit {result.fit}/40 ({result.fit_reason}) + "
                     f"prestige {result.prestige}/20 ({result.prestige_reason})"
                 )
@@ -206,6 +230,10 @@ async def run(apply: bool, limit: int | None) -> int:
                 if apply:
                     opp.relevance = total
                     opp.relevance_reason = reason
+                    pending_commit += 1
+                    if pending_commit >= _COMMIT_BATCH_SIZE:
+                        await session.commit()
+                        pending_commit = 0
 
             print(f"\n{changed} of {len(opps)} pending opportunities would change score.")
             if failures:
@@ -218,7 +246,8 @@ async def run(apply: bool, limit: int | None) -> int:
                 await session.rollback()
                 return 0
 
-            await session.commit()
+            if pending_commit:
+                await session.commit()
             print("\nApplied.")
             return 0
     finally:
