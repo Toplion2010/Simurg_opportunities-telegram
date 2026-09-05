@@ -1,4 +1,5 @@
-"""A 0-100 relevance score combining reachability ("coolness") and profile fit.
+"""A 0-100 relevance score combining reachability ("coolness"), profile fit,
+and prestige.
 
 Used by both collector pipelines (Telegram via src/processor/pipeline.py, web
 catalogs via src/collector/web/to_dto.py) so an opportunity's rank in the
@@ -10,33 +11,43 @@ need it, and neither should import from the other.
 Replaces an earlier 1-10 table (reachability tier x fit tier, 16 cells) that
 was too coarse once the job became "pick the real top 5 out of hundreds of
 pending rows a day" rather than just "sort a queue a human browses by hand".
-Both axes are now continuous point totals instead of table lookups, so ties
+All three axes are continuous point totals instead of table lookups, so ties
 are rare.
 
-  COOLNESS (0-60) -- can a Kazakh student actually get there, and how good
+  COOLNESS (0-40) -- can a Kazakh student actually get there, and how good
   is the deal. Built on the same reachability tiers as before (R1..R4, see
   reachability_tier()), plus a continuous bonus for how strong the signal is
-  within that tier:
+  within that tier. Internally this is the same 0-60 tier-floor-plus-bonus
+  computation the table above used to be scored on, scaled down by /1.5 (and
+  rounded) so it now shares the 0-100 budget with a third axis:
 
-    R1 (floor 0)   in-person, priced, unfunded, not Kazakhstan-local -- or
+    R1 (0)         in-person, priced, unfunded, not Kazakhstan-local -- or
                    the citizenship/residency bar. No bonus; this is the
                    score floor.
-    R2 (floor 15)  free/cheap in-person with no funding language, or
-                   genuinely unknown online-ness AND cost. Bonus (0-10)
-                   scales with how far under WEB_SMALL_FEE_USD the (known)
-                   cost is; an unknown cost gets a flat mid-range bonus.
-    R3 (floor 30)  partial funding, not Kazakhstan-local. Bonus (0-15) scales
-                   with how many distinct funding signals were found
+    R2 (10-17)     free/cheap in-person with no funding language, or
+                   genuinely unknown online-ness AND cost. Bonus scales with
+                   how far under WEB_SMALL_FEE_USD the (known) cost is; an
+                   unknown cost gets a flat mid-range bonus.
+    R3 (25-30)     partial funding, not Kazakhstan-local. Bonus scales with
+                   how many distinct funding signals were found
                    (find_funding()) -- "scholarship" alone reads weaker than
                    "scholarship, financial aid, stipend" together.
-    R4 (floor 45)  online, OR fully funded, OR Kazakhstan-local and
-                   funded/cheap. Bonus is at its max (+15) for online or full
-                   funding, slightly less (+12) for the KZ-local case, since
-                   a local program still costs the price of a bus ticket at
-                   worst.
+    R4 (38 or 40)  online, OR fully funded, OR Kazakhstan-local and
+                   funded/cheap. Binary bonus: the max (40) for online or
+                   full funding, slightly less (38) for the KZ-local case,
+                   since a local program still costs the price of a bus
+                   ticket at worst.
 
-  The tier ranges never overlap (R1=0, R2=15-25, R3=37-45, R4=57-60), so
-  coolness alone already orders every reachability outcome correctly.
+  The tier ranges never overlap, so coolness alone already orders every
+  reachability outcome correctly.
+
+  Citizenship/residency-bar clamp: this zeroes out ONLY coolness (R1, see
+  above) -- it does not zero fit or prestige, and never zeroes the total.
+  A citizenship-barred MIT program still surfaces in the admin queue,
+  low-ranked on coolness alone but with fit and prestige intact, rather than
+  vanishing silently. The reason string keeps the "citizenship/residency
+  bar" tag so the eligibility problem is obvious without re-reading the
+  listing.
 
   FIT (0-40) -- how well the opportunity matches THIS profile specifically:
   competitive programmer (Codeforces, ICPC finalist), AI/ML builder and
@@ -57,11 +68,19 @@ are rare.
                  by itself to reach tier 4 -- only the specific CS/AI/
                  competitive-programming terms above do.
 
-`score()` returns COOLNESS + FIT (0-100) and a reason naming both
-components' rationale, auditable straight off a queue card or a daily digest
-push, e.g.:
+  PRESTIGE (0-20) -- selectivity, brand recognition, and concrete
+  prize/output language. Deliberately disjoint from coolness (does not
+  re-score funding amounts as reachability) and from fit (does not re-score
+  topic words as profile match) -- it only fires on separate signals:
+  flagship institutions/orgs, explicit acceptance-rate or cap language, and
+  prize/scholarship-amount or publication/demo-day language. See
+  prestige_score() for the tier breakdown.
 
-    "cool 51/60 (fully funded) + fit 34/40 (core: computer vision, hackathon)"
+`score()` returns COOLNESS + FIT + PRESTIGE (0-100) and a reason naming all
+three components' rationale, auditable straight off a queue card or a daily
+digest push, e.g.:
+
+    "cool 40/40 (online) + fit 34/40 (core: computer vision) + prestige 18/20 (MIT + selective (15% acceptance))"
 """
 import re
 
@@ -260,10 +279,15 @@ def reachability_tier(
     return (R1, _REACH_LABELS[R1])
 
 
-# --- coolness (0-60) --------------------------------------------------------
+# --- coolness (0-40) --------------------------------------------------------
 
+# These floors/bonus are on the original 0-60 scale; coolness_score() scales
+# the final floor+bonus total down by _COOLNESS_SCALE before returning it, so
+# the tier structure and bonus logic below are untouched from the 1-10
+# table's replacement -- only the shared 0-100 budget changed.
 _REACH_FLOOR = {R1: 0, R2: 15, R3: 30, R4: 45}
 _REACH_BONUS_MAX = 15
+_COOLNESS_SCALE = 1.5
 
 
 def coolness_score(
@@ -273,7 +297,7 @@ def coolness_score(
     text: str,
     small_fee_usd: float = 50.0,
 ) -> tuple[int, str]:
-    """(score 0-60, reason). Continuous version of reachability_tier(): the
+    """(score 0-40, reason). Continuous version of reachability_tier(): the
     tier sets a floor, a same-tier bonus separates a strong signal (fully
     funded, $0 fee) from a weak one (one funding phrase, $45 of a $50 cap).
     """
@@ -282,7 +306,7 @@ def coolness_score(
     floor = _REACH_FLOOR[tier]
 
     if tier == R1:
-        return (floor, label)
+        return (0, label)
 
     if tier == R4:
         bonus = _REACH_BONUS_MAX if label in ("online", "fully funded") else 12
@@ -296,7 +320,7 @@ def coolness_score(
         else:
             bonus = 5  # unknown cost: a flat, middling bonus, not a guess
 
-    return (floor + bonus, label)
+    return (round((floor + bonus) / _COOLNESS_SCALE), label)
 
 
 # --- fit (0-40) --------------------------------------------------------
@@ -412,6 +436,133 @@ def fit_score(text: str) -> tuple[int, str]:
     return (value, reason)
 
 
+# --- prestige (0-20) --------------------------------------------------------
+
+# Flagship institutions/orgs/programs -- a plain list constant, not inlined
+# into the regex, since this will need tuning over time as new names come up.
+# Short acronyms are word-boundary matched via _FLAGSHIP_INSTITUTIONS_RE
+# below, so "YC" doesn't match inside an unrelated word.
+_FLAGSHIP_INSTITUTIONS = [
+    "MIT", "Massachusetts Institute of Technology",
+    "Stanford", "Harvard", "Caltech", "Princeton", "Yale",
+    "Berkeley", "UC Berkeley", "Carnegie Mellon", "CMU",
+    "Oxford", "Cambridge", "ETH Zurich",
+    "Google", "DeepMind", "OpenAI", "Meta AI", "Microsoft Research",
+    "Y Combinator", "YC", "Techstars",
+    "ICPC", "IOI", "IMO",
+]
+_FLAGSHIP_INSTITUTIONS_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(name) for name in _FLAGSHIP_INSTITUTIONS) + r")\b",
+    re.IGNORECASE,
+)
+
+# Explicit acceptance-rate/cap language. Matches with a digit in them
+# ("15% acceptance", "only 20 spots", "5 accepted out of 200") are the
+# strong, Flagship-tier signal; matches without a digit ("highly selective",
+# "competitive admission") are the weaker, Notable-tier signal -- classified
+# post-match in prestige_score() rather than as two separate regexes, so
+# there's still exactly one selectivity regex group as specified.
+_SELECTIVITY_PATTERNS = [
+    r"\d+(?:\.\d+)?\s?%\s*(?:acceptance|admission|admit|selection)(?:\s*rate)?",
+    r"only\s+\d+\s*(?:spots?|seats?|slots?|positions?|places?)",
+    r"\d+\s*(?:accepted|selected|admitted)\s*(?:out of|of)\s*\d+",
+    r"highly selective",
+    r"competitive admission",
+]
+_SELECTIVITY_RE = re.compile("|".join(_SELECTIVITY_PATTERNS), re.IGNORECASE)
+
+# Concrete prize/output language -- cash prizes, scholarship dollar amounts,
+# publication opportunities, demo days. Deliberately distinct phrasing from
+# _FUNDING_RE ("scholarship" alone is a coolness/reachability signal;
+# "scholarship award" plus a dollar figure is a prestige signal) so the two
+# axes don't double-count the same word.
+_PRIZE_PATTERNS = [
+    r"\$\s?\d[\d,]*",
+    r"cash prize",
+    r"scholarship award",
+    r"\bpublish(?:ed|ing)?\b",
+    r"demo day",
+]
+_PRIZE_RE = re.compile("|".join(_PRIZE_PATTERNS), re.IGNORECASE)
+
+# A recognized-but-non-flagship org name is hard to enumerate exhaustively,
+# so instead of a second institutions list this looks for the generic
+# "there is clearly some organization involved" markers -- weaker than a
+# flagship name, but still more than nothing.
+_ORG_MARKER_RE = re.compile(
+    r"\buniversity\b|\binstitute\b|\bfoundation\b|\bcorporation\b|\bcompany\b|\bcollege\b",
+    re.IGNORECASE,
+)
+
+_PRESTIGE_FLAGSHIP_BASE = 14
+_PRESTIGE_FLAGSHIP_MAX = 20
+_PRESTIGE_NOTABLE_MAX = 13
+
+
+def _describe_prize_match(raw: str) -> str:
+    raw = raw.strip()
+    if "$" in raw and "prize" not in raw.lower():
+        return f"{raw} prize"
+    return raw
+
+
+def prestige_score(text: str | None) -> tuple[int, str]:
+    """(score 0-20, reason). Selectivity, brand recognition, and prize/output
+    language -- disjoint from coolness (funding amounts) and fit (topic
+    words); see the module docstring's PRESTIGE section for the three
+    underlying signal groups.
+
+      Flagship (14-20): a flagship institution/org match, and/or an explicit
+        acceptance-rate or cap number. +2 per additional distinct signal
+        across all three regex groups, capped at 20.
+      Notable (7-13): prize/scholarship-amount language with no institution
+        match, OR vague selectivity language with no explicit rate/cap
+        number, OR a non-flagship org name present. +1 per additional
+        distinct category present, capped at 13.
+      Generic (0): none of the above -- open enrollment, no cap, unknown
+        organizer, recurring/low-stakes format.
+    """
+    text = text or ""
+    inst_match = _FLAGSHIP_INSTITUTIONS_RE.search(text)
+    selectivity_matches = list(_SELECTIVITY_RE.finditer(text))
+    prize_matches = list(_PRIZE_RE.finditer(text))
+    numeric_selectivity = [m for m in selectivity_matches if re.search(r"\d", m.group(0))]
+    vague_selectivity = [m for m in selectivity_matches if not re.search(r"\d", m.group(0))]
+    org_marker_match = None if inst_match else _ORG_MARKER_RE.search(text)
+
+    if inst_match or numeric_selectivity:
+        parts = []
+        if inst_match:
+            parts.append(inst_match.group(0).strip())
+        parts += [m.group(0).strip() for m in selectivity_matches]
+        parts += [_describe_prize_match(m.group(0)) for m in prize_matches]
+        distinct = sorted({p.lower(): p for p in parts}.values())
+        bonus = min(6, 2 * max(0, len(distinct) - 1))
+        value = min(_PRESTIGE_FLAGSHIP_MAX, _PRESTIGE_FLAGSHIP_BASE + bonus)
+        reason = " + ".join(distinct[:3])
+        return (value, reason)
+
+    if prize_matches or vague_selectivity or org_marker_match:
+        candidates = []
+        parts = []
+        if prize_matches:
+            candidates.append(13)
+            parts += [_describe_prize_match(m.group(0)) for m in prize_matches]
+        if vague_selectivity:
+            candidates.append(10)
+            parts += [m.group(0).strip() for m in vague_selectivity]
+        if org_marker_match:
+            candidates.append(7)
+            parts.append(org_marker_match.group(0).strip())
+        base = max(candidates)
+        value = min(_PRESTIGE_NOTABLE_MAX, base + (len(candidates) - 1))
+        distinct = sorted({p.lower(): p for p in parts}.values())
+        reason = " + ".join(distinct[:3])
+        return (value, reason)
+
+    return (0, "no institution/selectivity/prize signals")
+
+
 # --- combined score ------------------------------------------------------
 
 # Opportunity.relevance_reason is a String(120) column. Assignment on an
@@ -434,8 +585,12 @@ def score(
     text = text or ""
     cool, cool_label = coolness_score(is_online, cost_amount, location, text, small_fee_usd)
     fit, fit_label = fit_score(text)
-    value = cool + fit
-    reason = f"cool {cool}/60 ({cool_label}) + fit {fit}/40 ({fit_label})"
+    prestige, prestige_label = prestige_score(text)
+    value = cool + fit + prestige
+    reason = (
+        f"cool {cool}/40 ({cool_label}) + fit {fit}/40 ({fit_label}) "
+        f"+ prestige {prestige}/20 ({prestige_label})"
+    )
     if len(reason) > _MAX_REASON_LEN:
         reason = reason[: _MAX_REASON_LEN - 3] + "..."
     return (value, reason)

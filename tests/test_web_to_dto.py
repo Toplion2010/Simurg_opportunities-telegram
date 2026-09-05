@@ -58,7 +58,7 @@ def test_relevance_is_rated_so_items_are_not_buried():
 
 def test_online_item_scores_at_the_top_of_its_coolness_axis():
     dto = build_dto(item(is_online=True, title="AI hackathon"))
-    assert dto.relevance == 60 + 36  # coolness maxed (online) + core fit (ai, hackathon)
+    assert dto.relevance == 40 + 36  # coolness maxed (online) + core fit (ai, hackathon)
 
 
 def test_funding_signals_from_the_second_look_feed_the_score():
@@ -69,7 +69,7 @@ def test_funding_signals_from_the_second_look_feed_the_score():
         item(is_online=False, cost_amount=5000.0, title="AI research summer program"),
         funding_signals=["scholarship"],
     )
-    assert dto.relevance >= 37 + 34  # R3 coolness floor+bonus, core fit, at minimum
+    assert dto.relevance >= 25 + 34  # R3 coolness floor+bonus, core fit, at minimum
 
 
 def test_card_fields_respect_their_caps():
