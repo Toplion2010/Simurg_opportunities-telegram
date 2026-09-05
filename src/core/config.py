@@ -131,9 +131,15 @@ class Settings(BaseSettings):
 
     # Daily digest (src/routines/daily_digest.py) — surfaces the best pending
     # opportunities once a day instead of leaving the whole queue to manual
-    # browsing. Score is src/core/scoring.py's 0-100 (coolness + fit).
-    DIGEST_MIN_SCORE: int = 90
-    AUTO_APPROVE_SCORE: int = 95
+    # browsing. Score is src/core/scoring.py's 0-100 across six axes
+    # (affordability, attendance-ability, selectivity, prestige, topic fit,
+    # output value — see that module's docstring). Recalibrated for that
+    # rubric's real distribution: across the live pending backlog the median
+    # was 33, the 90th percentile 46, and the max 66 — the old 90/95
+    # thresholds (calibrated for the previous 3-axis scorer) were
+    # unreachable and would have silently starved the digest.
+    DIGEST_MIN_SCORE: int = 40
+    AUTO_APPROVE_SCORE: int = 60
     DAILY_DIGEST_SIZE: int = 5
     # Ceiling on actual channel posts per day, enforced in
     # publisher/scheduler.py regardless of whether a row was auto-approved
