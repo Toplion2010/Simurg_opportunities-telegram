@@ -350,6 +350,29 @@ def test_prestige_notable_non_flagship_org_name():
     assert "college" in reason.lower()
 
 
+def test_prestige_does_not_read_a_program_cost_as_a_prize():
+    # A bare dollar figure with no prize/award/scholarship/grant word next to
+    # it is a price tag, not a prize -- confirmed against real backlog data,
+    # where paid summer camps ("Camp costs $1,875") were scoring a "prize"
+    # purely off their tuition figure before this pattern was tightened.
+    value, reason = prestige_score("Tuition for the summer session is $1,875.")
+    assert value == 0
+    assert reason == "no institution/selectivity/prize signals"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Winners receive a $500 cash prize.",
+        "A $5,000 scholarship is awarded to the top applicant.",
+        "Grand prize worth $10,000 goes to the winning team.",
+    ],
+)
+def test_prestige_does_read_a_dollar_amount_next_to_prize_language(text):
+    value, _ = prestige_score(text)
+    assert value > 0
+
+
 def test_prestige_generic_has_no_signals():
     value, reason = prestige_score("Open enrollment webinar, no cap on registrations.")
     assert value == 0

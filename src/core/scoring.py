@@ -476,8 +476,16 @@ _SELECTIVITY_RE = re.compile("|".join(_SELECTIVITY_PATTERNS), re.IGNORECASE)
 # _FUNDING_RE ("scholarship" alone is a coolness/reachability signal;
 # "scholarship award" plus a dollar figure is a prestige signal) so the two
 # axes don't double-count the same word.
+#
+# The dollar-amount patterns require a prize/award/scholarship/grant word
+# next to the figure -- a bare "$" next to any number reads program tuition
+# ("Camp costs $1,875") as a prize just as readily as an actual one ("$1,875
+# scholarship"), which real backlog data confirmed: dozens of plain paid
+# summer camps were scoring a "prize" purely off their price tag.
 _PRIZE_PATTERNS = [
-    r"\$\s?\d[\d,]*",
+    r"\$\s?\d[\d,]*\s*(?:in\s+)?(?:cash\s+)?(?:prizes?|awards?|scholarships?|grants?)\b",
+    r"(?:cash\s+prizes?|scholarship\s+awards?|prizes?|awards?|grants?)\s+"
+    r"(?:of|worth|totaling|totalling)\s+\$\s?\d[\d,]*",
     r"cash prize",
     r"scholarship award",
     r"\bpublish(?:ed|ing)?\b",
@@ -497,13 +505,6 @@ _ORG_MARKER_RE = re.compile(
 _PRESTIGE_FLAGSHIP_BASE = 14
 _PRESTIGE_FLAGSHIP_MAX = 20
 _PRESTIGE_NOTABLE_MAX = 13
-
-
-def _describe_prize_match(raw: str) -> str:
-    raw = raw.strip()
-    if "$" in raw and "prize" not in raw.lower():
-        return f"{raw} prize"
-    return raw
 
 
 def prestige_score(text: str | None) -> tuple[int, str]:
@@ -535,7 +536,7 @@ def prestige_score(text: str | None) -> tuple[int, str]:
         if inst_match:
             parts.append(inst_match.group(0).strip())
         parts += [m.group(0).strip() for m in selectivity_matches]
-        parts += [_describe_prize_match(m.group(0)) for m in prize_matches]
+        parts += [m.group(0).strip() for m in prize_matches]
         distinct = sorted({p.lower(): p for p in parts}.values())
         bonus = min(6, 2 * max(0, len(distinct) - 1))
         value = min(_PRESTIGE_FLAGSHIP_MAX, _PRESTIGE_FLAGSHIP_BASE + bonus)
@@ -547,7 +548,7 @@ def prestige_score(text: str | None) -> tuple[int, str]:
         parts = []
         if prize_matches:
             candidates.append(13)
-            parts += [_describe_prize_match(m.group(0)) for m in prize_matches]
+            parts += [m.group(0).strip() for m in prize_matches]
         if vague_selectivity:
             candidates.append(10)
             parts += [m.group(0).strip() for m in vague_selectivity]
