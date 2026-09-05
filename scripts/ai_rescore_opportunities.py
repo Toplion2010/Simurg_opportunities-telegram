@@ -38,7 +38,7 @@ except Exception:
 
 import openai
 from pydantic import BaseModel, ValidationError, field_validator
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.core.config import Settings
@@ -128,18 +128,18 @@ class _LlmScore(BaseModel):
         return max(0, min(20, v))
 
 
-def _opportunity_text(opp: Opportunity) -> str:
-    lines = [f"Title: {opp.title or '(none)'}"]
-    if opp.description:
-        lines.append(f"Description: {opp.description}")
-    if opp.eligibility:
-        lines.append(f"Eligibility: {opp.eligibility}")
-    if opp.location:
-        lines.append(f"Location: {opp.location}")
-    if opp.cost:
-        lines.append(f"Cost: {opp.cost}")
-    if opp.organizer:
-        lines.append(f"Organizer: {opp.organizer}")
+def _opportunity_text(opp: dict) -> str:
+    lines = [f"Title: {opp['title'] or '(none)'}"]
+    if opp["description"]:
+        lines.append(f"Description: {opp['description']}")
+    if opp["eligibility"]:
+        lines.append(f"Eligibility: {opp['eligibility']}")
+    if opp["location"]:
+        lines.append(f"Location: {opp['location']}")
+    if opp["cost"]:
+        lines.append(f"Cost: {opp['cost']}")
+    if opp["organizer"]:
+        lines.append(f"Organizer: {opp['organizer']}")
     return "\n".join(lines)
 
 
@@ -149,7 +149,7 @@ def _opportunity_text(opp: Opportunity) -> str:
     wait=wait_exponential(multiplier=2, min=4, max=90),
     reraise=True,
 )
-async def _score_one(client: openai.AsyncOpenAI, model: str, opp: Opportunity) -> _LlmScore:
+async def _score_one(client: openai.AsyncOpenAI, model: str, opp: dict) -> _LlmScore:
     response = await client.chat.completions.create(
         model=model,
         messages=[
@@ -169,6 +169,24 @@ async def _score_one(client: openai.AsyncOpenAI, model: str, opp: Opportunity) -
     )
     raw = response.choices[0].message.content or "{}"
     return _LlmScore.model_validate(json.loads(raw))
+
+
+async def _flush_updates(session_factory, updates: list[tuple[int, int, str]]) -> None:
+    """Write a batch of (id, relevance, reason) via a short-lived session.
+
+    Opened and closed just for this write so the connection is never sitting
+    idle across the many seconds spent waiting on Groq between batches --
+    that idle time is exactly what let Neon drop the connection out from
+    under the old single-session-for-the-whole-run design.
+    """
+    async with session_factory() as session:
+        for opp_id, relevance, reason in updates:
+            await session.execute(
+                update(Opportunity)
+                .where(Opportunity.id == opp_id)
+                .values(relevance=relevance, relevance_reason=reason)
+            )
+        await session.commit()
 
 
 async def run(apply: bool, limit: int | None) -> int:
@@ -199,57 +217,68 @@ async def run(apply: bool, limit: int | None) -> int:
             if limit:
                 stmt = stmt.limit(limit)
             opps = (await session.execute(stmt)).scalars().all()
+            rows = [
+                {
+                    "id": o.id,
+                    "relevance": o.relevance,
+                    "title": o.title,
+                    "description": o.description,
+                    "eligibility": o.eligibility,
+                    "location": o.location,
+                    "cost": o.cost,
+                    "organizer": o.organizer,
+                }
+                for o in opps
+            ]
+        # Session closed here -- no DB connection is held during the LLM loop below.
 
-            failures: list[tuple[int, str]] = []
-            changed = 0
-            pending_commit = 0
+        failures: list[tuple[int, str]] = []
+        changed = 0
+        pending_updates: list[tuple[int, int, str]] = []
 
-            for i, opp in enumerate(opps):
-                if i > 0:
-                    await asyncio.sleep(_REQUEST_PACING_SECONDS)
+        for i, row in enumerate(rows):
+            if i > 0:
+                await asyncio.sleep(_REQUEST_PACING_SECONDS)
 
-                try:
-                    result = await _score_one(client, model, opp)
-                except (openai.RateLimitError, openai.APIError, json.JSONDecodeError, ValidationError) as e:
-                    failures.append((opp.id, str(e)[:300]))
-                    continue
+            try:
+                result = await _score_one(client, model, row)
+            except (openai.RateLimitError, openai.APIError, json.JSONDecodeError, ValidationError) as e:
+                failures.append((row["id"], str(e)[:300]))
+                continue
 
-                total = result.coolness + result.fit + result.prestige
-                reason = (
-                    f"{_AI_MARKER}cool {result.coolness}/40 ({result.coolness_reason}) + "
-                    f"fit {result.fit}/40 ({result.fit_reason}) + "
-                    f"prestige {result.prestige}/20 ({result.prestige_reason})"
-                )
-                if len(reason) > _MAX_REASON_LEN:
-                    reason = reason[: _MAX_REASON_LEN - 3] + "..."
+            total = result.coolness + result.fit + result.prestige
+            reason = (
+                f"{_AI_MARKER}cool {result.coolness}/40 ({result.coolness_reason}) + "
+                f"fit {result.fit}/40 ({result.fit_reason}) + "
+                f"prestige {result.prestige}/20 ({result.prestige_reason})"
+            )
+            if len(reason) > _MAX_REASON_LEN:
+                reason = reason[: _MAX_REASON_LEN - 3] + "..."
 
-                old = opp.relevance
-                print(f"  #{opp.id:<5} {old} -> {total}/100  ({reason})  {(opp.title or '')[:40]}")
-                if total != old:
-                    changed += 1
-                if apply:
-                    opp.relevance = total
-                    opp.relevance_reason = reason
-                    pending_commit += 1
-                    if pending_commit >= _COMMIT_BATCH_SIZE:
-                        await session.commit()
-                        pending_commit = 0
+            old = row["relevance"]
+            print(f"  #{row['id']:<5} {old} -> {total}/100  ({reason})  {(row['title'] or '')[:40]}")
+            if total != old:
+                changed += 1
+            if apply:
+                pending_updates.append((row["id"], total, reason))
+                if len(pending_updates) >= _COMMIT_BATCH_SIZE:
+                    await _flush_updates(session_factory, pending_updates)
+                    pending_updates = []
 
-            print(f"\n{changed} of {len(opps)} pending opportunities would change score.")
-            if failures:
-                print(f"{len(failures)} rows failed the AI call and were left untouched:")
-                for opp_id, err in failures:
-                    print(f"  #{opp_id}: {err}")
+        print(f"\n{changed} of {len(rows)} pending opportunities would change score.")
+        if failures:
+            print(f"{len(failures)} rows failed the AI call and were left untouched:")
+            for opp_id, err in failures:
+                print(f"  #{opp_id}: {err}")
 
-            if not apply:
-                print("\nDRY RUN — nothing written. Re-run with --apply to commit.")
-                await session.rollback()
-                return 0
-
-            if pending_commit:
-                await session.commit()
-            print("\nApplied.")
+        if not apply:
+            print("\nDRY RUN — nothing written. Re-run with --apply to commit.")
             return 0
+
+        if pending_updates:
+            await _flush_updates(session_factory, pending_updates)
+        print("\nApplied.")
+        return 0
     finally:
         await engine.dispose()
 
