@@ -3,6 +3,7 @@ from aiogram.filters.callback_data import CallbackData
 
 class QueuePage(CallbackData, prefix="qp"):
     page: int
+    source: str = "all"  # all | telegram | web
 
 
 class OpportunityAction(CallbackData, prefix="oa"):

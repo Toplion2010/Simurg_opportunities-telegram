@@ -26,6 +26,12 @@ _AUDIENCE_LABELS = {
     Audience.both: "🏫 School + 🎓 University",
 }
 
+_SOURCE_LABELS = {
+    "all": "opportunities",
+    "telegram": "Telegram opportunities",
+    "web": "web opportunities",
+}
+
 
 def _routing_line(opp: Opportunity) -> str:
     return f"📍 {_AUDIENCE_LABELS[opp.audience]}"
@@ -100,9 +106,14 @@ async def _send_opportunity_card(
         await message.answer(text, parse_mode="HTML", reply_markup=kb)
 
 
-@router.message(F.text == "📋 View Queue")
-async def view_queue(message: Message, session: AsyncSession) -> None:
-    await _show_queue_page(message, session, page=0, edit=False)
+@router.message(F.text == "📱 Telegram Queue")
+async def view_telegram_queue(message: Message, session: AsyncSession) -> None:
+    await _show_queue_page(message, session, page=0, source="telegram", edit=False)
+
+
+@router.message(F.text == "🌐 Online Queue")
+async def view_online_queue(message: Message, session: AsyncSession) -> None:
+    await _show_queue_page(message, session, page=0, source="web", edit=False)
 
 
 @router.callback_query(QueuePage.filter())
@@ -111,7 +122,9 @@ async def queue_page(
     callback_data: QueuePage,
     session: AsyncSession,
 ) -> None:
-    await _show_queue_page(call.message, session, page=callback_data.page, edit=True)
+    await _show_queue_page(
+        call.message, session, page=callback_data.page, source=callback_data.source, edit=True
+    )
     await call.answer()
 
 
@@ -119,13 +132,15 @@ async def _show_queue_page(
     message: Message,
     session: AsyncSession,
     page: int,
+    source: str,
     edit: bool,
 ) -> None:
     repo = OpportunityRepository(session)
-    total = await repo.count_pending()
+    total = await repo.count_pending(source_kind=source)
+    label = _SOURCE_LABELS.get(source, "opportunities")
 
     if total == 0:
-        text = "✅ No opportunities in queue."
+        text = f"✅ No {label} in queue."
         if edit:
             await message.edit_text(text)
         else:
@@ -134,7 +149,7 @@ async def _show_queue_page(
 
     total_pages = max(1, math.ceil(total / PAGE_SIZE))
     page = max(0, min(page, total_pages - 1))
-    items = await repo.get_pending(page=page, page_size=PAGE_SIZE)
+    items = await repo.get_pending(page=page, page_size=PAGE_SIZE, source_kind=source)
 
     for opp in items:
         card = _card_text(opp)
@@ -144,8 +159,10 @@ async def _show_queue_page(
         else:
             await message.answer(card, parse_mode="HTML", reply_markup=kb)
 
-    nav_kb = pagination_keyboard(page, total_pages)
-    await message.answer(f"Page {page + 1} of {total_pages} ({total} in queue)", reply_markup=nav_kb)
+    nav_kb = pagination_keyboard(page, total_pages, source=source)
+    await message.answer(
+        f"Page {page + 1} of {total_pages} ({total} {label} in queue)", reply_markup=nav_kb
+    )
 
 
 @router.callback_query(OpportunityAction.filter(F.action == "view"))

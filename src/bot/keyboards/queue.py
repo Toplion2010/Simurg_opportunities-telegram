@@ -40,26 +40,26 @@ def opportunity_actions_keyboard(opp_id: int, page: int) -> InlineKeyboardMarkup
     )
 
 
-def pagination_keyboard(page: int, total_pages: int) -> InlineKeyboardMarkup:
+def pagination_keyboard(page: int, total_pages: int, source: str = "all") -> InlineKeyboardMarkup:
     buttons = []
     if page > 0:
         buttons.append(
             InlineKeyboardButton(
                 text="⬅️ Prev",
-                callback_data=QueuePage(page=page - 1).pack(),
+                callback_data=QueuePage(page=page - 1, source=source).pack(),
             )
         )
     buttons.append(
         InlineKeyboardButton(
             text=f"📄 {page + 1}/{total_pages}",
-            callback_data=QueuePage(page=page).pack(),
+            callback_data=QueuePage(page=page, source=source).pack(),
         )
     )
     if page < total_pages - 1:
         buttons.append(
             InlineKeyboardButton(
                 text="➡️ Next",
-                callback_data=QueuePage(page=page + 1).pack(),
+                callback_data=QueuePage(page=page + 1, source=source).pack(),
             )
         )
     return InlineKeyboardMarkup(inline_keyboard=[buttons])

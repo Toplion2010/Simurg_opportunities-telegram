@@ -6,7 +6,27 @@ from sqlalchemy.orm import selectinload
 
 from src.core.enums import OpportunityStatus
 from src.db.models.opportunity import Opportunity
+from src.db.models.raw_message import RawMessage
+from src.db.models.source_channel import SourceChannel
 from src.db.repositories.base import BaseRepository
+
+
+def _apply_source_filter(stmt, source_kind: str | None):
+    """source_kind: None/"all" (no filter), "web" (scraped catalogs), or
+    "telegram" (everything else -- outerjoin so a Telegram-origin row with no
+    source_channel_id at all, which predates this table, still counts as
+    Telegram rather than being silently dropped from either queue)."""
+    if source_kind == "web":
+        return stmt.join(Opportunity.raw_message).join(RawMessage.source_channel).where(
+            SourceChannel.kind == "web"
+        )
+    if source_kind == "telegram":
+        return (
+            stmt.outerjoin(Opportunity.raw_message)
+            .outerjoin(RawMessage.source_channel)
+            .where((SourceChannel.kind.is_(None)) | (SourceChannel.kind != "web"))
+        )
+    return stmt
 
 
 class OpportunityRepository(BaseRepository[Opportunity]):
@@ -29,29 +49,31 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_pending(self, page: int = 0, page_size: int = 5) -> list[Opportunity]:
+    async def get_pending(
+        self, page: int = 0, page_size: int = 5, source_kind: str | None = None
+    ) -> list[Opportunity]:
         # Best profile fit first; NULL relevance (unrated, e.g. pre-migration rows)
         # sorts last. Not NULLS LAST: this form is portable across SQLite and
         # Postgres with no dialect branch. Never auto-rejects — sort only.
-        stmt = (
-            select(Opportunity)
-            .where(Opportunity.status == OpportunityStatus.pending)
-            .order_by(
-                Opportunity.relevance.is_(None).asc(),
-                Opportunity.relevance.desc(),
-                Opportunity.created_at.asc(),
-            )
-            .offset(page * page_size)
-            .limit(page_size)
-        )
+        # source_kind splits the queue by where the opportunity was found —
+        # "web" (Sirel/ExtracurricularHub-style scraped catalogs) vs
+        # "telegram" (everything else) — see _apply_source_filter().
+        stmt = select(Opportunity).where(Opportunity.status == OpportunityStatus.pending)
+        stmt = _apply_source_filter(stmt, source_kind)
+        stmt = stmt.order_by(
+            Opportunity.relevance.is_(None).asc(),
+            Opportunity.relevance.desc(),
+            Opportunity.created_at.asc(),
+        ).offset(page * page_size).limit(page_size)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
-    async def count_pending(self) -> int:
+    async def count_pending(self, source_kind: str | None = None) -> int:
         from sqlalchemy import func
         stmt = select(func.count()).select_from(Opportunity).where(
             Opportunity.status == OpportunityStatus.pending
         )
+        stmt = _apply_source_filter(stmt, source_kind)
         result = await self._session.execute(stmt)
         return result.scalar_one()
 
