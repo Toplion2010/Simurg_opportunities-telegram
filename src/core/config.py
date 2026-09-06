@@ -143,8 +143,11 @@ class Settings(BaseSettings):
     DAILY_DIGEST_SIZE: int = 5
     # Ceiling on actual channel posts per day, enforced in
     # publisher/scheduler.py regardless of whether a row was auto-approved
-    # today or approved manually on an earlier day.
-    DAILY_PUBLISH_CAP: int = 7
+    # today or approved manually on an earlier day. Raised from 7 -> 10:
+    # after DIGEST_MIN_SCORE/AUTO_APPROVE_SCORE were lowered for the new
+    # 6-axis rubric's distribution, approvals started outpacing 7/day,
+    # leaving a growing backlog of approved-but-unpublished rows.
+    DAILY_PUBLISH_CAP: int = 10
 
     # Feature flags
     ENABLE_EMBEDDING_DEDUP: bool = False
