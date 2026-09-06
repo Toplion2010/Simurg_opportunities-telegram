@@ -9,6 +9,7 @@ from src.core.enums import Audience, Category, OpportunityStatus
 from src.core.exceptions import PublishError
 from src.core.geo import match_kazakhstan
 from src.core.logging import get_logger
+from src.core.scoring import infer_is_online
 from src.db.models.opportunity import Opportunity
 from src.publisher.formatter import format_opportunity
 
@@ -73,15 +74,21 @@ class OpportunitySender:
         chat_id = self._settings.DEST_CHANNEL_ID_HACKATHON
         if not chat_id or opp.category != Category.Hackathon:
             return []
+        # The hackathons channel combines BOTH Kazakhstan-local hackathons
+        # (attendable in person, no travel) AND online/remote ones (attendable
+        # from anywhere, including internationally-organized hackathons) --
+        # a KZ student can actually take part in either. A purely in-person
+        # hackathon abroad is excluded: neither attendable locally nor online.
         token = match_kazakhstan(opp.location)
-        if not token:
+        is_online = infer_is_online(opp.location) is True
+        if not token and not is_online:
             return []
-        # The matched token, so a misroute is diagnosable from this line alone.
+        # The matched reason, so a misroute is diagnosable from this line alone.
         logger.info(
             "hackathon_channel_routed",
             opp_id=opp.id,
             location=opp.location,
-            matched=token,
+            matched=token or "online",
         )
         return [chat_id]
 

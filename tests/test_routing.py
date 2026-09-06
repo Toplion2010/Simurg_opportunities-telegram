@@ -1,4 +1,4 @@
-"""Publish-target routing: audience channels, plus the KZ-hackathon channel.
+"""Publish-target routing: audience channels, plus the hackathons channel.
 
 ``_resolve_targets`` is a pure function of (Settings, Opportunity) — no DB, no
 network — and sender.py imports image_gen lazily inside publish(), so nothing
@@ -54,14 +54,23 @@ def test_extra_channel_is_last():
     assert targets_for(settings, make_opp())[-1] == HACKATHON
 
 
-def test_non_kz_hackathon_is_not_routed():
+@pytest.mark.parametrize("location", ["Online", "Remote", "Worldwide"])
+def test_online_hackathon_also_goes_to_the_hackathon_channel(location):
+    # Attendable from anywhere, including an internationally-organized
+    # hackathon -- the channel combines KZ-local AND online, not just KZ.
+    settings = make_settings(DEST_CHANNEL_ID_HACKATHON=HACKATHON)
+    assert targets_for(settings, make_opp(location=location)) == [SCHOOL, UNIVERSITY, HACKATHON]
+
+
+def test_in_person_hackathon_abroad_is_not_routed():
+    # Neither attendable locally nor online -- excluded.
     settings = make_settings(DEST_CHANNEL_ID_HACKATHON=HACKATHON)
     opp = make_opp(location="Berlin, Germany")
     assert targets_for(settings, opp) == [SCHOOL, UNIVERSITY]
 
 
-@pytest.mark.parametrize("location", [None, "", "Online", "Remote", "Worldwide"])
-def test_no_kz_signal_is_not_routed(location):
+@pytest.mark.parametrize("location", [None, ""])
+def test_no_location_signal_at_all_is_not_routed(location):
     settings = make_settings(DEST_CHANNEL_ID_HACKATHON=HACKATHON)
     assert targets_for(settings, make_opp(location=location)) == [SCHOOL, UNIVERSITY]
 
