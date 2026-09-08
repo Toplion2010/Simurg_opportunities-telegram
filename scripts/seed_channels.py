@@ -23,6 +23,7 @@ except Exception:
     pass
 
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 from telethon.tl.functions.channels import GetFullChannelRequest, JoinChannelRequest
 from telethon.tl.functions.messages import (
     CheckChatInviteRequest,
@@ -108,9 +109,25 @@ async def _resolve_invite(client: TelegramClient, invite_hash: str):
 
 
 async def seed(settings: Settings, session_factory: async_sessionmaker) -> None:
-    session_path = f"telethon_session/{settings.TELETHON_SESSION}"
-    client = TelegramClient(session_path, settings.TELETHON_API_ID, settings.TELETHON_API_HASH)
-    await client.start()
+    # Same session resolution as src/collector/userbot.py: prefer the portable
+    # StringSession (works in a fresh GitHub Actions checkout with no prior
+    # login) over a local session FILE, which would only exist on a machine
+    # that already ran an interactive Telethon login.
+    if settings.TELETHON_SESSION_STRING:
+        session = StringSession(settings.TELETHON_SESSION_STRING)
+    else:
+        session = f"telethon_session/{settings.TELETHON_SESSION}"
+
+    client = TelegramClient(session, settings.TELETHON_API_ID, settings.TELETHON_API_HASH)
+    await client.connect()
+    if not await client.is_user_authorized():
+        # start() would drop into an interactive phone/code prompt, which
+        # hangs forever on a headless CI runner instead of failing loudly.
+        await client.disconnect()
+        raise RuntimeError(
+            "Telethon session is not authorized. Run auth_telethon.py locally, then "
+            "set TELETHON_SESSION_STRING (see scripts/export_session_string.py)."
+        )
     print("Telethon connected.\n")
 
     async with session_factory() as session:
