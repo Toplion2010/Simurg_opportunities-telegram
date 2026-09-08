@@ -51,6 +51,11 @@ jobs:
           ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
           TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
           TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          # Only used here to react (as the userbot's personal account) to
+          # whatever this run publishes -- this workflow skips the Telethon
+          # fetch entirely otherwise. Without it, publishing still succeeds;
+          # only the bot's own reaction goes out.
+          TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
           # Optional third channel: KZ hackathons publish here as well as to

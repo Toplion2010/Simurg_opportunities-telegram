@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from telethon import TelegramClient
 
 from src.core.config import Settings
 from src.core.logging import get_logger
@@ -22,8 +23,14 @@ async def publish_scheduled(
     settings: Settings,
     session_factory: async_sessionmaker[AsyncSession],
     bot: Bot,
+    telethon_client: TelegramClient | None = None,
 ) -> None:
-    sender = OpportunitySender(settings)
+    # Optional: a connected userbot client so freshly published posts also
+    # get a reaction from that personal account, not just the bot (see
+    # src/publisher/reactions.py). Absent it (no caller passed one, or
+    # TELETHON isn't configured), publishing is unaffected -- only the bot
+    # reacts.
+    sender = OpportunitySender(settings, telethon_client=telethon_client)
     now = datetime.now(tz=timezone.utc)
 
     async with session_factory() as session:

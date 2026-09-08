@@ -2,9 +2,18 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 import config
 from pipeline.telegram import _deadline_line, format_message, send_hackathon
 from sources.base import Hackathon
+
+
+@pytest.fixture(autouse=True)
+def _no_reactions(monkeypatch):
+    """send_hackathon reacts to whatever it just posted (pipeline/reactions.py)
+    -- irrelevant to these tests and would otherwise fire a real HTTP request."""
+    monkeypatch.setattr("pipeline.telegram.react", lambda *a, **k: None)
 
 
 def _h(**overrides) -> Hackathon:
@@ -253,12 +262,12 @@ def test_send_hackathon_falls_back_to_text_when_generation_and_photo_both_fail(m
     h = _h(image_url="https://example.com/real-cover.png")
     monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
     monkeypatch.setattr("pipeline.telegram.generate_image", lambda h, key: None)
-    monkeypatch.setattr("pipeline.telegram.send_photo", lambda *a, **k: False)
+    monkeypatch.setattr("pipeline.telegram.send_photo", lambda *a, **k: None)
 
     calls = []
     monkeypatch.setattr(
-        "pipeline.telegram.send_message",
-        lambda token, chat_id, text: calls.append(text) or True,
+        "pipeline.telegram.send_message_returning_id",
+        lambda token, chat_id, text: calls.append(text) or 1,
     )
 
     assert send_hackathon("tok", "chat", h, gemini_api_key="key") is True

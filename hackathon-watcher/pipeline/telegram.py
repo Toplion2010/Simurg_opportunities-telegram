@@ -16,6 +16,7 @@ import requests
 import config
 from pipeline.format_prize import summarize_prize
 from pipeline.image_gen import generate_image
+from pipeline.reactions import react
 from sources.base import Hackathon
 
 logger = logging.getLogger(__name__)
@@ -316,25 +317,31 @@ def set_chat_description(token: str, chat_id: str, description: str) -> bool:
     return True
 
 
-def send_photo(token: str, chat_id: str, photo_url: str, caption: str) -> bool:
-    """Send a photo by URL with an HTML caption. Returns True on success —
-    callers should fall back to send_message on failure (Telegram rejects
-    some remote image URLs it can't fetch or decode)."""
+def send_photo(token: str, chat_id: str, photo_url: str, caption: str) -> int | None:
+    """Send a photo by URL with an HTML caption. Returns its message_id on
+    success (so callers can react to it), None on failure — callers should
+    fall back to send_message on failure (Telegram rejects some remote
+    image URLs it can't fetch or decode)."""
     response = _post(
         f"bot{token}/sendPhoto",
         {"chat_id": chat_id, "photo": photo_url, "caption": caption, "parse_mode": "HTML"},
     )
     if response is None:
-        return False
+        return None
     if not response.ok:
         logger.warning("telegram: sendPhoto failed (%s): %s", response.status_code, response.text)
-        return False
-    return True
+        return None
+    try:
+        return response.json()["result"]["message_id"]
+    except (ValueError, KeyError):
+        logger.error("telegram: sendPhoto returned no message_id: %s", response.text[:300])
+        return None
 
 
-def send_photo_bytes(token: str, chat_id: str, photo_bytes: bytes, caption: str) -> bool:
+def send_photo_bytes(token: str, chat_id: str, photo_bytes: bytes, caption: str) -> int | None:
     """Send a photo uploaded as raw bytes (a generated image, not a URL)
-    with an HTML caption. Returns True on success."""
+    with an HTML caption. Returns its message_id on success, None on
+    failure."""
     url = f"{API_BASE}/bot{token}/sendPhoto"
     data = {"chat_id": chat_id, "caption": caption, "parse_mode": "HTML"}
     files = {"photo": ("hackathon.jpg", photo_bytes, "image/jpeg")}
@@ -354,14 +361,20 @@ def send_photo_bytes(token: str, chat_id: str, photo_bytes: bytes, caption: str)
                     "telegram: sendPhoto (bytes) failed (%s): %s",
                     response.status_code, response.text,
                 )
-                return False
-            return True
+                return None
+            try:
+                return response.json()["result"]["message_id"]
+            except (ValueError, KeyError):
+                logger.error(
+                    "telegram: sendPhoto (bytes) returned no message_id: %s", response.text[:300]
+                )
+                return None
         except requests.RequestException:
             logger.warning("telegram: sendPhoto (bytes) request failed on attempt %d", attempt + 1, exc_info=True)
             time.sleep(config.REQUEST_BACKOFF_SECONDS * (2**attempt))
 
     logger.error("telegram: giving up on sendPhoto (bytes) after retries")
-    return False
+    return None
 
 
 def send_hackathon(token: str, chat_id: str, h: Hackathon, gemini_api_key: str | None = None) -> bool:
@@ -369,21 +382,32 @@ def send_hackathon(token: str, chat_id: str, h: Hackathon, gemini_api_key: str |
     photo, generate_image() uses it as a style reference rather than
     skipping generation, so posts look designed instead of using whatever
     generic thumbnail the source happened to provide. Falls back to the
-    real photo verbatim, then to text-only, never costing a post."""
+    real photo verbatim, then to text-only, never costing a post.
+
+    Reacts to whichever message actually landed — a small engagement boost,
+    best-effort and never able to turn a successful post into a failure."""
     if config.IMAGE_GEN_ENABLED and gemini_api_key:
         generated = generate_image(h, gemini_api_key)
         if generated:
             caption = format_message(h, max_length=1024)
-            if send_photo_bytes(token, chat_id, generated, caption):
+            message_id = send_photo_bytes(token, chat_id, generated, caption)
+            if message_id is not None:
+                react(token, chat_id, message_id)
                 return True
 
     if h.image_url:
         caption = format_message(h, max_length=1024)
-        if send_photo(token, chat_id, h.image_url, caption):
+        message_id = send_photo(token, chat_id, h.image_url, caption)
+        if message_id is not None:
+            react(token, chat_id, message_id)
             return True
 
     text = format_message(h, max_length=4096)
-    return send_message(token, chat_id, text)
+    message_id = send_message_returning_id(token, chat_id, text)
+    if message_id is None:
+        return False
+    react(token, chat_id, message_id)
+    return True
 
 
 def post_hackathons(

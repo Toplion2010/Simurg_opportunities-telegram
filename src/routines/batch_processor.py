@@ -57,9 +57,14 @@ async def run() -> int:
     processed = created = errors = 0
     fetched = 0
     payloads: list[dict] = []
+    client: TelegramClient | None = None
 
     try:
         # --- 1 & 2: collect and process -------------------------------------
+        # Stays connected through step 4 (not disconnected right after the
+        # fetch) so publish_scheduled can reuse it to react, as the userbot's
+        # personal account, to whatever it publishes -- one connection
+        # instead of a second ad-hoc one just for reactions.
         client = _build_telethon_client(settings)
         await client.connect()
         try:
@@ -70,8 +75,9 @@ async def run() -> int:
                 )
             payloads = await fetch_new_messages(client, session_factory)
             fetched = len(payloads)
-        finally:
+        except Exception:
             await client.disconnect()
+            raise
 
         if payloads:
             # Oldest first, so a capped run leaves the newest for next time and the
@@ -105,7 +111,7 @@ async def run() -> int:
 
         # --- 4: publish whatever is approved and due -------------------------
         try:
-            await publish_scheduled(settings, session_factory, bot)
+            await publish_scheduled(settings, session_factory, bot, telethon_client=client)
         except Exception:
             logger.exception("publish_scheduled_failed")
 
@@ -140,6 +146,8 @@ async def run() -> int:
         )
         return 1
     finally:
+        if client is not None:
+            await client.disconnect()
         await bot.session.close()
         await engine.dispose()
 

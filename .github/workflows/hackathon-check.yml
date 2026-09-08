@@ -40,6 +40,12 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          # Optional: reuse Simurg's already-authorized personal-account
+          # session so posts also get a reaction from that account, not just
+          # the bot. Reactions are skipped (not a failure) if these are unset.
+          TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
+          TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
+          TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
         run: python main.py ${{ inputs.args }}
 
       - name: Commit updated state

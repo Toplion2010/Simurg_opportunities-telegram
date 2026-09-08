@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
+from telethon import TelegramClient
 
 from src.core.config import Settings
 from src.core.enums import Audience, Category, OpportunityStatus
@@ -12,6 +13,7 @@ from src.core.logging import get_logger
 from src.core.scoring import infer_is_online
 from src.db.models.opportunity import Opportunity
 from src.publisher.formatter import format_opportunity
+from src.publisher.reactions import add_reactions
 
 logger = get_logger(__name__)
 
@@ -36,8 +38,12 @@ class PublishResult:
 
 
 class OpportunitySender:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, telethon_client: TelegramClient | None = None) -> None:
         self._settings = settings
+        # Optional -- when given a connected userbot client, freshly published
+        # posts also get a reaction from that personal account (see
+        # src/publisher/reactions.py). Absent it, only the bot reacts.
+        self._telethon_client = telethon_client
 
     def _resolve_targets(self, opp: Opportunity) -> list[int]:
         school = self._settings.DEST_CHANNEL_ID_SCHOOL
@@ -119,7 +125,7 @@ class OpportunitySender:
         for chat_id in targets:
             try:
                 photo = BufferedInputFile(img_bytes, filename="card.jpg")
-                await bot.send_photo(
+                sent = await bot.send_photo(
                     chat_id=chat_id,
                     photo=photo,
                     caption=photo_caption,
@@ -128,6 +134,10 @@ class OpportunitySender:
                 if overlong:
                     await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
                 result.succeeded.append(chat_id)
+                # Cosmetic and best-effort -- add_reactions swallows its own
+                # errors, so a reaction failure never turns this into a
+                # failed publish.
+                await add_reactions(bot, chat_id, sent.message_id, self._telethon_client)
             except Exception as e:
                 logger.exception(
                     "publish_failed_channel", opp_id=opp.id, chat_id=chat_id, error=str(e)

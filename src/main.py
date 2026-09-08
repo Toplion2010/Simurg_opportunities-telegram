@@ -10,6 +10,7 @@ from src.core.config import Settings
 from src.core.logging import get_logger, setup_logging
 from src.core.notify import notify_admins
 from src.core.redis_client import init_redis
+from src.core.telethon_client import build_telethon_client
 from src.db.base import create_engine
 from src.db.session import create_session_factory
 from src.processor.worker import PipelineFactory, build_pipeline, process_batch
@@ -45,7 +46,7 @@ async def run_async() -> None:
         misfire_grace_time=1800,
     )
     scheduler.add_job(
-        functools.partial(publish_scheduled, settings, session_factory, bot),
+        functools.partial(_publish_scheduled_with_reactions, settings, session_factory, bot),
         trigger="interval",
         seconds=settings.PUBLISHER_POLL_SECONDS,
         id="publish_scheduled",
@@ -79,6 +80,34 @@ async def run_async() -> None:
         await bot.session.close()
         await engine.dispose()
         logger.info("shutdown_complete")
+
+
+async def _publish_scheduled_with_reactions(settings: Settings, session_factory, bot: Bot) -> None:
+    """Wraps publish_scheduled with a short-lived userbot connection so freshly
+    published posts also get a reaction from that personal account (see
+    src/publisher/reactions.py). A separate, ad-hoc connection rather than
+    reusing the long-running collector client in _run_userbot_supervised --
+    Telegram allows multiple simultaneous MTProto connections per account, and
+    keeping this one scoped to a single publish cycle means it can never be
+    left dangling by a collector reconnect/backoff cycle happening elsewhere."""
+    telethon_client = None
+    if settings.TELETHON_API_ID:
+        telethon_client = build_telethon_client(settings)
+        try:
+            await telethon_client.connect()
+            if not await telethon_client.is_user_authorized():
+                logger.warning("telethon_not_authorized", hint="skipping userbot reactions")
+                await telethon_client.disconnect()
+                telethon_client = None
+        except Exception:
+            logger.warning("telethon_connect_failed", hint="skipping userbot reactions")
+            telethon_client = None
+
+    try:
+        await publish_scheduled(settings, session_factory, bot, telethon_client=telethon_client)
+    finally:
+        if telethon_client is not None:
+            await telethon_client.disconnect()
 
 
 # Reconnect backoff for the collector. A transient network blip (wifi drop, laptop
