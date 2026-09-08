@@ -86,7 +86,7 @@ SOURCE_CHANNELS = [
     {"username": "nucleus_borziyon",       "name": "NUcleus"},
     {"username": "ShineYourCV",            "name": "Shine Your CV"},
     {"username": "steppeforward",          "name": "Steppe Forward"},
-    {"username": "hackathon_kz",          "name": "Hackathon KZ"},
+    {"username": "hackathon_kz",           "name": "Hackathon KZ"},
     # Private invite links — no username; joined via ImportChatInviteRequest.
     # name is filled in from the resolved channel title.
     {"invite_link": "https://t.me/+NfgWEYGdCDVhMTYy"},
