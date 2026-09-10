@@ -21,11 +21,11 @@ async def add_reactions(
 ) -> None:
     """Best-effort engagement boost on a just-published post: one reaction
     from the bot, one from the userbot's personal account (if connected),
-    picking two different emoji so the post doesn't look like a bot talking
-    to itself. Never raises -- publishing has already succeeded by the time
-    this runs, so a reaction failure (bot lacks the permission, the account
-    isn't a member of the channel, a transient API error) must not turn a
-    successful publish into a reported failure."""
+    each an independently random pick from EMOJI_POOL -- landing on the same
+    emoji twice is fine. Never raises -- publishing has already succeeded by
+    the time this runs, so a reaction failure (bot lacks the permission, the
+    account isn't a member of the channel, a transient API error) must not
+    turn a successful publish into a reported failure."""
     bot_emoji = random.choice(EMOJI_POOL)
     try:
         await bot.set_message_reaction(
@@ -41,7 +41,7 @@ async def add_reactions(
     if telethon_client is None or not telethon_client.is_connected():
         return
 
-    user_emoji = next((e for e in EMOJI_POOL if e != bot_emoji), bot_emoji)
+    user_emoji = random.choice(EMOJI_POOL)
     try:
         entity = await telethon_client.get_entity(chat_id)
         await telethon_client(

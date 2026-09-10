@@ -75,11 +75,11 @@ def _react_as_user(chat_id: str, message_id: int, emoji: str) -> None:
 
 
 def react(token: str, chat_id: str, message_id: int) -> None:
-    """Add a bot reaction and (if configured) a userbot reaction, picking
-    two different emoji from the pool so the post doesn't look like a bot
-    talking to itself."""
+    """Add a bot reaction and (if configured) a userbot reaction, each an
+    independently random pick from the pool -- landing on the same emoji
+    twice is fine."""
     bot_emoji = random.choice(EMOJI_POOL)
     _react_as_bot(token, chat_id, message_id, bot_emoji)
 
-    user_emoji = next((e for e in EMOJI_POOL if e != bot_emoji), bot_emoji)
+    user_emoji = random.choice(EMOJI_POOL)
     _react_as_user(chat_id, message_id, user_emoji)
