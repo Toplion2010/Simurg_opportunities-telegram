@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     # Generate with: python -m scripts.export_session_string
     TELETHON_SESSION_STRING: str = ""
 
+    # Optional second personal account, used ONLY to react to published posts
+    # (never to fetch source channels) -- an extra engagement reaction
+    # alongside the primary userbot's. Unset = feature off, no second
+    # reaction. Same API_ID/API_HASH app, a different account's session.
+    # Generate with: TELETHON_SESSION=<name> python -m scripts.export_session_string
+    TELETHON_SESSION_STRING_2: str = ""
+    TELETHON_SESSION_2: str = "simurg2"
+
     # Destination channels — audience-based routing (school vs university)
     DEST_CHANNEL_ID_SCHOOL: int
     DEST_CHANNEL_ID_UNIVERSITY: int

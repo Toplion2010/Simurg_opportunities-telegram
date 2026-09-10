@@ -56,6 +56,8 @@ jobs:
           # fetch entirely otherwise. Without it, publishing still succeeds;
           # only the bot's own reaction goes out.
           TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
+          # Optional second personal account -- also reacts if set.
+          TELETHON_SESSION_STRING_2: ${{ secrets.TELETHON_SESSION_STRING_2 }}
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
           # Optional third channel: KZ hackathons publish here as well as to

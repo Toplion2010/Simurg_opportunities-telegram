@@ -58,6 +58,8 @@ jobs:
           TELETHON_API_ID: ${{ secrets.TELETHON_API_ID }}
           TELETHON_API_HASH: ${{ secrets.TELETHON_API_HASH }}
           TELETHON_SESSION_STRING: ${{ secrets.TELETHON_SESSION_STRING }}
+          # Optional second personal account -- also reacts if set.
+          TELETHON_SESSION_STRING_2: ${{ secrets.TELETHON_SESSION_STRING_2 }}
           DEST_CHANNEL_ID_SCHOOL: ${{ secrets.DEST_CHANNEL_ID_SCHOOL }}
           DEST_CHANNEL_ID_UNIVERSITY: ${{ secrets.DEST_CHANNEL_ID_UNIVERSITY }}
           # Optional third channel for KZ hackathons; see drain.yml. Empty when

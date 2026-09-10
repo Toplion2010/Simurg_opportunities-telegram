@@ -38,12 +38,14 @@ class PublishResult:
 
 
 class OpportunitySender:
-    def __init__(self, settings: Settings, telethon_client: TelegramClient | None = None) -> None:
+    def __init__(
+        self, settings: Settings, telethon_clients: list[TelegramClient] | None = None
+    ) -> None:
         self._settings = settings
-        # Optional -- when given a connected userbot client, freshly published
-        # posts also get a reaction from that personal account (see
+        # Optional -- when given connected userbot clients, freshly published
+        # posts also get a reaction from each of those personal accounts (see
         # src/publisher/reactions.py). Absent it, only the bot reacts.
-        self._telethon_client = telethon_client
+        self._telethon_clients = telethon_clients or []
 
     def _resolve_targets(self, opp: Opportunity) -> list[int]:
         school = self._settings.DEST_CHANNEL_ID_SCHOOL
@@ -137,7 +139,7 @@ class OpportunitySender:
                 # Cosmetic and best-effort -- add_reactions swallows its own
                 # errors, so a reaction failure never turns this into a
                 # failed publish.
-                await add_reactions(bot, chat_id, sent.message_id, self._telethon_client)
+                await add_reactions(bot, chat_id, sent.message_id, self._telethon_clients)
             except Exception as e:
                 logger.exception(
                     "publish_failed_channel", opp_id=opp.id, chat_id=chat_id, error=str(e)

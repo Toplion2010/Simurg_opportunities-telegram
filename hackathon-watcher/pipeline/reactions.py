@@ -1,9 +1,9 @@
 """Best-effort emoji reactions on freshly posted messages: one from the bot,
-one from the personal Telegram account (the same userbot session Simurg's
-main pipeline uses to scrape source channels, reused here so no separate
-login is needed). Never raises -- posting has already succeeded by the time
-this runs, and a reaction failure must not turn that into a reported
-failure."""
+plus one from each configured personal account (the same userbot session(s)
+Simurg's main pipeline uses to scrape source channels, reused here so no
+separate login is needed). Never raises -- posting has already succeeded by
+the time this runs, and a reaction failure must not turn that into a
+reported failure."""
 
 from __future__ import annotations
 
@@ -18,6 +18,11 @@ import config
 logger = logging.getLogger(__name__)
 
 EMOJI_POOL = ["\U0001F525", "❤"]  # fire, heart
+
+# Env var pairs for each personal account this bot may react as. A second
+# account is entirely optional -- unset TELETHON_SESSION_STRING_2 and it's
+# simply skipped.
+_SESSION_STRING_ENV_VARS = ["TELETHON_SESSION_STRING", "TELETHON_SESSION_STRING_2"]
 
 
 def _react_as_bot(token: str, chat_id: str, message_id: int, emoji: str) -> None:
@@ -47,16 +52,7 @@ def _resolve_peer(chat_id: str) -> int | str:
         return chat_id
 
 
-def _react_as_user(chat_id: str, message_id: int, emoji: str) -> None:
-    """Reacts using the personal account, if the TELETHON_* secrets are
-    present in the environment. Silently a no-op otherwise -- this bonus
-    reaction is optional and must not block the bot's own reaction."""
-    api_id = os.environ.get("TELETHON_API_ID")
-    api_hash = os.environ.get("TELETHON_API_HASH")
-    session_string = os.environ.get("TELETHON_SESSION_STRING")
-    if not api_id or not api_hash or not session_string:
-        return
-
+def _react_as_user(chat_id: str, message_id: int, emoji: str, api_id: str, api_hash: str, session_string: str) -> None:
     try:
         from telethon.sessions import StringSession
         from telethon.sync import TelegramClient
@@ -74,12 +70,23 @@ def _react_as_user(chat_id: str, message_id: int, emoji: str) -> None:
         logger.warning("telethon: user reaction failed", exc_info=True)
 
 
-def react(token: str, chat_id: str, message_id: int) -> None:
-    """Add a bot reaction and (if configured) a userbot reaction, each an
-    independently random pick from the pool -- landing on the same emoji
-    twice is fine."""
-    bot_emoji = random.choice(EMOJI_POOL)
-    _react_as_bot(token, chat_id, message_id, bot_emoji)
+def _configured_accounts() -> list[str]:
+    """Session strings for every personal account configured via the
+    TELETHON_* env vars -- empty if TELETHON_API_ID/HASH aren't set."""
+    api_id = os.environ.get("TELETHON_API_ID")
+    api_hash = os.environ.get("TELETHON_API_HASH")
+    if not api_id or not api_hash:
+        return []
+    return [os.environ[k] for k in _SESSION_STRING_ENV_VARS if os.environ.get(k)]
 
-    user_emoji = random.choice(EMOJI_POOL)
-    _react_as_user(chat_id, message_id, user_emoji)
+
+def react(token: str, chat_id: str, message_id: int) -> None:
+    """Add a bot reaction and one reaction per configured personal account,
+    each an independently random pick from the pool -- landing on the same
+    emoji twice is fine."""
+    _react_as_bot(token, chat_id, message_id, random.choice(EMOJI_POOL))
+
+    api_id = os.environ.get("TELETHON_API_ID")
+    api_hash = os.environ.get("TELETHON_API_HASH")
+    for session_string in _configured_accounts():
+        _react_as_user(chat_id, message_id, random.choice(EMOJI_POOL), api_id, api_hash, session_string)

@@ -24,6 +24,7 @@ from src.collector.fetcher import advance_cursors, compute_safe_cursors, fetch_n
 from src.core.config import Settings
 from src.core.logging import get_logger, setup_logging
 from src.core.notify import notify_admins
+from src.core.telethon_client import connect_second_reaction_client
 from src.db.base import create_engine
 from src.db.session import create_session_factory
 from src.processor.worker import build_pipeline, process_payloads
@@ -58,6 +59,7 @@ async def run() -> int:
     fetched = 0
     payloads: list[dict] = []
     client: TelegramClient | None = None
+    second_client: TelegramClient | None = None
 
     try:
         # --- 1 & 2: collect and process -------------------------------------
@@ -78,6 +80,10 @@ async def run() -> int:
         except Exception:
             await client.disconnect()
             raise
+
+        # Optional: an unrelated second personal account, connected only to
+        # react to whatever gets published in step 4 -- never used to fetch.
+        second_client = await connect_second_reaction_client(settings)
 
         if payloads:
             # Oldest first, so a capped run leaves the newest for next time and the
@@ -110,8 +116,9 @@ async def run() -> int:
             await _drain_admin_updates(settings, session_factory, bot)
 
         # --- 4: publish whatever is approved and due -------------------------
+        telethon_clients = [c for c in (client, second_client) if c is not None]
         try:
-            await publish_scheduled(settings, session_factory, bot, telethon_client=client)
+            await publish_scheduled(settings, session_factory, bot, telethon_clients=telethon_clients)
         except Exception:
             logger.exception("publish_scheduled_failed")
 
@@ -148,6 +155,8 @@ async def run() -> int:
     finally:
         if client is not None:
             await client.disconnect()
+        if second_client is not None:
+            await second_client.disconnect()
         await bot.session.close()
         await engine.dispose()
 

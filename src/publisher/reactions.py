@@ -17,39 +17,40 @@ async def add_reactions(
     bot: Bot,
     chat_id: int,
     message_id: int,
-    telethon_client: TelegramClient | None,
+    telethon_clients: list[TelegramClient] | None = None,
 ) -> None:
     """Best-effort engagement boost on a just-published post: one reaction
-    from the bot, one from the userbot's personal account (if connected),
-    each an independently random pick from EMOJI_POOL -- landing on the same
-    emoji twice is fine. Never raises -- publishing has already succeeded by
-    the time this runs, so a reaction failure (bot lacks the permission, the
-    account isn't a member of the channel, a transient API error) must not
-    turn a successful publish into a reported failure."""
-    bot_emoji = random.choice(EMOJI_POOL)
+    from the bot, plus one from each connected personal account (the primary
+    userbot and, if configured, a second one) -- each an independently
+    random pick from EMOJI_POOL, landing on the same emoji twice is fine.
+    Never raises -- publishing has already succeeded by the time this runs,
+    so a reaction failure (bot lacks the permission, an account isn't a
+    member of the channel, a transient API error) must not turn a successful
+    publish into a reported failure."""
     try:
         await bot.set_message_reaction(
             chat_id=chat_id,
             message_id=message_id,
-            reaction=[ReactionTypeEmoji(emoji=bot_emoji)],
+            reaction=[ReactionTypeEmoji(emoji=random.choice(EMOJI_POOL))],
         )
     except Exception as e:
         logger.warning(
             "bot_reaction_failed", chat_id=chat_id, message_id=message_id, error=str(e)
         )
 
-    if telethon_client is None or not telethon_client.is_connected():
-        return
-
-    user_emoji = random.choice(EMOJI_POOL)
-    try:
-        entity = await telethon_client.get_entity(chat_id)
-        await telethon_client(
-            SendReactionRequest(
-                peer=entity, msg_id=message_id, reaction=[ReactionEmoji(emoticon=user_emoji)]
+    for client in telethon_clients or []:
+        if not client.is_connected():
+            continue
+        try:
+            entity = await client.get_entity(chat_id)
+            await client(
+                SendReactionRequest(
+                    peer=entity,
+                    msg_id=message_id,
+                    reaction=[ReactionEmoji(emoticon=random.choice(EMOJI_POOL))],
+                )
             )
-        )
-    except Exception as e:
-        logger.warning(
-            "user_reaction_failed", chat_id=chat_id, message_id=message_id, error=str(e)
-        )
+        except Exception as e:
+            logger.warning(
+                "user_reaction_failed", chat_id=chat_id, message_id=message_id, error=str(e)
+            )
