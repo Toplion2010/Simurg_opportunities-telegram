@@ -1,12 +1,14 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from telethon import TelegramClient
 
 from src.core.config import Settings
+from src.core.enums import OpportunityStatus
 from src.core.logging import get_logger
 from src.db.repositories.opportunity import OpportunityRepository
+from src.publisher.deadlines import deadline_sort_key, is_expired
 from src.publisher.sender import OpportunitySender
 
 logger = get_logger(__name__)
@@ -17,6 +19,29 @@ def remaining_publish_cap(daily_cap: int, already_published: int) -> int:
     have. Never negative -- a cap lowered mid-day, or a burst of manual
     approvals, must not turn into a negative slice."""
     return max(0, daily_cap - already_published)
+
+
+def partition_by_deadline(
+    opportunities: list, today: date
+) -> tuple[list, list]:
+    """Split a due-for-publish list into (publishable, expired).
+
+    `get_due_for_publish` orders by scheduled_at/created_at -- approval order,
+    which has nothing to do with when an application actually closes. That is
+    how a hackathon whose registration closed on the 12th went out on the 13th:
+    it had simply been approved earlier than the rows around it. Ordering here
+    is by deadline, soonest first, so the posts most at risk of going stale are
+    the ones that fit under the daily cap.
+
+    Rows with no parseable deadline ("Rolling", prose, NULL) sort last and are
+    never expired -- see src/publisher/deadlines.py on why the uncertain case
+    resolves toward publishing.
+    """
+    live, expired = [], []
+    for opp in opportunities:
+        (expired if is_expired(opp.deadline, today) else live).append(opp)
+    live.sort(key=lambda o: deadline_sort_key(o.deadline, today))
+    return live, expired
 
 
 async def publish_scheduled(
@@ -44,13 +69,30 @@ async def publish_scheduled(
         if not due:
             return
 
+        # Retire anything whose deadline has already passed and re-order the
+        # rest soonest-deadline-first, BEFORE the cap trims the list -- a cap
+        # applied to approval order is what let a closed opportunity take one
+        # of the day's slots. Expired rows are marked rejected so they leave
+        # the approved pool instead of being re-examined every run.
+        due, expired = partition_by_deadline(due, now.date())
+        if expired:
+            logger.info(
+                "expired_deadline_rejected",
+                count=len(expired),
+                ids=[o.id for o in expired],
+            )
+            for opp in expired:
+                opp.status = OpportunityStatus.rejected
+            await session.commit()
+        if not due:
+            return
+
         # DAILY_PUBLISH_CAP bounds actual channel posts per day regardless of
         # WHEN a row was approved -- daily_digest.py's auto-approvals and a
         # human tap from days ago both flow through this same due-for-publish
         # list, so the cap has to live here, not in the digest step, to be a
-        # true ceiling. Order is already scheduled_at/created_at ascending
-        # (get_due_for_publish), so older approvals go out first; anything
-        # trimmed simply stays 'approved' for a later run to pick up.
+        # true ceiling. Anything trimmed simply stays 'approved' for a later
+        # run to pick up.
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         already_published = await repo.count_published_since(start_of_day)
         remaining_cap = remaining_publish_cap(settings.DAILY_PUBLISH_CAP, already_published)

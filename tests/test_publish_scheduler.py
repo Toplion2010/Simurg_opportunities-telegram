@@ -8,7 +8,17 @@ unit tested in isolation.
 """
 import pytest
 
+from src.core.config import Settings
 from src.publisher.scheduler import remaining_publish_cap
+
+
+def test_daily_publish_cap_default_is_five():
+    """The channel's chosen volume, and the main lever on Gemini image spend
+    (every post is a billed generation -- see test_image_cost_guards.py).
+    Asserted rather than left to config review because it has drifted up
+    before: 7 -> 10, on backlog pressure that deadline ordering now handles
+    by choosing WHICH five go out rather than by posting more."""
+    assert Settings.model_fields["DAILY_PUBLISH_CAP"].default == 5
 
 
 @pytest.mark.parametrize(
