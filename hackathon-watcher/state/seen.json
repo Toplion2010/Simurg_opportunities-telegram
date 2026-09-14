@@ -131,6 +131,12 @@
     "title": "Avalon OpenHack",
     "url": "https://avalon-openhack.devfolio.co"
   },
+  "aws communication developer services cds agentic ai partner|2026-09-14": {
+    "ends_at": "2026-10-28",
+    "first_seen": "2026-09-14",
+    "title": "AWS Communication Developer Services (CDS) Agentic AI Partner Hackathon",
+    "url": "https://aws-cds-partner.devpost.com"
+  },
   "banana hacks|2026-10-09": {
     "ends_at": "2026-10-12",
     "first_seen": "2026-08-23",
@@ -641,6 +647,12 @@
     "title": "NextStep Hacks 2026",
     "url": "https://nextstep2026.devpost.com"
   },
+  "oneaquahealth ieee global|2026-09-14": {
+    "ends_at": "2026-10-01",
+    "first_seen": "2026-09-14",
+    "title": "OneAquaHealth IEEE Global Hackathon",
+    "url": "https://oneaquahealth-ieee-hackathon.devpost.com"
+  },
   "opencv ai competition powered by aws|2026-08-26": {
     "ends_at": "2026-10-27",
     "first_seen": "2026-08-26",
@@ -664,6 +676,12 @@
     "first_seen": "2026-08-23",
     "title": "Predict Cross-sectional Equity Returns",
     "url": "https://hub.crunchdao.com/competitions/datacrunch-2"
+  },
+  "predict price movements from limit order book data|2026-09-11": {
+    "ends_at": "2026-11-15",
+    "first_seen": "2026-09-14",
+    "title": "Predict Price Movements from Limit Order Book Data",
+    "url": "https://wundernn.io/connectome"
   },
   "predict student learning outcomes from tutoring transcripts|2026-06-15": {
     "ends_at": "2026-08-27",
@@ -856,6 +874,12 @@
     "first_seen": "2026-08-24",
     "title": "Track Developing Cells in 3D Microscopy Data",
     "url": "https://www.kaggle.com/competitions/biohub-cell-tracking-during-development"
+  },
+  "transcribe code switched speech in underserved languages|2026-08-04": {
+    "ends_at": "2026-10-02",
+    "first_seen": "2026-09-14",
+    "title": "Transcribe Code-Switched Speech in Underserved Languages",
+    "url": "https://competitions.mozilladatacollective.com/competitions/group/lost-in-transcription"
   },
   "univabio|2026-08-07": {
     "ends_at": "2026-10-06",
