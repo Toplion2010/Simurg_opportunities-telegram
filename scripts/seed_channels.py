@@ -9,9 +9,10 @@ then inserts (or skips existing) rows into source_channels.
 """
 
 import asyncio
+import os
 import re
 import sys
-import os
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -87,6 +88,12 @@ SOURCE_CHANNELS = [
     {"username": "ShineYourCV",            "name": "Shine Your CV"},
     {"username": "steppeforward",          "name": "Steppe Forward"},
     {"username": "hackathon_kz",           "name": "Hackathon KZ"},
+    {
+        "username": "tirkelemiz_bil",
+        "name": "Tirkelemiz BIL",
+        # Start this channel at the beginning of September 10, 2026 (UTC).
+        "history_since": datetime(2026, 9, 10, tzinfo=timezone.utc),
+    },
     # Private invite links — no username; joined via ImportChatInviteRequest.
     # name is filled in from the resolved channel title.
     {"invite_link": "https://t.me/+NfgWEYGdCDVhMTYy"},
@@ -96,6 +103,18 @@ SOURCE_CHANNELS = [
 # Private invite links look like t.me/+HASH or t.me/joinchat/HASH — get_entity()
 # can't resolve those, so they need ImportChatInviteRequest instead.
 _INVITE_RE = re.compile(r"t\.me/(?:\+|joinchat/)([\w-]+)")
+
+
+async def _message_id_before(
+    client: TelegramClient, entity, cutoff: datetime
+) -> int:
+    """Return the final message ID before ``cutoff``, or zero if none exists.
+
+    The collector resumes using ``min_id``, so this converts a human-friendly
+    initial date into the cursor format already used by source_channels.
+    """
+    messages = await client.get_messages(entity, limit=1, offset_date=cutoff)
+    return messages[0].id if messages else 0
 
 
 async def _resolve_invite(client: TelegramClient, invite_hash: str):
@@ -154,6 +173,7 @@ async def seed(settings: Settings, session_factory: async_sessionmaker) -> None:
 
                 telegram_id = entity.id
                 name = ch.get("name") or getattr(entity, "title", None) or label
+                history_since = ch.get("history_since")
 
                 # Telegram channel IDs from get_entity are bare; broadcast channels
                 # are stored as negative in Bot API: -(1000000000000 + id)
@@ -161,6 +181,16 @@ async def seed(settings: Settings, session_factory: async_sessionmaker) -> None:
                 # Store the bare id; collector uses Telethon which also gives bare ids.
                 existing = await repo.list(telegram_id=telegram_id)
                 if existing:
+                    # Apply the initial boundary on a rerun too, provided this
+                    # source has not started collection yet.
+                    if history_since and existing[0].last_seen_msg_id is None:
+                        existing[0].last_seen_msg_id = await _message_id_before(
+                            client, entity, history_since
+                        )
+                        print(
+                            f"  INIT  {label}: history from "
+                            f"{history_since.date().isoformat()}"
+                        )
                     print(f"  SKIP  {label} (id={telegram_id}) -- already in DB")
                     continue
 
@@ -184,6 +214,11 @@ async def seed(settings: Settings, session_factory: async_sessionmaker) -> None:
                     name=name,
                     username=username,
                     active=True,
+                    last_seen_msg_id=(
+                        await _message_id_before(client, entity, history_since)
+                        if history_since
+                        else None
+                    ),
                 )
                 await repo.save(channel)
                 print(f"  ADD   {label} -> id={telegram_id}  ({name})")
