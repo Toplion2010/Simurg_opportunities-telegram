@@ -83,6 +83,12 @@
     "title": "AI YES :International Youth AI Competition",
     "url": "https://ai-yes-competition-30441.devpost.com/"
   },
+  "algothon 26|2026-10-04": {
+    "ends_at": "2026-10-04",
+    "first_seen": "2026-09-25",
+    "title": "ALGOTHON'26",
+    "url": "https://algothon.devfolio.co"
+  },
   "all things agentic|2026-08-04": {
     "ends_at": "2026-08-31",
     "first_seen": "2026-08-23",
@@ -202,6 +208,12 @@
     "first_seen": "2026-08-23",
     "title": "Brainwave 2026 – Midnight Track",
     "url": "https://brainwave-2026-midnight-track.devpost.com"
+  },
+  "build coding agents with gemma 4|2026-09-23": {
+    "ends_at": "2026-12-02",
+    "first_seen": "2026-09-25",
+    "title": "Build Coding Agents with Gemma 4",
+    "url": "https://www.kaggle.com/competitions/gemma-4-developer-agent"
   },
   "build for earth|2026-11-08": {
     "ends_at": "2027-01-16",
@@ -1085,11 +1097,23 @@
     "title": "WeAreDevelopers Hackathon",
     "url": "https://lablab.ai/ai-hackathons/wearedevelopers-hackathon"
   },
+  "wild bugs|2026-10-13": {
+    "ends_at": "2026-10-15",
+    "first_seen": "2026-09-25",
+    "title": "Wild Bugs",
+    "url": "https://wild-bugs.devfolio.co"
+  },
   "winter of code|2026-10-14": {
     "ends_at": "2026-11-30",
     "first_seen": "2026-09-17",
     "title": "Winter of Code 2026",
     "url": "https://winter-of-code-4.devfolio.co"
+  },
+  "write a research paper on coding agents|2026-09-23": {
+    "ends_at": "2026-11-12",
+    "first_seen": "2026-09-25",
+    "title": "Write a Research Paper on Coding Agents",
+    "url": "https://www.kaggle.com/competitions/gemma-4-developer-agent-paper"
   },
   "xylem global student innovation challenge|2026-09-28": {
     "ends_at": null,
