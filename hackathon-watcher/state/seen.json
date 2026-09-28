@@ -395,6 +395,12 @@
     "title": "DecentraHack 2.0",
     "url": "https://decentrahack-2-0.devpost.com"
   },
+  "decode brains signals in task specific settings|2026-09-21": {
+    "ends_at": "2026-11-21",
+    "first_seen": "2026-09-28",
+    "title": "Decode Brains Signals in Task-Specific Settings",
+    "url": "https://neural-interfaces26.github.io"
+  },
   "design llm agents to build virtual spacecraft|2026-07-08": {
     "ends_at": "2026-09-12",
     "first_seen": "2026-08-24",
@@ -893,6 +899,12 @@
     "title": "Predict Student Learning Outcomes from Tutoring Transcripts",
     "url": "https://platform.k12-ai-infrastructure.org/competitions/3/tutoring-outcomes"
   },
+  "predict whether ai systems answer benchmark items correctly|None": {
+    "ends_at": "2026-10-30",
+    "first_seen": "2026-09-28",
+    "title": "Predict Whether AI Systems Answer Benchmark Items Correctly",
+    "url": "https://aimslab.stanford.edu/competition"
+  },
   "prometheus august ai challenge|2026-08-18": {
     "ends_at": "2026-08-30",
     "first_seen": "2026-08-23",
@@ -1000,6 +1012,12 @@
     "first_seen": "2026-09-11",
     "title": "Shared OS Hackathon",
     "url": "https://shared-os-hackathon.devpost.com"
+  },
+  "sim2real bimanual robot manipulation|2026-07-13": {
+    "ends_at": "2026-10-11",
+    "first_seen": "2026-09-28",
+    "title": "Sim2Real Bimanual Robot Manipulation",
+    "url": "https://robosyn-bench.net"
   },
   "speed fall classic|2026-08-31": {
     "ends_at": "2026-09-26",
@@ -1120,6 +1138,12 @@
     "first_seen": "2026-08-30",
     "title": "VentureFix",
     "url": "https://venturefix.devpost.com"
+  },
+  "verifiable ai agents for quantitative finance|2026-08-17": {
+    "ends_at": "2026-10-12",
+    "first_seen": "2026-09-28",
+    "title": "Verifiable AI Agents for Quantitative Finance",
+    "url": "https://www.agenthon.net"
   },
   "volthacks|2026-05-22": {
     "ends_at": "2026-09-05",
