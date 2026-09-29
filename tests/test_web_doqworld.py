@@ -7,7 +7,7 @@ from src.collector.web import http as web_http
 from src.collector.web.filters import REASON_CLOSED, admits
 from src.collector.web.sources.doqworld import DoqWorldSource, _deadline_passed
 from src.collector.web.to_dto import build_dto
-from src.core.enums import Audience, OpportunityStatus
+from src.core.enums import Audience, Category, OpportunityStatus
 from src.db.models.opportunity import Opportunity
 from src.processor.deduplicator import Deduplicator
 from src.publisher.formatter import format_opportunity
@@ -62,6 +62,8 @@ def test_parses_visible_opportunity_facts_and_organizer_link():
     assert "Registration Window:" in item.extra_notes
     assert "Editorial prestige" not in item.raw["opportunity_text"]
     assert "top competition" not in item.description
+    assert "prestigious" not in item.description
+    assert build_dto(item).category is Category.Competition
 
 
 def test_link_provenance_excludes_button_metadata_and_listing_url():

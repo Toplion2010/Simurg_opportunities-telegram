@@ -54,6 +54,10 @@ _EDITORIAL_SENTENCE_RE = re.compile(
     r"(?:top|strong|ideal|excellent|great|prestigious|compelling))\b",
     re.I,
 )
+_ORGANIZER_MARKETING_RE = re.compile(
+    r",?\s*described by organizers as [^.!?]+",
+    re.I,
+)
 
 _EMPTY = {"", "loading...", "not disclosed", "unknown", "n/a", "tbd", "tba", "—", "-"}
 _MAPPED_FACTS = {
@@ -129,6 +133,7 @@ def _description(fragment: str | None) -> str | None:
     value = _text(fragment)
     if not value:
         return None
+    value = _ORGANIZER_MARKETING_RE.sub("", value)
     sentences = re.findall(r"[^.!?]+(?:[.!?]+|$)", value)
     kept = [sentence.strip() for sentence in sentences if not _EDITORIAL_SENTENCE_RE.search(sentence)]
     return " ".join(kept) or None
@@ -238,7 +243,10 @@ class DoqWorldSource(WebSource):
             text_lines.append(f"Link ({entry['text']}): {entry['url']}")
         opportunity_text = "\n".join(text_lines)
 
-        subjects = [facts.get("field"), "Competition"]
+        # Let specific title words (Olympiad, Conference, Hackathon, ...) win.
+        # The source path itself is not a taxonomy precise enough to flatten
+        # every doq.world listing into the generic Competition category.
+        subjects = [facts.get("field")]
         deadline = facts.get("deadline")
         return WebItem(
             source=self.name,
