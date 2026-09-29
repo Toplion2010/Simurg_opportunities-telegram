@@ -38,6 +38,7 @@ from src.db.session import create_session_factory
 LABELS: dict[str, str] = {
     "extracurricularhub": "ExtracurricularHub (extracurricularhub.com)",
     "sirel": "SIREL (sirel.org)",
+    "zhaslink": "ZhasLink (zhaslink.invisionu.education)",
 }
 
 

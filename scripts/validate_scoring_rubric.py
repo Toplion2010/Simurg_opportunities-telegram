@@ -41,7 +41,7 @@ from src.db.models.raw_message import RawMessage
 from src.db.models.source_channel import SourceChannel
 from src.db.session import create_session_factory
 
-_AGGREGATOR_IDENTIFIERS = {"sirel", "extracurricularhub"}
+_AGGREGATOR_IDENTIFIERS = {"sirel", "extracurricularhub", "zhaslink"}
 
 
 def _score_text(opp: Opportunity) -> str:

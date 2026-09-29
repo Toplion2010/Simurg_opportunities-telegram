@@ -34,6 +34,13 @@ WEB_SOURCES: dict[str, dict] = {
         "module": "src.collector.web.sources.sirel",
         "enabled": True,
     },
+    # Runs without the site's permission, by the owner's explicit decision --
+    # see the module docstring. doq.world above was kept out on the same
+    # grounds; this one is an informed override, not an oversight.
+    "zhaslink": {
+        "module": "src.collector.web.sources.zhaslink",
+        "enabled": True,
+    },
 }
 
 

@@ -1,0 +1,293 @@
+[
+ {
+  "id": "b5297c59-ab7d-48b7-894d-b19275423af7",
+  "title_en": "🔧 Engineering Camp for Teens 2026",
+  "title_ru": "🔧 Engineering Camp for Teens 2026",
+  "title_kz": "🔧 Жасөспірімдерге арналған инженерлік лагерь 2026",
+  "description_en": null,
+  "description_ru": null,
+  "requirements_en": "• Be between 13–17 years old\n• Fill out an online application\n• Write a short motivational letter (2–3 sentences)\n• Provide contact information (email and WhatsApp)\n• Confirm consent to personal data processing",
+  "requirements_ru": "• Быть в возрасте 13–17 лет\n• Заполнить онлайн-заявку\n• Написать короткое мотивационное письмо (2–3 предложения)\n• Указать контактные данные (email и WhatsApp)\n• Подтвердить согласие на обработку персональных данных",
+  "content_en": [
+   {
+    "id": "ad25c3ac-7180-4c86-9193-c33d10547009",
+    "type": "image",
+    "content": "https://i.postimg.cc/xdkcymZb/Snimok-ekrana-2026-03-08-v-00-11-55.png",
+    "metadata": {}
+   },
+   {
+    "id": "abebd4d3-d76d-4a9e-926c-320e65b30417",
+    "type": "heading",
+    "content": "💡 About the program",
+    "metadata": {
+     "level": 2
+    }
+   },
+   {
+    "id": "203d4fc0-8ec8-40e1-812b-88e4706db78f",
+    "type": "paragraph",
+    "content": "**Engineering Camp** is a three-day hands-on camp for teenagers interested in technology, engineering, and invention. Participants will solve engineering problems, learn to think like engineers, and test their ideas through real practical tasks.\n\nThe sessions include a little theory and a lot of practice, where participants can experiment, create, and test their solutions.",
+    "metadata": {}
+   },
+   {
+    "id": "b59008dd-db6a-4932-b555-a9475886a797",
+    "type": "heading",
+    "content": "🚀 What awaits participants:",
+    "metadata": {
+     "level": 2
+    }
+   }
+  ],
+  "organizer": "American Corner & Makerspace Astana",
+  "region": "Astana",
+  "cost": "free",
+  "level": "school",
+  "language": [
+   "EN",
+   "RU",
+   "KZ"
+  ],
+  "grade": [
+   "6",
+   "7",
+   "8",
+   "9",
+   "10",
+   "11"
+  ],
+  "tags": [
+   "IT & Programming",
+   "Mathematics",
+   "Physics",
+   "Engineering",
+   "creative engineering",
+   "AI",
+   "AI education",
+   "Robotics"
+  ],
+  "opportunity_type": "Course",
+  "subject_area": "Engineering and Technology",
+  "application_url": "https://forms.gle/QUicAuizbaazZaq37",
+  "source_url": null,
+  "start_date": "2026-03-26",
+  "end_date": "2026-03-28",
+  "application_start_date": null,
+  "application_end_date": null,
+  "event_date": null,
+  "created_at": "2026-03-07T19:12:34.956111+00:00"
+ },
+ {
+  "id": "8a856d83-2b84-4b80-b144-6821558993d7",
+  "title_en": "🤖 Veritas AI Scholars Program 2026",
+  "title_ru": "🤖 Программа Veritas AI Scholars 2026",
+  "title_kz": "🤖 Veritas AI Scholars 2026 бағдарламасы",
+  "description_en": null,
+  "description_ru": null,
+  "requirements_en": "• Be a high school student (approximately 15–18 years old)\n• Be enrolled in high school\n• Have an interest in artificial intelligence, technology, or programming\n• Be proficient in English for study and project work\n• Have stable internet access for participation in online classes\n• Complete the application and answer motivational questions (up to 300 words)",
+  "requirements_ru": "• Быть старшеклассником (примерно 15–18 лет)\n• Учиться в средней школе (high school)\n• Иметь интерес к искусственному интеллекту, технологиям или программированию\n• Владеть английским языком для обучения и выполнения проектов\n• Иметь стабильный доступ к интернету для участия в онлайн-занятиях\n• Заполнить заявку и ответить на мотивационные вопросы (до 300 слов)",
+  "content_en": [
+   {
+    "id": "ee1a4c92-ad7a-4a26-a83f-fd40d1eb83d0",
+    "type": "heading",
+    "content": "Veritas AI Scholars 2026",
+    "metadata": {
+     "level": 2
+    }
+   },
+   {
+    "id": "337ca8cc-87eb-4907-a7cc-95434a184877",
+    "type": "image",
+    "content": "https://www.nshss.org/media/3n1bwkb0/veritasaitransparent_2024.png?width=640&height=360&rmode=pad&quality=80&bgcolor=FFFF0000&format=webp",
+    "metadata": {}
+   },
+   {
+    "id": "aeae4201-aa0c-44af-b49c-fad42d29837e",
+    "type": "heading",
+    "content": "💡 About the program:",
+    "metadata": {
+     "level": 2
+    }
+   },
+   {
+    "id": "315a0616-58c8-4f51-80bf-981a6684b1f9",
+    "type": "paragraph",
+    "content": "**Veritas AI** is a prestigious artificial intelligence education program for ambitious high school students. It was founded by researchers from Harvard University, and among its instructors are experts from leading universities worldwide, including Stanford University, Massachusetts Institute of Technology, and Princeton University.\n\nParticipants learn fundamental AI concepts and apply them in practice by creating their own project under the guidance of mentors and researchers.",
+    "metadata": {}
+   }
+  ],
+  "organizer": "Veritas",
+  "region": "Online",
+  "cost": "paid",
+  "level": "high_school",
+  "language": [
+   "EN"
+  ],
+  "grade": [
+   "9",
+   "10",
+   "11",
+   "12",
+   "University"
+  ],
+  "tags": [
+   "AI",
+   "DataScience",
+   "machine learning",
+   "computer science",
+   "Robotics",
+   "IT & Programming",
+   "IT",
+   "Digital Knowledge",
+   "Accelerator"
+  ],
+  "opportunity_type": "Educational Program",
+  "subject_area": "Computer Science and IT",
+  "application_url": "https://airtable.com/appypCyHN77hElIcS/shrlSiM4TpwP7kVoC",
+  "source_url": null,
+  "start_date": null,
+  "end_date": null,
+  "application_start_date": null,
+  "application_end_date": null,
+  "event_date": null,
+  "created_at": "2026-03-07T18:54:16.466272+00:00"
+ },
+ {
+  "id": "e8900573-0a68-4dd8-b57e-c4c189ff275a",
+  "title_en": "Sh. Smagulov Republican Olympiad",
+  "title_ru": "Республиканская олимпиада им. Ш. Смагулова",
+  "title_kz": "Ш. Смағұлов атындағы республикалық олимпиада",
+  "description_en": null,
+  "description_ru": null,
+  "requirements_en": "",
+  "requirements_ru": "",
+  "content_en": [
+   {
+    "id": "563b3a9d-3462-4e51-b64f-07ecc64aff6c",
+    "type": "heading",
+    "content": "I qualifying stage of the Republican Olympiad named after Sh. Smagulov",
+    "metadata": {
+     "level": 2
+    }
+   },
+   {
+    "id": "56fda790-f022-459b-8cce-0f228e68cfd4",
+    "type": "image",
+    "content": "https://i.postimg.cc/qRrXbNZR/Snimok-ekrana-2026-02-19-v-23-35-59.png",
+    "metadata": {}
+   },
+   {
+    "id": "9375fb8e-1814-4cda-9bbb-ba35e729925a",
+    "type": "paragraph",
+    "content": "One of the republican olympiads for students of grades 6–7, which provides an opportunity to test knowledge, pass several selection stages, and compete for final prizes and a grant.",
+    "metadata": {}
+   },
+   {
+    "id": "9ff30aa8-e125-43a1-9d14-2c833ecd1a54",
+    "type": "heading",
+    "content": "🎓 Who is it for",
+    "metadata": {
+     "level": 2
+    }
+   }
+  ],
+  "organizer": "Quadrat.kz",
+  "region": "Astana",
+  "cost": "free",
+  "level": "school",
+  "language": [
+   "RU"
+  ],
+  "grade": [
+   "6",
+   "7"
+  ],
+  "tags": [
+   "Mathematics",
+   "Physics",
+   "Social Sciences",
+   "Science & Research"
+  ],
+  "opportunity_type": "Olympiad",
+  "subject_area": "Mathematics and Natural Sciences",
+  "application_url": "https://www.instagram.com/p/DU2V5pvii9A/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+  "source_url": null,
+  "start_date": null,
+  "end_date": null,
+  "application_start_date": null,
+  "application_end_date": null,
+  "event_date": null,
+  "created_at": "2026-02-19T18:47:55.112058+00:00"
+ },
+ {
+  "id": "8f620c1e-0451-416f-988e-3a5deedb7f42",
+  "title_en": "📐 Geometry Booster by MSDC",
+  "title_ru": "📐 Geometry Booster от MSDC",
+  "title_kz": "📐 MSDC-тан геометрияны дамыту орталығы",
+  "description_en": null,
+  "description_ru": null,
+  "requirements_en": "Registration",
+  "requirements_ru": "Регистрация",
+  "content_en": [
+   {
+    "id": "4910fedb-2f6c-49d0-b734-55517b80fcc6",
+    "type": "heading",
+    "content": "🎓 NUET — your direct path to admission to Nazarbayev University",
+    "metadata": {
+     "level": 2
+    }
+   },
+   {
+    "id": "964b4d40-3c34-4273-acbf-6f2d2f543279",
+    "type": "image",
+    "content": "https://egov.kz/cms/sites/default/files/nu_logo.png",
+    "metadata": {}
+   },
+   {
+    "id": "8bfbd27c-f488-4e56-99a8-8fb380758610",
+    "type": "image",
+    "content": "https://www.intmath.com/functions-and-graphs/img/geometric-formulas.png",
+    "metadata": {}
+   },
+   {
+    "id": "bd169871-fd52-4b06-9784-a11bab459d69",
+    "type": "heading",
+    "content": "🧠 What is this?",
+    "metadata": {
+     "level": 2
+    }
+   }
+  ],
+  "organizer": "MSDC",
+  "region": "Online",
+  "cost": "10.000 тенге",
+  "level": "",
+  "language": [
+   "RU",
+   "EN"
+  ],
+  "grade": [
+   "University",
+   "12",
+   "11",
+   "10",
+   "9",
+   "8"
+  ],
+  "tags": [
+   "Mathematics",
+   "NUET",
+   "Geometry",
+   "Science"
+  ],
+  "opportunity_type": "Course",
+  "subject_area": "Mathematics and Natural Sciences",
+  "application_url": "https://forms.gle/mNE8oLme2iBWEG9d6",
+  "source_url": null,
+  "start_date": null,
+  "end_date": null,
+  "application_start_date": null,
+  "application_end_date": null,
+  "event_date": null,
+  "created_at": "2026-01-28T20:45:44.42603+00:00"
+ }
+]

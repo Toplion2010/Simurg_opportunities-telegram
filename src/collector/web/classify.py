@@ -29,6 +29,11 @@ _TAXONOMY_TO_CATEGORY: dict[str, Category] = {
     "internship": Category.Internship,
     "fellowship": Category.Fellowship,
     "conference": Category.Conference,
+    # ZhasLink's `opportunity_type`. Its other terms (Course, Educational
+    # Program, Workshop, Mentorship Program) have no honest one-to-one bucket
+    # and are left to the title rules below.
+    "olympiad": Category.Olympiad,
+    "hackathon": Category.Hackathon,
     # "Club" and "Program" are real SIREL terms with no Category equivalent.
     # Mapped to the closest honest bucket rather than left Unknown.
     "club": Category.Volunteer,

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       source:
-        description: "Only this registry key (extracurricularhub | sirel). Blank = all."
+        description: "Only this registry key (extracurricularhub | sirel | zhaslink). Blank = all."
         required: false
         default: ""
       limit:
