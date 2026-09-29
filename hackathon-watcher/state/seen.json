@@ -47,6 +47,12 @@
     "title": "Agents for Humans Hackathon",
     "url": "https://agentsforhumans.devpost.com"
   },
+  "ai builders challenge north america|2026-11-02": {
+    "ends_at": null,
+    "first_seen": "2026-09-29",
+    "title": "AI Builders Challenge - North America",
+    "url": "https://www.hackathon.com/event/ai-builders-challenge---north-america-6abbf8d772b8a910818d2070"
+  },
   "ai builders challenge with ibm bob|2027-07-01": {
     "ends_at": null,
     "first_seen": "2026-08-23",
@@ -797,6 +803,12 @@
     "title": "MUBA Blockchain Hackathon",
     "url": "https://muba-hackathon.devfolio.co"
   },
+  "multimodal ai|2026-09-29": {
+    "ends_at": "2026-10-14",
+    "first_seen": "2026-09-29",
+    "title": "Multimodal AI Hackathon 2026",
+    "url": "https://multimodal-ai-hackathon-2026-7.devpost.com"
+  },
   "multimodal ai|2026-09-30": {
     "ends_at": "2026-10-14",
     "first_seen": "2026-09-22",
@@ -1204,6 +1216,12 @@
     "first_seen": "2026-09-14",
     "title": "Xylem Global Student Innovation Challenge 2026",
     "url": "https://www.hackathon.com/event/xylem-global-student-innovation-challenge-2026-6aa862e261509030e7e6436f"
+  },
+  "youcam api skin ai ecommerce vto|2026-09-29": {
+    "ends_at": "2026-11-02",
+    "first_seen": "2026-09-29",
+    "title": "YouCam API Skin AI & eCommerce VTO Hackathon",
+    "url": "https://youcam-api-skin-ai-ecommerce.devpost.com"
   },
   "zero origin|2026-08-27": {
     "ends_at": "2026-09-25",
