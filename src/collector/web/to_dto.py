@@ -184,11 +184,11 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
             "for aid before publishing."
         )
 
-    additional_links = []
-    if item.apply_url and item.page_url and item.apply_url != item.page_url:
-        # Keep the catalog page too — it often carries context the official
-        # site buries, and source_url already points there for provenance.
-        additional_links.append(item.page_url)
+    # Never the catalog page: a published post links to the opportunity
+    # itself, not to the site we found it on. The catalog page stays reachable
+    # for admins as source_url ("Original post" on the queue card), and is
+    # still apply_link when the catalog gives no official link at all.
+    additional_links: list[str] = []
 
     return OpportunityDTO(
         is_opportunity=True,
