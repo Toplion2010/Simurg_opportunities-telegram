@@ -169,26 +169,30 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         item.title, 130
     )
 
-    rewards = None
-    if cost and cost.lower() == "free":
+    rewards = item.rewards
+    if rewards is None and cost and cost.lower() == "free":
         rewards = "Free to enter"
-    elif funding_signals:
+    elif rewards is None and funding_signals:
         rewards = f"Financial aid available ({', '.join(funding_signals[:3])})"
 
-    extra_notes = None
+    extra_notes = item.extra_notes
     if funding_signals:
-        extra_notes = (
+        funding_note = (
             "Cost is listed as "
             f"{cost or 'unstated'}, but the official site mentions: "
             f"{', '.join(funding_signals)}. Verify the amount and the deadline "
             "for aid before publishing."
         )
+        extra_notes = " ".join(filter(None, [extra_notes, funding_note]))
 
     # Never the catalog page: a published post links to the opportunity
     # itself, not to the site we found it on. The catalog page stays reachable
     # for admins as source_url ("Original post" on the queue card), and is
     # still apply_link when the catalog gives no official link at all.
-    additional_links: list[str] = []
+    additional_links = list(dict.fromkeys(item.additional_urls))
+    apply_link = item.apply_url
+    if apply_link is None and item.allow_page_url_fallback:
+        apply_link = item.page_url
 
     return OpportunityDTO(
         is_opportunity=True,
@@ -205,7 +209,7 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         organizer=item.organizer,
         duration=item.duration,
         rewards=rewards,
-        apply_link=item.apply_url or item.page_url,
+        apply_link=apply_link,
         description=description,
         rewritten_text=description,
         card_summary=card_summary,
@@ -213,7 +217,7 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         card_rewards=_fit(rewards or cost, 90),
         additional_links=additional_links,
         extra_notes=extra_notes,
-        source_excerpt=_fit(description, 400),
+        source_excerpt=_fit(item.source_excerpt or description, 400),
         min_age=min_age,
         # 0-100, coolness (reachability) + fit — src/core/scoring.py, shared
         # with the Telegram pipeline. relevance_reason names both components

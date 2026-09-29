@@ -53,6 +53,21 @@ class Deduplicator:
             logger.info("duplicate_detected_hash", title=dto.title)
             return True
 
+        # A source that is forbidden from falling back to its catalog URL can
+        # legitimately produce linkless items. Exact-title matching gives those
+        # items a deterministic cross-source dedupe path without weakening the
+        # link provenance rule.
+        if (
+            not dto.apply_link
+            and dto.title
+            and await opp_repo.find_recent_by_title(
+                dto.title, self._settings.DEDUP_TTL_SECONDS
+            )
+            is not None
+        ):
+            logger.info("duplicate_detected_title", title=dto.title)
+            return True
+
         if (
             self._settings.ENABLE_EMBEDDING_DEDUP
             and dto.rewritten_text

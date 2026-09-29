@@ -84,13 +84,17 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         previous DEDUP_TTL_SECONDS window so a reposted opportunity is allowed
         through again once it has aged out.
         """
+        return await self.find_recent_by_hash(similarity_hash, within_seconds) is not None
+
+    async def find_recent_by_hash(
+        self, similarity_hash: str, within_seconds: int
+    ) -> Opportunity | None:
+        """Return the recent exact hash match, when one exists."""
         from datetime import timedelta
 
-        cutoff = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(
-            seconds=within_seconds
-        )
+        cutoff = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(seconds=within_seconds)
         stmt = (
-            select(Opportunity.id)
+            select(Opportunity)
             .where(
                 Opportunity.similarity_hash == similarity_hash,
                 Opportunity.created_at >= cutoff,
@@ -98,7 +102,35 @@ class OpportunityRepository(BaseRepository[Opportunity]):
             .limit(1)
         )
         result = await self._session.execute(stmt)
-        return result.scalar_one_or_none() is not None
+        return result.scalar_one_or_none()
+
+    async def find_recent_by_title(
+        self, title: str, within_seconds: int
+    ) -> Opportunity | None:
+        """Link-independent fallback for listings that publish no eligible URL.
+
+        Deliberately exact after case-folding and edge trimming. A fuzzy title
+        query here would silently merge yearly editions or similarly named
+        competitions; the optional embedding path remains the place for fuzzy
+        matching.
+        """
+        from datetime import timedelta
+
+        from sqlalchemy import func
+
+        cutoff = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(seconds=within_seconds)
+        normalized = " ".join(title.split()).lower()
+        stmt = (
+            select(Opportunity)
+            .where(
+                func.lower(func.trim(Opportunity.title)) == normalized,
+                Opportunity.created_at >= cutoff,
+            )
+            .order_by(Opportunity.created_at.desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def get_due_for_publish(self, now: datetime | None = None) -> list[Opportunity]:
         now = (now or datetime.now(tz=timezone.utc)).replace(tzinfo=None)
