@@ -9,6 +9,7 @@ import pathlib
 import pytest
 
 from src.collector.web.sources.extracurricularhub import ExtracurricularHubSource
+from src.collector.web.to_dto import build_dto
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "web"
 
@@ -69,6 +70,7 @@ def test_parses_the_official_apply_url(pumac_page):
     (item,) = source.fetch(["pumac-princeton-university-mathematics-competition"])
     assert item.apply_url == "https://pumac.princeton.edu/"
     assert "extracurricularhub.com" in item.page_url
+    assert build_dto(item).apply_link == "https://pumac.princeton.edu/"
 
 
 def test_parses_structured_fields(pumac_page):

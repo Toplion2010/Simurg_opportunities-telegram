@@ -27,10 +27,29 @@ def test_official_link_becomes_apply_link():
     assert dto.additional_links == []
 
 
-def test_apply_link_falls_back_to_the_catalog_page():
+def test_missing_official_link_never_falls_back_to_the_catalog_page():
     dto = build_dto(item(apply_url=None))
-    assert dto.apply_link == "https://catalog.example/p/x"
+    assert dto.apply_link is None
     assert dto.additional_links == []
+
+
+def test_catalog_domain_cannot_be_smuggled_in_as_apply_link():
+    dto = build_dto(item(apply_url="https://catalog.example/redirect/x"))
+    assert dto.apply_link is None
+
+
+def test_only_external_additional_links_survive():
+    dto = build_dto(
+        item(
+            apply_url="https://official.example/apply",
+            additional_urls=[
+                "https://catalog.example/more/x",
+                "https://official.example/rules",
+                "https://official.example/rules",
+            ],
+        )
+    )
+    assert dto.additional_links == ["https://official.example/rules"]
 
 
 def test_category_comes_from_the_source_taxonomy():

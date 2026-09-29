@@ -49,6 +49,10 @@ class WebItem:
     grades: list[str] = field(default_factory=list)
     subjects: list[str] = field(default_factory=list)
     image_url: str | None = None
+    rewards: str | None = None
+    extra_notes: str | None = None
+    additional_urls: list[str] = field(default_factory=list)
+    source_excerpt: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
 

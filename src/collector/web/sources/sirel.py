@@ -16,8 +16,9 @@ That listing paginates only through JetEngine's admin-ajax handler — every GET
 variant (?jet_paged, /page/2/, ?_page, ?pagenum) serves page 1. We therefore
 lift the request payload verbatim out of the grid's own `data-nav` attribute
 rather than hardcoding it, so a settings change on their side is carried along
-instead of breaking us. If any of that fails the item still ships, with
-apply_url=None and the sirel.org page as the link — degraded, never dropped.
+instead of breaking us. If any of that fails the item still ships with
+apply_url=None. Followers see no link for that item; the SIREL catalog page is
+kept only as the admin-visible source URL and is never published as a fallback.
 
 Note sirel.org intermittently answers 403 to automated clients; Fetcher retries
 that status for exactly this reason.

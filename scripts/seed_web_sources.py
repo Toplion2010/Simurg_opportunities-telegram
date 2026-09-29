@@ -36,6 +36,7 @@ from src.db.session import create_session_factory
 # WEB_SOURCES; a key here that the registry does not know is a typo and is
 # reported rather than silently seeded.
 LABELS: dict[str, str] = {
+    "doqworld": "doq.world",
     "extracurricularhub": "ExtracurricularHub (extracurricularhub.com)",
     "sirel": "SIREL (sirel.org)",
     "zhaslink": "ZhasLink (zhaslink.invisionu.education)",
@@ -51,7 +52,10 @@ async def seed(settings: Settings, session_factory: async_sessionmaker) -> int:
     async with session_factory() as session:
         repo = SourceChannelRepository(session)
 
-        for key in WEB_SOURCES:
+        for key, config in WEB_SOURCES.items():
+            if not config.get("seed", True):
+                print(f"  HOLD  {key} -- awaiting dry-run approval")
+                continue
             label = LABELS.get(key, key)
             existing = await repo.list(kind=KIND_WEB, identifier=key)
             if existing:

@@ -9,6 +9,7 @@ import json
 import pathlib
 
 from src.collector.web.sources.sirel import SirelSource
+from src.collector.web.to_dto import build_dto
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "web"
 
@@ -128,6 +129,9 @@ def test_official_url_is_joined_from_the_listing_by_post_id():
     items = {i.external_id: i for i in source.fetch(["national-science-bee", "junior-solar-sprint"])}
     assert items["national-science-bee"].apply_url == "https://www.iacompetitions.com/emssciencebee/"
     assert items["junior-solar-sprint"].apply_url == "https://www.usaeop.com/program/jss/"
+    assert build_dto(items["national-science-bee"]).apply_link == (
+        "https://www.iacompetitions.com/emssciencebee/"
+    )
 
 
 def test_missing_listing_degrades_to_no_apply_url():
@@ -138,6 +142,7 @@ def test_missing_listing_degrades_to_no_apply_url():
     (item,) = source.fetch(["national-science-bee"])
     assert item.apply_url is None
     assert item.page_url.startswith("https://sirel.org/program/")
+    assert build_dto(item).apply_link is None
 
 
 def test_link_map_is_built_once_per_run():
