@@ -53,3 +53,22 @@ def test_non_hackathon_category_routes_to_generic_formatter():
     text = format_opportunity(opp)
     assert "#Scholarship #SimurgOpportunities" in text
     assert "Register" not in text
+
+
+def test_catalog_page_is_never_linked_in_the_post():
+    """Rows scraped before to_dto stopped adding it still carry the catalog page
+    in additional_links; source_url is that same page. Posts must link only
+    to the opportunity."""
+    catalog = "https://zhaslink.invisionu.education/en/opportunities/veritas-8a856d83"
+    for category in (Category.Hackathon, Category.Scholarship):
+        opp = _make_opp(
+            title="Veritas AI Scholars Program",
+            category=category,
+            apply_link="https://airtable.com/apply",
+            source_url=catalog,
+            additional_links=[catalog, "https://instagram.com/veritas"],
+        )
+        text = format_opportunity(opp)
+        assert "https://airtable.com/apply" in text
+        assert "https://instagram.com/veritas" in text
+        assert "zhaslink" not in text

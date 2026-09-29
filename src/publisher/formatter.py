@@ -71,6 +71,15 @@ def _fit_caption(text: str, max_length: int) -> str:
     return re.sub(r"\n{3,}", "\n\n", result).strip()
 
 
+def _extra_links(opp: Opportunity) -> list[str]:
+    """additional_links minus the source page. For a scraped item source_url is
+    the catalog page (ZhasLink, SIREL, ...), and rows ingested before to_dto
+    stopped adding it still carry it here. Posts link to the opportunity, never
+    to the catalog."""
+    skip = {opp.source_url, opp.apply_link}
+    return [link for link in opp.additional_links or [] if link and link not in skip]
+
+
 def _split_paragraphs(text: str) -> list[str]:
     chunks = [c.strip() for c in re.split(r"\n{2,}", text) if c.strip()]
     if len(chunks) > 1:
@@ -133,10 +142,9 @@ def _format_hackathon(opp: Opportunity) -> str:
         parts.append(f'🔗 {_bold("Register →")} <a href="{apply}">{apply}</a>')
         parts.append("")
 
-    if opp.additional_links:
-        links_line = "  ".join(
-            f'<a href="{link}">{link}</a>' for link in opp.additional_links
-        )
+    extra_links = _extra_links(opp)
+    if extra_links:
+        links_line = "  ".join(f'<a href="{link}">{link}</a>' for link in extra_links)
         parts.append(f"🔗 {_bold('Also see:')} {links_line}")
         parts.append("")
 
@@ -213,10 +221,9 @@ def _format_generic(opp: Opportunity) -> str:
 
     # Additional links — e.g. an Instagram page or secondary info page that isn't
     # the primary application link but was mentioned in the source text.
-    if opp.additional_links:
-        links_line = "  ".join(
-            f'<a href="{link}">{link}</a>' for link in opp.additional_links
-        )
+    extra_links = _extra_links(opp)
+    if extra_links:
+        links_line = "  ".join(f'<a href="{link}">{link}</a>' for link in extra_links)
         parts.append(f"🔗 {_bold('Also see:')} {links_line}")
         parts.append("")
 

@@ -23,8 +23,8 @@ def item(**kwargs) -> WebItem:
 def test_official_link_becomes_apply_link():
     dto = build_dto(item(apply_url="https://official.example/apply"))
     assert dto.apply_link == "https://official.example/apply"
-    # The catalog page is kept, not lost — it often carries context.
-    assert "https://catalog.example/p/x" in dto.additional_links
+    # Posts link to the opportunity, never to the catalog it came from.
+    assert dto.additional_links == []
 
 
 def test_apply_link_falls_back_to_the_catalog_page():
