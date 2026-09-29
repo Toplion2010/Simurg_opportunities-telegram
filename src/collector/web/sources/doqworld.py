@@ -269,7 +269,6 @@ class DoqWorldSource(WebSource):
             rewards=facts.get("prize"),
             extra_notes=extra_notes,
             source_excerpt=opportunity_text,
-            allow_page_url_fallback=False,
             raw={
                 "facts": facts,
                 "opportunity_text": opportunity_text,

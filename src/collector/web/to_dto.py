@@ -17,6 +17,7 @@ trade, and the admin queue's Edit flow (src/bot/routers/edit.py) is the
 escape hatch for any individual item worth polishing.
 """
 import re
+from urllib.parse import urlsplit
 
 from src.collector.web.base import WebItem
 from src.collector.web.classify import category_from
@@ -93,6 +94,22 @@ def _audience(item: WebItem) -> str | None:
     if has_university and not has_school:
         return "university"
     return None
+
+
+def _external_to_catalog(url: str | None, page_url: str) -> str | None:
+    """Only an absolute URL on a different host may reach a follower."""
+    if not url:
+        return None
+    try:
+        target = urlsplit(url)
+        catalog = urlsplit(page_url)
+    except ValueError:
+        return None
+    if target.scheme not in {"http", "https"} or not target.netloc:
+        return None
+    if target.hostname == catalog.hostname:
+        return None
+    return url
 
 
 def _description(item: WebItem) -> str:
@@ -187,12 +204,17 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
 
     # Never the catalog page: a published post links to the opportunity
     # itself, not to the site we found it on. The catalog page stays reachable
-    # for admins as source_url ("Original post" on the queue card), and is
-    # still apply_link when the catalog gives no official link at all.
-    additional_links = list(dict.fromkeys(item.additional_urls))
-    apply_link = item.apply_url
-    if apply_link is None and item.allow_page_url_fallback:
-        apply_link = item.page_url
+    # for admins as source_url ("Original post" on the queue card). A missing
+    # official link stays missing rather than being replaced by the catalog.
+    apply_link = _external_to_catalog(item.apply_url, item.page_url)
+    additional_links = list(
+        dict.fromkeys(
+            link
+            for raw_link in item.additional_urls
+            if (link := _external_to_catalog(raw_link, item.page_url))
+            and link != apply_link
+        )
+    )
 
     return OpportunityDTO(
         is_opportunity=True,
