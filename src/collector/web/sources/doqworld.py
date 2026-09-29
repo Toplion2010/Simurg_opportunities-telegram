@@ -15,6 +15,7 @@ adds a revision signal.
 """
 import html
 import re
+from datetime import date, datetime
 from urllib.parse import urlparse
 
 from src.collector.web.base import WebItem, WebSource
@@ -46,6 +47,13 @@ _FACT_RE = re.compile(
 _SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b.*?</\1>", re.S | re.I)
 _TAG_RE = re.compile(r"<[^>]+>")
 _USD_RE = re.compile(r"(?:US\s*)?\$\s*(\d[\d,]*(?:\.\d+)?)", re.I)
+_DATE_RE = re.compile(r"\b([A-Z][a-z]{2,8}\s+\d{1,2},\s+\d{4})\b")
+_EDITORIAL_SENTENCE_RE = re.compile(
+    r"\b(?:one of the (?:most )?prestigious|"
+    r"(?:is|are|makes? (?:it|this))\s+(?:a|the)\s+"
+    r"(?:top|strong|ideal|excellent|great|prestigious|compelling))\b",
+    re.I,
+)
 
 _EMPTY = {"", "loading...", "not disclosed", "unknown", "n/a", "tbd", "tba", "—", "-"}
 _MAPPED_FACTS = {
@@ -99,6 +107,31 @@ def _attendance(raw: str | None) -> bool | None:
     if value in {"in-person", "in person", "onsite", "on-site"}:
         return False
     return None
+
+
+def _deadline_passed(raw: str | None, today: date | None = None) -> bool:
+    """Whether a stated English deadline date is strictly before today."""
+    match = _DATE_RE.search(raw or "")
+    if not match:
+        return False
+    try:
+        deadline = datetime.strptime(match.group(1), "%b %d, %Y").date()
+    except ValueError:
+        try:
+            deadline = datetime.strptime(match.group(1), "%B %d, %Y").date()
+        except ValueError:
+            return False
+    return deadline < (today or date.today())
+
+
+def _description(fragment: str | None) -> str | None:
+    """Visible lead summary with subjective editorial sentences removed."""
+    value = _text(fragment)
+    if not value:
+        return None
+    sentences = re.findall(r"[^.!?]+(?:[.!?]+|$)", value)
+    kept = [sentence.strip() for sentence in sentences if not _EDITORIAL_SENTENCE_RE.search(sentence)]
+    return " ".join(kept) or None
 
 
 def _visible_links(main: str, organizer_href: str | None) -> tuple[list[str], list[dict[str, str]]]:
@@ -174,7 +207,7 @@ class DoqWorldSource(WebSource):
             return None
 
         description_match = _DESCRIPTION_RE.search(main)
-        description = _text(description_match.group(1)) if description_match else None
+        description = _description(description_match.group(1)) if description_match else None
 
         organizer_match = _ORGANIZER_RE.search(main)
         organizer_href = html.unescape(organizer_match.group(1)) if organizer_match else None
@@ -206,6 +239,7 @@ class DoqWorldSource(WebSource):
         opportunity_text = "\n".join(text_lines)
 
         subjects = [facts.get("field"), "Competition"]
+        deadline = facts.get("deadline")
         return WebItem(
             source=self.name,
             external_id=slug,
@@ -215,7 +249,7 @@ class DoqWorldSource(WebSource):
             additional_urls=links[1:],
             description=description,
             organizer=organizer,
-            deadline=facts.get("deadline"),
+            deadline=deadline,
             cost_amount=cost_amount,
             cost_currency=cost_currency,
             cost_text=cost_text,
@@ -232,5 +266,6 @@ class DoqWorldSource(WebSource):
                 "facts": facts,
                 "opportunity_text": opportunity_text,
                 "link_provenance": link_provenance,
+                "is_closed": _deadline_passed(deadline),
             },
         )

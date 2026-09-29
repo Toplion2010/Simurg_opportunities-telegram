@@ -1,9 +1,11 @@
 import asyncio
 import pathlib
+from datetime import date
 from types import SimpleNamespace
 
 from src.collector.web import http as web_http
-from src.collector.web.sources.doqworld import DoqWorldSource
+from src.collector.web.filters import REASON_CLOSED, admits
+from src.collector.web.sources.doqworld import DoqWorldSource, _deadline_passed
 from src.collector.web.to_dto import build_dto
 from src.core.enums import Audience, OpportunityStatus
 from src.db.models.opportunity import Opportunity
@@ -59,6 +61,7 @@ def test_parses_visible_opportunity_facts_and_organizer_link():
     assert item.rewards.startswith("$100 cash")
     assert "Registration Window:" in item.extra_notes
     assert "Editorial prestige" not in item.raw["opportunity_text"]
+    assert "top competition" not in item.description
 
 
 def test_link_provenance_excludes_button_metadata_and_listing_url():
@@ -126,6 +129,12 @@ def test_three_second_pacing_is_enforced_without_sleeping(monkeypatch):
     finally:
         fetcher.close()
     assert sleeps == [3.0]
+
+
+def test_past_stated_deadline_is_rejected():
+    item = parsed_item()
+    assert _deadline_passed(item.deadline, today=date(2026, 9, 29)) is True
+    assert admits(item) == (False, REASON_CLOSED)
 
 
 def test_dedupe_hash_matches_another_source_when_title_and_link_match():
