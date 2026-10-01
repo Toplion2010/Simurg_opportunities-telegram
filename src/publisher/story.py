@@ -1,10 +1,11 @@
 """Posts a Telegram Story to all three Simurg channels for published
 opportunities an admin starred ("📸 Story" button, src/bot/routers/queue.py).
 
-The story reposts the REAL photo of the opportunity's live channel message
-(like Telegram's own "Share to Story"), referenced by id -- not a fresh
-generate_card() render, whose background is non-deterministic per call and
-would look different from the post that's actually live.
+Looks like Telegram's own "Share post to Story": the live channel post drawn
+as a card (story_card.py) using the post's REAL photo, downloaded from the
+message -- not a fresh generate_card() render, whose background is
+non-deterministic and would differ from what's live. Tapping the card opens
+the original post (InputMediaAreaChannelPost).
 
 Stories are MTProto-only, so this goes through the Telethon userbot, not the
 aiogram Bot. Requires that account to be an admin with the "Post Stories"
@@ -17,8 +18,13 @@ from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from telethon import TelegramClient
 from telethon.tl.functions.stories import SendStoryRequest
-from telethon.tl.types import InputMediaPhoto, InputPrivacyValueAllowAll
-from telethon.utils import get_input_photo
+from telethon.tl.types import (
+    InputMediaAreaChannelPost,
+    InputMediaUploadedPhoto,
+    InputPrivacyValueAllowAll,
+    MediaAreaCoordinates,
+)
+from telethon.utils import get_input_channel
 
 from src.core.config import Settings
 from src.core.exceptions import PublishError
@@ -26,6 +32,7 @@ from src.core.logging import get_logger
 from src.core.notify import notify_admins
 from src.db.models.opportunity import Opportunity
 from src.db.repositories.opportunity import OpportunityRepository
+from src.publisher import story_card
 
 logger = get_logger(__name__)
 
@@ -40,11 +47,22 @@ class StoryResult:
     failed: list[tuple[int, str]] = field(default_factory=list)
 
 
-def story_caption(opp: Opportunity) -> str:
+def story_caption(opp: Opportunity, post_link: str | None = None) -> str:
     caption = f"✨ {(opp.title or 'Opportunity').strip()}"
     if opp.deadline:
         caption += f"\n⏳ {opp.deadline}"
-    return caption[:_CAPTION_LIMIT]
+    if not post_link:
+        return caption[:_CAPTION_LIMIT]
+    # Trim the text, never the link -- a cut-off link is a broken link.
+    room = _CAPTION_LIMIT - len(post_link) - 1
+    return f"{caption[:room]}\n{post_link}"
+
+
+def post_link(channel, msg_id: int) -> str | None:
+    # Only public channels have a t.me link; for a private one the tappable
+    # card area still opens the post for subscribers.
+    username = getattr(channel, "username", None)
+    return f"https://t.me/{username}/{msg_id}" if username else None
 
 
 def story_targets(settings: Settings) -> list[int]:
@@ -68,8 +86,21 @@ async def post_story(settings: Settings, client: TelegramClient, opp: Opportunit
             f"Published message {opp.published_chat_id}/{opp.published_message_id} "
             f"for opportunity {opp.id} is gone or has no photo"
         )
-    media = InputMediaPhoto(id=get_input_photo(message.photo))
-    caption = story_caption(opp)
+    photo_bytes = await client.download_media(message, file=bytes)
+    source = await client.get_entity(opp.published_chat_id)
+
+    # Rendered and uploaded once, reused for every channel.
+    img_bytes, box = await story_card.render_story_card(
+        photo_bytes, getattr(source, "title", "") or "", opp
+    )
+    uploaded = await client.upload_file(img_bytes, file_name="story.jpg")
+    media = InputMediaUploadedPhoto(file=uploaded)
+    open_post_area = InputMediaAreaChannelPost(
+        coordinates=MediaAreaCoordinates(x=box.x, y=box.y, w=box.w, h=box.h, rotation=0),
+        channel=get_input_channel(source),
+        msg_id=opp.published_message_id,
+    )
+    caption = story_caption(opp, post_link(source, opp.published_message_id))
 
     result = StoryResult()
     for chat_id in story_targets(settings):
@@ -79,6 +110,7 @@ async def post_story(settings: Settings, client: TelegramClient, opp: Opportunit
                 SendStoryRequest(
                     peer=entity,
                     media=media,
+                    media_areas=[open_post_area],
                     privacy_rules=[InputPrivacyValueAllowAll()],
                     caption=caption,
                     period=_STORY_PERIOD_SECONDS,

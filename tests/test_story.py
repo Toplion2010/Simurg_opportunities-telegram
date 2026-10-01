@@ -1,10 +1,11 @@
-"""Starred Telegram Stories (src/publisher/story.py) and the published-message
-reference sender.py records for them.
+"""Starred Telegram Stories (src/publisher/story.py, story_card.py) and the
+published-message reference sender.py records for them.
 
 publish_stories() itself does real DB + Telegram I/O and is verified the same
 way publish_scheduled() is: a live workflow run. What's covered here is the
-logic around it -- targets, caption, reposting the live message's own photo,
-partial/total failure -- against a fake Telethon client.
+logic around it -- targets, caption/link, rendering the live post as a card,
+the tappable "open post" area, partial/total failure -- against a fake
+Telethon client, with the Playwright render stubbed out.
 """
 import asyncio
 from datetime import datetime
@@ -12,7 +13,14 @@ from types import SimpleNamespace
 
 import pytest
 from telethon.tl.functions.stories import SendStoryRequest
-from telethon.tl.types import InputMediaPhoto, InputPhoto, Photo
+from telethon.tl.types import (
+    Channel,
+    ChatPhotoEmpty,
+    InputChannel,
+    InputMediaAreaChannelPost,
+    InputMediaUploadedPhoto,
+    Photo,
+)
 
 import src.publisher.image_gen as image_gen
 import src.publisher.story as story
@@ -22,6 +30,7 @@ from src.core.exceptions import PublishError
 from src.db.models.opportunity import Opportunity
 from src.publisher.sender import OpportunitySender
 from src.publisher.story import post_story, story_caption, story_targets
+from src.publisher.story_card import CardBox, build_story_html
 
 SCHOOL = -1001
 UNIVERSITY = -1002
@@ -62,14 +71,17 @@ def make_opp(**overrides) -> Opportunity:
 LIVE_PHOTO = Photo(
     id=111, access_hash=222, file_reference=b"ref", date=None, sizes=[], dc_id=2
 )
+CARD_BOX = CardBox(x=50, y=48, w=80, h=70)
 
 
 class FakeClient:
-    def __init__(self, photo=LIVE_PHOTO, fail_on=(), deleted_message_ids=()):
+    def __init__(self, photo=LIVE_PHOTO, fail_on=(), deleted_message_ids=(), username="simurg_uni"):
         self._photo = photo
         self._fail_on = set(fail_on)
         self._deleted = set(deleted_message_ids)
+        self._username = username
         self.fetched: list[tuple[int, int]] = []
+        self.uploads: list[bytes] = []
         self.stories: list[tuple[int, SendStoryRequest]] = []
 
     def is_connected(self):
@@ -84,13 +96,40 @@ class FakeClient:
             return None
         return SimpleNamespace(photo=self._photo)
 
+    async def download_media(self, message, file):
+        assert file is bytes
+        return b"live-photo"
+
+    async def upload_file(self, data, file_name):
+        self.uploads.append(data)
+        return f"input-file-{len(self.uploads)}"
+
     async def get_entity(self, chat_id):
-        return chat_id
+        return Channel(
+            id=chat_id,
+            title=f"Simurg {chat_id}",
+            photo=ChatPhotoEmpty(),
+            date=None,
+            access_hash=99,
+            username=self._username,
+        )
 
     async def __call__(self, request):
-        if request.peer in self._fail_on:
+        if request.peer.id in self._fail_on:
             raise RuntimeError("CHAT_ADMIN_REQUIRED")
-        self.stories.append((request.peer, request))
+        self.stories.append((request.peer.id, request))
+
+
+@pytest.fixture(autouse=True)
+def renders(monkeypatch):
+    calls = []
+
+    async def fake_render(photo_bytes, channel_title, opp):
+        calls.append((photo_bytes, channel_title, opp.id))
+        return b"card-jpeg", CARD_BOX
+
+    monkeypatch.setattr(story.story_card, "render_story_card", fake_render)
+    return calls
 
 
 # --- targets & caption --------------------------------------------------------
@@ -121,22 +160,65 @@ def test_caption_fits_telegram_story_limit():
     assert len(story_caption(make_opp(title="x" * 500))) == 200
 
 
+def test_long_caption_trims_text_but_keeps_the_link_whole():
+    link = "https://t.me/simurg_uni/555"
+    caption = story_caption(make_opp(title="x" * 500), link)
+    assert len(caption) == 200
+    assert caption.endswith("\n" + link)
+
+
+# --- story card HTML ----------------------------------------------------------
+
+
+def test_card_escapes_post_text():
+    html = build_story_html(b"img", "<Simurg>", make_opp(title="<script>x</script>", card_summary="a & b"))
+    assert "<script>x</script>" not in html
+    assert "&lt;script&gt;" in html and "&lt;Simurg&gt;" in html and "a &amp; b" in html
+
+
+def test_long_excerpt_ends_with_read_more():
+    html = build_story_html(b"img", "Simurg", make_opp(card_summary="word " * 200))
+    assert "…" in html and "Read More" in html
+
+
+def test_short_excerpt_has_no_read_more():
+    html = build_story_html(b"img", "Simurg", make_opp(card_summary="Free, online, fully funded."))
+    assert "Read More" not in html
+
+
 # --- post_story ---------------------------------------------------------------
 
 
-def test_reposts_the_live_messages_own_photo_to_every_channel():
+def test_posts_one_rendered_card_of_the_live_post_to_every_channel(renders):
     client = FakeClient()
     result = asyncio.run(post_story(make_settings(), client, make_opp()))
 
     assert client.fetched == [(UNIVERSITY, 555)]
+    # The card is drawn from the live photo, once, and uploaded once.
+    assert renders == [(b"live-photo", f"Simurg {UNIVERSITY}", 7)]
+    assert client.uploads == [b"card-jpeg"]
     assert result.succeeded == [SCHOOL, UNIVERSITY, HACKATHON]
     assert result.failed == []
     for _, request in client.stories:
-        # Referenced by id -- the same photo that's live, never a re-render.
-        assert isinstance(request.media, InputMediaPhoto)
-        assert request.media.id == InputPhoto(id=111, access_hash=222, file_reference=b"ref")
+        assert request.media == InputMediaUploadedPhoto(file="input-file-1")
         assert request.period == 24 * 60 * 60
-        assert request.caption == "✨ Global AI Hackathon\n⏳ 12 October 2026"
+        assert request.caption == (
+            "✨ Global AI Hackathon\n⏳ 12 October 2026\nhttps://t.me/simurg_uni/555"
+        )
+        [area] = request.media_areas
+        # Tapping the card opens the original post.
+        assert isinstance(area, InputMediaAreaChannelPost)
+        assert area.channel == InputChannel(channel_id=UNIVERSITY, access_hash=99)
+        assert area.msg_id == 555
+        c = area.coordinates
+        assert (c.x, c.y, c.w, c.h, c.rotation) == (50, 48, 80, 70, 0)
+
+
+def test_private_source_channel_gets_no_link():
+    client = FakeClient(username=None)
+    asyncio.run(post_story(make_settings(), client, make_opp()))
+    for _, request in client.stories:
+        assert "t.me" not in request.caption
 
 
 def test_one_channel_failing_is_a_partial_success():
@@ -154,11 +236,12 @@ def test_every_channel_failing_raises():
 
 
 @pytest.mark.parametrize("photo", [False, None], ids=["message-deleted", "no-photo"])
-def test_missing_live_photo_raises_before_posting_anything(photo):
+def test_missing_live_photo_raises_before_posting_anything(photo, renders):
     client = FakeClient(photo=photo)
     with pytest.raises(PublishError):
         asyncio.run(post_story(make_settings(), client, make_opp()))
     assert client.stories == []
+    assert renders == []
 
 
 # --- publish_stories loop -----------------------------------------------------
