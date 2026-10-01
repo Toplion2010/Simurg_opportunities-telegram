@@ -1,4 +1,5 @@
 import math
+from datetime import datetime, timezone
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
@@ -247,5 +248,45 @@ async def reject_opportunity(
     try:
         await call.answer("❌ Rejected.")
         await call.message.edit_text(f"❌ Rejected: {opp.title or 'Untitled'}")
+    except TelegramBadRequest as e:
+        logger.info("stale_callback_ack_skipped", opp_id=opp.id, error=str(e))
+
+
+@router.callback_query(OpportunityAction.filter(F.action == "story"))
+async def story_opportunity(
+    call: CallbackQuery,
+    callback_data: OpportunityAction,
+    session: AsyncSession,
+) -> None:
+    # Only flips the request flag here, same reasoning as approve_opportunity
+    # above: the actual Telethon story upload is slow and must not run inside
+    # this handler's short admin-polling window. publish_stories() (run right
+    # after publish_scheduled() by the batch and drain jobs) picks it up.
+    repo = OpportunityRepository(session)
+    opp = await repo.get(callback_data.opp_id)
+    if not opp:
+        await call.answer("Not found.", show_alert=True)
+        return
+
+    # A story reposts the REAL live photo (src/publisher/story.py), so there
+    # has to be a published message to pull it from -- this button also shows
+    # on pending-queue and digest cards (shared keyboard), where that isn't
+    # true yet.
+    if opp.status != OpportunityStatus.published or opp.published_message_id is None:
+        await call.answer("Publish it first, then story it.", show_alert=True)
+        return
+    if opp.story_posted_at is not None:
+        await call.answer("📸 Already posted as a story.", show_alert=True)
+        return
+    if opp.story_requested_at is not None:
+        await call.answer("📸 Already queued for a story.")
+        return
+
+    opp.story_requested_at = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+    await session.commit()
+    logger.info("story_requested", opp_id=opp.id, title=opp.title)
+
+    try:
+        await call.answer("📸 Queued — will post to all 3 channels' stories shortly")
     except TelegramBadRequest as e:
         logger.info("stale_callback_ack_skipped", opp_id=opp.id, error=str(e))

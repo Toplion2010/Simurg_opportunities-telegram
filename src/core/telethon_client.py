@@ -40,6 +40,17 @@ async def _connect_reaction_client(
         return None
 
 
+async def connect_primary_client(settings: Settings) -> TelegramClient | None:
+    """Connects the primary userbot account -- the one that, unlike the second,
+    is a channel admin and so can also post Stories. None if not configured or
+    it fails to connect."""
+    if not settings.TELETHON_API_ID:
+        return None
+    return await _connect_reaction_client(
+        settings, settings.TELETHON_SESSION_STRING, settings.TELETHON_SESSION, "primary"
+    )
+
+
 async def connect_second_reaction_client(settings: Settings) -> TelegramClient | None:
     """Connects the optional second personal account, used only to react to
     published posts. None if it isn't configured or fails to connect --
@@ -61,9 +72,7 @@ async def connect_all_reaction_clients(settings: Settings) -> list[TelegramClien
         return []
 
     clients = []
-    primary = await _connect_reaction_client(
-        settings, settings.TELETHON_SESSION_STRING, settings.TELETHON_SESSION, "primary"
-    )
+    primary = await connect_primary_client(settings)
     if primary is not None:
         clients.append(primary)
 

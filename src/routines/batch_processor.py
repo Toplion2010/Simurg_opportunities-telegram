@@ -29,6 +29,7 @@ from src.db.base import create_engine
 from src.db.session import create_session_factory
 from src.processor.worker import build_pipeline, process_payloads
 from src.publisher.scheduler import publish_scheduled
+from src.publisher.story import publish_stories
 
 logger = get_logger(__name__)
 
@@ -121,6 +122,15 @@ async def run() -> int:
             await publish_scheduled(settings, session_factory, bot, telethon_clients=telethon_clients)
         except Exception:
             logger.exception("publish_scheduled_failed")
+
+        # Starred stories (src/bot/routers/queue.py's "📸 Story" button) go out
+        # through the primary userbot client specifically -- it's the one
+        # that must be an admin with "Post Stories" rights on all three
+        # channels; the second reaction-only account has no such requirement.
+        try:
+            await publish_stories(settings, session_factory, bot, client=client)
+        except Exception:
+            logger.exception("publish_stories_failed")
 
         # --- 5: report -------------------------------------------------------
         duration = round(time.monotonic() - started_at, 2)

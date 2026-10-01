@@ -35,6 +35,10 @@ def opportunity_actions_keyboard(opp_id: int, page: int) -> InlineKeyboardMarkup
                     text="👁 Preview",
                     callback_data=OpportunityAction(opp_id=opp_id, action="preview").pack(),
                 ),
+                InlineKeyboardButton(
+                    text="📸 Story",
+                    callback_data=OpportunityAction(opp_id=opp_id, action="story").pack(),
+                ),
             ],
         ]
     )
