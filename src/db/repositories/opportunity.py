@@ -133,6 +133,32 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_reminder_candidates(self, min_score: int) -> list[Opportunity]:
+        """Published, high-scoring opportunities that haven't had their
+        deadline reminder yet. The deadline window itself is checked in Python
+        (src/publisher/reminders.py): `deadline` is free text, not a date."""
+        stmt = (
+            select(Opportunity)
+            .options(selectinload(Opportunity.raw_message))
+            .where(
+                Opportunity.status == OpportunityStatus.published,
+                Opportunity.reminder_sent_at.is_(None),
+                Opportunity.relevance >= min_score,
+                Opportunity.deadline.is_not(None),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_reminders_since(self, since: datetime) -> int:
+        from sqlalchemy import func
+
+        stmt = select(func.count()).select_from(Opportunity).where(
+            Opportunity.reminder_sent_at >= since
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one()
+
     async def count_by_status(self) -> dict[OpportunityStatus, int]:
         from sqlalchemy import func
 

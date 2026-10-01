@@ -101,60 +101,17 @@ class OpportunitySender:
         return [chat_id]
 
     async def publish(self, opp: Opportunity, bot: Bot) -> PublishResult:
-        # format_opportunity trims the About section to fit _CAPTION_LIMIT when
-        # possible, so the common case (an overlong description) stays a single
-        # message. `caption` keeps the untrimmed text for the rare case where
-        # even eligibility/prize/notes alone don't fit — the last-resort
-        # follow-up message below.
-        caption = format_opportunity(opp)
-        photo_caption = format_opportunity(opp, max_length=_CAPTION_LIMIT)
         targets = self._resolve_targets(opp)
-
-        # Generate the card ONCE — Gemini + Playwright render is expensive and
-        # non-deterministic per call, so a "both" post must reuse one image.
-        try:
-            from src.publisher.image_gen import generate_card
-            img_bytes = await generate_card(opp)
-        except Exception as e:
-            logger.exception("publish_failed", opp_id=opp.id, error=str(e))
-            raise PublishError(f"Failed to render card for opportunity {opp.id}: {e}") from e
-
-        overlong = len(photo_caption) > _CAPTION_LIMIT
-        if overlong:
-            photo_caption = f"<b>✨ {opp.title or 'Opportunity'}</b>"
-
-        result = PublishResult()
-        for chat_id in targets:
-            try:
-                photo = BufferedInputFile(img_bytes, filename="card.jpg")
-                sent = await bot.send_photo(
-                    chat_id=chat_id,
-                    photo=photo,
-                    caption=photo_caption,
-                    parse_mode="HTML",
-                )
-                if overlong:
-                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
-                # First successful target only -- enough for story.py to later
-                # fetch THIS live message's real photo; which channel it came
-                # from doesn't matter since every target got the same bytes.
-                if not result.succeeded:
-                    opp.published_chat_id = sent.chat.id
-                    opp.published_message_id = sent.message_id
-                result.succeeded.append(chat_id)
-                # Cosmetic and best-effort -- add_reactions swallows its own
-                # errors, so a reaction failure never turns this into a
-                # failed publish.
-                await add_reactions(bot, chat_id, sent.message_id, self._telethon_clients)
-            except Exception as e:
-                logger.exception(
-                    "publish_failed_channel", opp_id=opp.id, chat_id=chat_id, error=str(e)
-                )
-                result.failed.append((chat_id, str(e)))
+        result, first_sent = await self._send_card(opp, bot, targets, banner="")
 
         # Total failure (nothing sent) → raise so nothing commits and it's retried.
         if not result.succeeded:
             raise PublishError(f"Failed to publish opportunity {opp.id} to any channel")
+
+        # Enough for story.py to later fetch THIS live message's real photo;
+        # which channel it came from doesn't matter, every target got the same bytes.
+        opp.published_chat_id = first_sent.chat.id
+        opp.published_message_id = first_sent.message_id
 
         # Any success (full OR partial) → mark published so the scheduler won't resend
         # to the channel(s) that already received it.
@@ -174,3 +131,70 @@ class OpportunitySender:
             failed=[c for c, _ in result.failed],
         )
         return result
+
+    async def publish_reminder(self, opp: Opportunity, bot: Bot, days_left: int) -> PublishResult:
+        """A second post for an already-published opportunity whose deadline is
+        near: same channels and text, a freshly generated image, and a banner.
+        Leaves status and the published-message reference alone."""
+        banner = f"⏰ <b>{days_left} {'day' if days_left == 1 else 'days'} left to apply!</b>\n\n"
+        result, _ = await self._send_card(opp, bot, self._resolve_targets(opp), banner=banner)
+        if not result.succeeded:
+            raise PublishError(f"Failed to post reminder for opportunity {opp.id} to any channel")
+        logger.info(
+            "reminder_published",
+            opp_id=opp.id,
+            days_left=days_left,
+            succeeded=result.succeeded,
+            failed=[c for c, _ in result.failed],
+        )
+        return result
+
+    async def _send_card(self, opp: Opportunity, bot: Bot, targets: list[int], banner: str):
+        """Render one card and send it, with `banner` + the post text, to every
+        target. Returns (PublishResult, first successfully sent message)."""
+        # format_opportunity trims the About section to fit _CAPTION_LIMIT when
+        # possible, so the common case (an overlong description) stays a single
+        # message. `caption` keeps the untrimmed text for the rare case where
+        # even eligibility/prize/notes alone don't fit — the last-resort
+        # follow-up message below.
+        caption = banner + format_opportunity(opp)
+        photo_caption = banner + format_opportunity(opp, max_length=_CAPTION_LIMIT - len(banner))
+
+        # Generate the card ONCE — Gemini + Playwright render is expensive and
+        # non-deterministic per call, so a "both" post must reuse one image.
+        try:
+            from src.publisher.image_gen import generate_card
+            img_bytes = await generate_card(opp)
+        except Exception as e:
+            logger.exception("publish_failed", opp_id=opp.id, error=str(e))
+            raise PublishError(f"Failed to render card for opportunity {opp.id}: {e}") from e
+
+        overlong = len(photo_caption) > _CAPTION_LIMIT
+        if overlong:
+            photo_caption = banner + f"<b>✨ {opp.title or 'Opportunity'}</b>"
+
+        result = PublishResult()
+        first_sent = None
+        for chat_id in targets:
+            try:
+                photo = BufferedInputFile(img_bytes, filename="card.jpg")
+                sent = await bot.send_photo(
+                    chat_id=chat_id,
+                    photo=photo,
+                    caption=photo_caption,
+                    parse_mode="HTML",
+                )
+                if overlong:
+                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
+                first_sent = first_sent or sent
+                result.succeeded.append(chat_id)
+                # Cosmetic and best-effort -- add_reactions swallows its own
+                # errors, so a reaction failure never turns this into a
+                # failed publish.
+                await add_reactions(bot, chat_id, sent.message_id, self._telethon_clients)
+            except Exception as e:
+                logger.exception(
+                    "publish_failed_channel", opp_id=opp.id, chat_id=chat_id, error=str(e)
+                )
+                result.failed.append((chat_id, str(e)))
+        return result, first_sent

@@ -147,8 +147,21 @@ class Settings(BaseSettings):
     # thresholds (calibrated for the previous 3-axis scorer) were
     # unreachable and would have silently starved the digest.
     DIGEST_MIN_SCORE: int = 40
-    AUTO_APPROVE_SCORE: int = 60
+    # 60 -> 75: only clearly strong opportunities skip human review now. A day
+    # with none still auto-posts its single best candidate if it clears
+    # DAILY_PICK_MIN_SCORE, so the channel isn't left silent.
+    AUTO_APPROVE_SCORE: int = 75
+    DAILY_PICK_MIN_SCORE: int = 60
     DAILY_DIGEST_SIZE: int = 5
+    # A published hackathon whose prize pool reaches this (rough USD
+    # conversion, src/core/prize.py) gets a Telegram Story automatically.
+    AUTO_STORY_PRIZE_USD: int = 5000
+    # A second "N days left" post, with a fresh image, for strong programs
+    # nearing their deadline (src/publisher/reminders.py). The cap bounds the
+    # extra Gemini image spend per day.
+    REMINDER_MIN_SCORE: int = 70
+    REMINDER_DAYS_BEFORE: int = 14
+    DAILY_REMINDER_CAP: int = 2
     # Ceiling on actual channel posts per day, enforced in
     # publisher/scheduler.py regardless of whether a row was auto-approved
     # today or approved manually on an earlier day.

@@ -22,6 +22,7 @@ from src.core.telethon_client import (
 )
 from src.db.base import create_engine
 from src.db.session import create_session_factory
+from src.publisher.reminders import publish_reminders
 from src.publisher.scheduler import publish_scheduled
 from src.publisher.story import publish_stories
 from src.routines.batch_processor import _drain_admin_updates
@@ -61,6 +62,11 @@ async def run() -> None:
             await publish_stories(settings, session_factory, bot, client=primary)
         except Exception:
             logger.exception("publish_stories_failed")
+
+        try:
+            await publish_reminders(settings, session_factory, bot, telethon_clients=telethon_clients)
+        except Exception:
+            logger.exception("publish_reminders_failed")
     finally:
         await disconnect_all(telethon_clients)
         await bot.session.close()

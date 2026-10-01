@@ -122,6 +122,8 @@ class Opportunity(Base):
     # Stamped once src/publisher/story.py actually sends it, so a later run
     # never reposts the same story.
     story_posted_at: Mapped[datetime | None]
+    # Stamped once src/publisher/reminders.py posts the "N days left" reminder.
+    reminder_sent_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     # Stamped the moment a pending row is selected into a daily digest run
     # (src/routines/daily_digest.py) — auto-approved or pushed for review.

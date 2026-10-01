@@ -27,9 +27,11 @@ from telethon.tl.types import (
 from telethon.utils import get_input_channel
 
 from src.core.config import Settings
+from src.core.enums import Category
 from src.core.exceptions import PublishError
 from src.core.logging import get_logger
 from src.core.notify import notify_admins
+from src.core.prize import opportunity_prize_usd
 from src.db.models.opportunity import Opportunity
 from src.db.repositories.opportunity import OpportunityRepository
 from src.publisher import story_card
@@ -63,6 +65,15 @@ def post_link(channel, msg_id: int) -> str | None:
     # card area still opens the post for subscribers.
     username = getattr(channel, "username", None)
     return f"https://t.me/{username}/{msg_id}" if username else None
+
+
+def wants_auto_story(opp: Opportunity, min_prize_usd: float) -> bool:
+    """A just-published hackathon with a big enough prize pool gets a Story
+    without anyone pressing 📸 Story."""
+    if opp.category != Category.Hackathon or opp.story_requested_at is not None:
+        return False
+    prize = opportunity_prize_usd(opp)
+    return prize is not None and prize >= min_prize_usd
 
 
 def story_targets(settings: Settings) -> list[int]:

@@ -10,6 +10,7 @@ from src.core.logging import get_logger
 from src.db.repositories.opportunity import OpportunityRepository
 from src.publisher.deadlines import deadline_sort_key, is_expired
 from src.publisher.sender import OpportunitySender
+from src.publisher.story import wants_auto_story
 
 logger = get_logger(__name__)
 
@@ -122,6 +123,11 @@ async def publish_scheduled(
             opp_id, title = identities[opp.id]
             try:
                 result = await sender.publish(opp, bot)
+                # Queued here so publish_stories(), which runs right after this
+                # in the same job, posts it together with the post.
+                if wants_auto_story(opp, settings.AUTO_STORY_PRIZE_USD):
+                    opp.story_requested_at = now.replace(tzinfo=None)
+                    logger.info("auto_story_queued", opp_id=opp_id)
                 await session.commit()
                 if result.failed:
                     failed_ids = [c for c, _ in result.failed]
