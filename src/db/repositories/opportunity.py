@@ -117,12 +117,16 @@ class OpportunityRepository(BaseRepository[Opportunity]):
     async def get_story_pending(self) -> list[Opportunity]:
         """Opportunities an admin starred for a Telegram Story that haven't
         gone out yet. Oldest request first, so a backlog clears in request
-        order rather than newest-first."""
+        order rather than newest-first. A starred post that later got rejected
+        (e.g. its deadline expired before publishing) drops out here."""
         stmt = (
             select(Opportunity)
             .where(
                 Opportunity.story_requested_at.is_not(None),
                 Opportunity.story_posted_at.is_(None),
+                Opportunity.status.in_(
+                    [OpportunityStatus.approved, OpportunityStatus.published]
+                ),
             )
             .order_by(Opportunity.story_requested_at.asc())
         )

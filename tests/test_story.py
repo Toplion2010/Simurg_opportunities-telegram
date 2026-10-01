@@ -24,6 +24,7 @@ from telethon.tl.types import (
 
 import src.publisher.image_gen as image_gen
 import src.publisher.story as story
+from src.bot.routers.queue import story_block_reason
 from src.core.config import Settings
 from src.core.enums import Audience, Category, OpportunityStatus
 from src.core.exceptions import PublishError
@@ -291,6 +292,30 @@ def test_one_failed_story_is_unqueued_and_does_not_block_the_rest(monkeypatch):
     assert len(bot.sent) == 1 and "Deleted post" in bot.sent[0] and "Cool hackathon" not in bot.sent[0]
 
 
+def test_story_starred_before_publish_waits_without_failing(monkeypatch):
+    requested = datetime(2026, 10, 1)
+    waiting = make_opp(
+        id=1, status=OpportunityStatus.approved, published_chat_id=None,
+        published_message_id=None, story_requested_at=requested,
+    )
+    live = make_opp(id=2, story_requested_at=requested)
+
+    async def fake_pending(self):
+        return [waiting, live]
+
+    monkeypatch.setattr(story.OpportunityRepository, "get_story_pending", fake_pending)
+    bot = AlertBot()
+    client = FakeClient()
+
+    asyncio.run(story.publish_stories(make_settings(), lambda: FakeSession(), bot, client))
+
+    assert waiting.story_requested_at == requested  # still queued for the next run
+    assert waiting.story_posted_at is None
+    assert live.story_posted_at is not None
+    assert client.fetched == [(UNIVERSITY, 555)]
+    assert bot.sent == []
+
+
 def test_no_client_leaves_stories_queued(monkeypatch):
     opp = make_opp(story_requested_at=datetime(2026, 10, 1))
 
@@ -302,6 +327,30 @@ def test_no_client_leaves_stories_queued(monkeypatch):
 
     assert opp.story_requested_at is not None
     assert opp.story_posted_at is None
+
+
+# --- 📸 Story tap -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "overrides,expected",
+    [
+        # Approved but not yet published: accepted, goes out right after publishing.
+        (dict(status=OpportunityStatus.approved, published_message_id=None), None),
+        (dict(), None),
+        (dict(status=OpportunityStatus.pending), "Approve it first, then story it."),
+        (dict(status=OpportunityStatus.rejected), "Approve it first, then story it."),
+        (
+            dict(published_message_id=None),
+            "This post was published before stories existed, so it can't be storied.",
+        ),
+        (dict(story_posted_at=datetime(2026, 10, 1)), "📸 Already posted as a story."),
+        (dict(story_requested_at=datetime(2026, 10, 1)), "📸 Already queued for a story."),
+    ],
+    ids=["approved", "published", "pending", "rejected", "pre-feature-post", "posted", "queued"],
+)
+def test_story_tap_rules(overrides, expected):
+    assert story_block_reason(make_opp(**overrides)) == expected
 
 
 # --- sender.publish records the live message ----------------------------------
