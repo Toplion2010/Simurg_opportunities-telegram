@@ -153,6 +153,11 @@ class Settings(BaseSettings):
     AUTO_APPROVE_SCORE: int = 75
     DAILY_PICK_MIN_SCORE: int = 60
     DAILY_DIGEST_SIZE: int = 5
+    # Telegram Stories on the channels (src/publisher/story.py). Off until the
+    # channels reach boost level 1: Telegram refuses channel stories with
+    # BOOSTS_REQUIRED before that, so every attempt just failed and alerted.
+    # While off, the 📸 Story button says so and nothing is queued.
+    ENABLE_STORIES: bool = False
     # A published hackathon whose prize pool reaches this (rough USD
     # conversion, src/core/prize.py) gets a Telegram Story automatically.
     AUTO_STORY_PRIZE_USD: int = 5000
