@@ -136,9 +136,16 @@ async def publish_stories(
     userbot (the channel admin), already connected."""
     async with session_factory() as session:
         repo = OpportunityRepository(session)
-        pending = await repo.get_story_pending()
+        starred = await repo.get_story_pending()
+        # Starred while still only approved: stays queued until its post is
+        # live (usually earlier in this same run, via publish_scheduled).
+        pending = [o for o in starred if o.published_message_id is not None]
 
-        logger.info("publishing_due_stories", count=len(pending))
+        logger.info(
+            "publishing_due_stories",
+            count=len(pending),
+            waiting_for_publish=len(starred) - len(pending),
+        )
         if not pending:
             return
         if client is None or not client.is_connected():

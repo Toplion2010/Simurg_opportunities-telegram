@@ -252,6 +252,23 @@ async def reject_opportunity(
         logger.info("stale_callback_ack_skipped", opp_id=opp.id, error=str(e))
 
 
+def story_block_reason(opp: Opportunity) -> str | None:
+    """Why a 📸 Story tap can't be queued, or None if it can. An approved post
+    is accepted too: publish_stories() runs right after publish_scheduled() in
+    the same job, so its story goes out as soon as the post itself does."""
+    if opp.status not in (OpportunityStatus.approved, OpportunityStatus.published):
+        return "Approve it first, then story it."
+    # A story shows the REAL live photo (src/publisher/story.py); posts
+    # published before sender.py recorded their message have none to show.
+    if opp.status == OpportunityStatus.published and opp.published_message_id is None:
+        return "This post was published before stories existed, so it can't be storied."
+    if opp.story_posted_at is not None:
+        return "📸 Already posted as a story."
+    if opp.story_requested_at is not None:
+        return "📸 Already queued for a story."
+    return None
+
+
 @router.callback_query(OpportunityAction.filter(F.action == "story"))
 async def story_opportunity(
     call: CallbackQuery,
@@ -268,25 +285,21 @@ async def story_opportunity(
         await call.answer("Not found.", show_alert=True)
         return
 
-    # A story reposts the REAL live photo (src/publisher/story.py), so there
-    # has to be a published message to pull it from -- this button also shows
-    # on pending-queue and digest cards (shared keyboard), where that isn't
-    # true yet.
-    if opp.status != OpportunityStatus.published or opp.published_message_id is None:
-        await call.answer("Publish it first, then story it.", show_alert=True)
-        return
-    if opp.story_posted_at is not None:
-        await call.answer("📸 Already posted as a story.", show_alert=True)
-        return
-    if opp.story_requested_at is not None:
-        await call.answer("📸 Already queued for a story.")
+    reason = story_block_reason(opp)
+    if reason:
+        await call.answer(reason, show_alert=True)
         return
 
+    waiting_for_publish = opp.status == OpportunityStatus.approved
     opp.story_requested_at = datetime.now(tz=timezone.utc).replace(tzinfo=None)
     await session.commit()
-    logger.info("story_requested", opp_id=opp.id, title=opp.title)
+    logger.info("story_requested", opp_id=opp.id, title=opp.title, waiting_for_publish=waiting_for_publish)
 
     try:
-        await call.answer("📸 Queued — will post to all 3 channels' stories shortly")
+        await call.answer(
+            "📸 Queued: the story goes out right after this post publishes."
+            if waiting_for_publish
+            else "📸 Queued: it goes to all 3 channels' stories on the next publish run."
+        )
     except TelegramBadRequest as e:
         logger.info("stale_callback_ack_skipped", opp_id=opp.id, error=str(e))
