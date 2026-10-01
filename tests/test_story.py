@@ -47,6 +47,7 @@ def make_settings(**overrides) -> Settings:
         DEST_CHANNEL_ID_SCHOOL=SCHOOL,
         DEST_CHANNEL_ID_UNIVERSITY=UNIVERSITY,
         DEST_CHANNEL_ID_HACKATHON=HACKATHON,
+        ENABLE_STORIES=True,
         DATABASE_URL="postgresql+asyncpg://u:p@h/db",
     )
     base.update(overrides)
@@ -314,6 +315,27 @@ def test_story_starred_before_publish_waits_without_failing(monkeypatch):
     assert live.story_posted_at is not None
     assert client.fetched == [(UNIVERSITY, 555)]
     assert bot.sent == []
+
+
+def test_stories_are_off_by_default():
+    # Telegram refuses channel stories (BOOSTS_REQUIRED) until the channels
+    # are boosted, so attempting them by default only produced failure alerts.
+    assert Settings.model_fields["ENABLE_STORIES"].default is False
+
+
+def test_paused_stories_touch_nothing(monkeypatch):
+    async def must_not_query(self):
+        raise AssertionError("paused stories must not even load the queue")
+
+    monkeypatch.setattr(story.OpportunityRepository, "get_story_pending", must_not_query)
+    client = FakeClient()
+    bot = AlertBot()
+
+    asyncio.run(
+        story.publish_stories(make_settings(ENABLE_STORIES=False), lambda: FakeSession(), bot, client)
+    )
+
+    assert client.stories == [] and bot.sent == []
 
 
 def test_no_client_leaves_stories_queued(monkeypatch):

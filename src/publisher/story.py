@@ -145,6 +145,9 @@ async def publish_stories(
 ) -> None:
     """Post every starred, not-yet-posted story. `client` must be the primary
     userbot (the channel admin), already connected."""
+    if not settings.ENABLE_STORIES:
+        logger.info("stories_paused")
+        return
     async with session_factory() as session:
         repo = OpportunityRepository(session)
         starred = await repo.get_story_pending()

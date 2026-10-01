@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.bot.callbacks.data import OpportunityAction, QueuePage
 from src.bot.keyboards.queue import opportunity_actions_keyboard, pagination_keyboard
+from src.core.config import Settings
 from src.core.enums import Audience, OpportunityStatus
 from src.core.logging import get_logger
 from src.db.models.opportunity import Opportunity
@@ -274,11 +275,17 @@ async def story_opportunity(
     call: CallbackQuery,
     callback_data: OpportunityAction,
     session: AsyncSession,
+    settings: Settings,
 ) -> None:
     # Only flips the request flag here, same reasoning as approve_opportunity
     # above: the actual Telethon story upload is slow and must not run inside
     # this handler's short admin-polling window. publish_stories() (run right
     # after publish_scheduled() by the batch and drain jobs) picks it up.
+    if not settings.ENABLE_STORIES:
+        await call.answer(
+            "📸 Stories are paused until the channels are boosted.", show_alert=True
+        )
+        return
     repo = OpportunityRepository(session)
     opp = await repo.get(callback_data.opp_id)
     if not opp:
