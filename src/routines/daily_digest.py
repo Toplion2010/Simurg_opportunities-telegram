@@ -6,6 +6,8 @@ Picks the best still-undigested pending opportunities (src/core/scoring.py's
     >= AUTO_APPROVE_SCORE  auto-approved, no human review — the next
                             drain.yml run publishes it through the existing
                             OpportunitySender, unchanged.
+    none of the above?     the single best candidate is still auto-approved
+                            as the "daily pick" if >= DAILY_PICK_MIN_SCORE.
     >= DIGEST_MIN_SCORE    pushed straight to the admins as a reviewable
                             card, reusing the exact card/keyboard the manual
                             "View Queue" flow already uses.
@@ -36,6 +38,25 @@ from src.db.session import create_session_factory
 logger = get_logger(__name__)
 
 
+def route_candidates(candidates: list, auto_score: int, pick_min_score: int) -> tuple[list, object, list]:
+    """Split best-first candidates into (auto_approved, daily_pick, for_review).
+
+    Every candidate scoring >= auto_score is auto-approved. On a day with none,
+    the single best candidate is still auto-approved as the "daily pick" if it
+    scores >= pick_min_score, so the channel posts something good every day.
+    """
+    auto, review = [], []
+    for opp in candidates:
+        if opp.relevance is not None and opp.relevance >= auto_score:
+            auto.append(opp)
+        else:
+            review.append(opp)
+    pick = None
+    if not auto and review and (review[0].relevance or 0) >= pick_min_score:
+        pick = review.pop(0)
+    return auto, pick, review
+
+
 async def run() -> int:
     settings = Settings()
     setup_logging(settings.ENVIRONMENT)
@@ -60,16 +81,19 @@ async def run() -> int:
             # Stamped for every selected row up front, before any routing —
             # a candidate counts as "surfaced" the moment it's picked, even
             # if the admin push below fails partway through.
-            for_review = []
-            auto_approved = []
             for opp in candidates:
                 opp.digested_at = now
-                if opp.relevance is not None and opp.relevance >= settings.AUTO_APPROVE_SCORE:
-                    opp.status = OpportunityStatus.approved
-                    opp.scheduled_at = now
-                    auto_approved.append((opp.id, opp.title or "Untitled", opp.relevance))
-                else:
-                    for_review.append(opp)
+            auto, pick, for_review = route_candidates(
+                candidates, settings.AUTO_APPROVE_SCORE, settings.DAILY_PICK_MIN_SCORE
+            )
+            auto_approved = []
+            for opp in auto + ([pick] if pick else []):
+                opp.status = OpportunityStatus.approved
+                # scheduled_at == digested_at is how src/core/decisions.py
+                # tells an automatic approval from a human one.
+                opp.scheduled_at = now
+                label = "⭐ daily pick" if opp is pick else "auto"
+                auto_approved.append((opp.id, opp.title or "Untitled", opp.relevance, label))
 
             await session.commit()
 
@@ -101,8 +125,8 @@ async def run() -> int:
             f"🗓 Daily digest: {len(candidates)} surfaced "
             f"({len(auto_approved)} auto-approved, {len(for_review)} for your review)"
         ]
-        for opp_id, title, relevance in auto_approved:
-            lines.append(f"  ✅ #{opp_id} {title} ({relevance}/100) — publishing shortly")
+        for opp_id, title, relevance, label in auto_approved:
+            lines.append(f"  ✅ #{opp_id} {title} ({relevance}/100, {label}) — publishing shortly")
         await notify_admins(bot, settings.ADMIN_IDS, "\n".join(lines))
 
         return 0

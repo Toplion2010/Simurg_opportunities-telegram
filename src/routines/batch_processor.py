@@ -28,6 +28,7 @@ from src.core.telethon_client import connect_second_reaction_client
 from src.db.base import create_engine
 from src.db.session import create_session_factory
 from src.processor.worker import build_pipeline, process_payloads
+from src.publisher.reminders import publish_reminders
 from src.publisher.scheduler import publish_scheduled
 from src.publisher.story import publish_stories
 
@@ -131,6 +132,11 @@ async def run() -> int:
             await publish_stories(settings, session_factory, bot, client=client)
         except Exception:
             logger.exception("publish_stories_failed")
+
+        try:
+            await publish_reminders(settings, session_factory, bot, telethon_clients=telethon_clients)
+        except Exception:
+            logger.exception("publish_reminders_failed")
 
         # --- 5: report -------------------------------------------------------
         duration = round(time.monotonic() - started_at, 2)
