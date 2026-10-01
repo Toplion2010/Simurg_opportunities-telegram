@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Index, String, Text, TypeDecorator
+from sqlalchemy import BigInteger, ForeignKey, Index, String, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import ARRAY as PgArray
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -108,6 +108,20 @@ class Opportunity(Base):
     hooks: Mapped[list[str]] = mapped_column(StringList(), default=list, nullable=False)
     scheduled_at: Mapped[datetime | None]
     published_at: Mapped[datetime | None]
+    # The first channel/message a published post actually reached (sender.py) --
+    # the live message src/publisher/story.py reads the real photo from when
+    # posting a Story, rather than re-rendering (generate_card()'s background
+    # is non-deterministic per call, so a fresh render would look different
+    # from what's actually live).
+    published_chat_id: Mapped[int | None] = mapped_column(BigInteger())
+    published_message_id: Mapped[int | None]
+    # Stamped when an admin taps "📸 Story" in the queue/search
+    # (src/bot/routers/queue.py) -- a request to also post this opportunity's
+    # real published photo as a Telegram Story on all three channels.
+    story_requested_at: Mapped[datetime | None]
+    # Stamped once src/publisher/story.py actually sends it, so a later run
+    # never reposts the same story.
+    story_posted_at: Mapped[datetime | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     # Stamped the moment a pending row is selected into a daily digest run
     # (src/routines/daily_digest.py) — auto-approved or pushed for review.

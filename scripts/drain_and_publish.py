@@ -15,10 +15,15 @@ from aiogram import Bot
 
 from src.core.config import Settings
 from src.core.logging import get_logger, setup_logging
-from src.core.telethon_client import connect_all_reaction_clients, disconnect_all
+from src.core.telethon_client import (
+    connect_primary_client,
+    connect_second_reaction_client,
+    disconnect_all,
+)
 from src.db.base import create_engine
 from src.db.session import create_session_factory
 from src.publisher.scheduler import publish_scheduled
+from src.publisher.story import publish_stories
 from src.routines.batch_processor import _drain_admin_updates
 
 logger = get_logger(__name__)
@@ -38,7 +43,12 @@ async def run() -> None:
     # unlike batch_processor.py there's no risk of racing the always-on
     # deployment's own userbot connection -- reacting is a lightweight,
     # independent MTProto call.
-    telethon_clients = await connect_all_reaction_clients(settings)
+    # Connected separately (not via connect_all_reaction_clients) so stories
+    # below can be handed the primary account specifically -- the only one
+    # that's a channel admin.
+    primary = await connect_primary_client(settings)
+    second = await connect_second_reaction_client(settings)
+    telethon_clients = [c for c in (primary, second) if c is not None]
 
     try:
         logger.info("draining_admin_updates")
@@ -46,6 +56,11 @@ async def run() -> None:
 
         logger.info("publishing_due")
         await publish_scheduled(settings, session_factory, bot, telethon_clients=telethon_clients)
+
+        try:
+            await publish_stories(settings, session_factory, bot, client=primary)
+        except Exception:
+            logger.exception("publish_stories_failed")
     finally:
         await disconnect_all(telethon_clients)
         await bot.session.close()

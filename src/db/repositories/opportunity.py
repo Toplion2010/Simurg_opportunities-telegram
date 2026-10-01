@@ -114,6 +114,21 @@ class OpportunityRepository(BaseRepository[Opportunity]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_story_pending(self) -> list[Opportunity]:
+        """Opportunities an admin starred for a Telegram Story that haven't
+        gone out yet. Oldest request first, so a backlog clears in request
+        order rather than newest-first."""
+        stmt = (
+            select(Opportunity)
+            .where(
+                Opportunity.story_requested_at.is_not(None),
+                Opportunity.story_posted_at.is_(None),
+            )
+            .order_by(Opportunity.story_requested_at.asc())
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def count_by_status(self) -> dict[OpportunityStatus, int]:
         from sqlalchemy import func
 

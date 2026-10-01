@@ -135,6 +135,12 @@ class OpportunitySender:
                 )
                 if overlong:
                     await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML")
+                # First successful target only -- enough for story.py to later
+                # fetch THIS live message's real photo; which channel it came
+                # from doesn't matter since every target got the same bytes.
+                if not result.succeeded:
+                    opp.published_chat_id = sent.chat.id
+                    opp.published_message_id = sent.message_id
                 result.succeeded.append(chat_id)
                 # Cosmetic and best-effort -- add_reactions swallows its own
                 # errors, so a reaction failure never turns this into a
