@@ -221,6 +221,12 @@
     "title": "Banana Hacks",
     "url": "https://www.bananahacks.tech"
   },
+  "bch blaze|2026-10-10": {
+    "ends_at": "2026-11-21",
+    "first_seen": "2026-10-10",
+    "title": "BCH BLAZE 2026",
+    "url": "https://dev.events/conferences/bch-blaze-2026-qapgqpvx"
+  },
   "beginner s paradise firstcommit|2026-08-21": {
     "ends_at": "2026-09-30",
     "first_seen": "2026-08-23",
@@ -521,6 +527,12 @@
     "title": "Event Contracts Hackathon",
     "url": "https://dev.events/conferences/event-contracts-hackathon-th2co2co"
   },
+  "evohacks2026|2026-10-10": {
+    "ends_at": "2026-10-11",
+    "first_seen": "2026-10-10",
+    "title": "EvoHacks2026",
+    "url": "https://evohackathon2026.devpost.com"
+  },
   "evorozen apex nextgen ai buildathon|2026-07-17": {
     "ends_at": "2026-09-20",
     "first_seen": "2026-08-23",
@@ -694,6 +706,12 @@
     "first_seen": "2026-08-23",
     "title": "Hefty-Hacks",
     "url": "https://hefty-hacks.devfolio.co"
+  },
+  "homingo days|2026-11-21": {
+    "ends_at": "2026-12-19",
+    "first_seen": "2026-10-10",
+    "title": "Homingo Hack Days",
+    "url": "https://dev.events/conferences/homingo-hack-days-uwsxrl8e"
   },
   "huawei ireland tech arena|2026-10-14": {
     "ends_at": null,
