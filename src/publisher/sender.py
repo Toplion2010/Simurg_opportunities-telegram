@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
@@ -12,7 +12,7 @@ from src.core.geo import match_kazakhstan
 from src.core.logging import get_logger
 from src.core.scoring import infer_is_online
 from src.db.models.opportunity import Opportunity
-from src.publisher.formatter import format_opportunity
+from src.publisher.formatter import attribution_footer, format_opportunity
 from src.publisher.reactions import add_reactions
 
 logger = get_logger(__name__)
@@ -149,16 +149,32 @@ class OpportunitySender:
         )
         return result
 
+    def _handle_for(self, chat_id: int) -> str:
+        """Public @handle of a target channel, for its card and caption footer."""
+        s = self._settings
+        return {
+            s.DEST_CHANNEL_ID_SCHOOL: s.SIMURG_HANDLE_SCHOOL,
+            s.DEST_CHANNEL_ID_UNIVERSITY: s.SIMURG_HANDLE_UNIVERSITY,
+            s.DEST_CHANNEL_ID_HACKATHON: s.SIMURG_HANDLE_HACKATHON,
+        }.get(chat_id, s.SIMURG_HANDLE_SCHOOL)
+
+    def _branded(self, img_bytes: bytes, handle: str, checked_on: date) -> bytes:
+        if not self._settings.ENABLE_CARD_BRANDING:
+            return img_bytes
+        # Lazy: Pillow is not installed on Vercel, which imports this module.
+        from src.publisher.branding import ChannelBrand, brand_card
+
+        name = handle.lstrip("@").replace("_", " ").upper()
+        return brand_card(img_bytes, ChannelBrand(name=name, handle=handle), checked_on)
+
     async def _send_card(self, opp: Opportunity, bot: Bot, targets: list[int], banner: str):
         """Render one card and send it, with `banner` + the post text, to every
-        target. Returns (PublishResult, first successfully sent message)."""
-        # format_opportunity trims the About section to fit _CAPTION_LIMIT when
-        # possible, so the common case (an overlong description) stays a single
-        # message. `caption` keeps the untrimmed text for the rare case where
-        # even eligibility/prize/notes alone don't fit — the last-resort
-        # follow-up message below.
-        caption = banner + format_opportunity(opp)
-        photo_caption = banner + format_opportunity(opp, max_length=_CAPTION_LIMIT - len(banner))
+        target. Returns (PublishResult, first successfully sent message).
+
+        Each target gets its own copy of the card branded with that channel's
+        wordmark/@handle, and a caption ending in the matching attribution
+        footer ("✓ Checked by Simurg · <date>" + @handle)."""
+        checked_on = date.today()
 
         # Generate the card ONCE — Gemini + Playwright render is expensive and
         # non-deterministic per call, so a "both" post must reuse one image.
@@ -169,15 +185,26 @@ class OpportunitySender:
             logger.exception("publish_failed", opp_id=opp.id, error=str(e))
             raise PublishError(f"Failed to render card for opportunity {opp.id}: {e}") from e
 
-        overlong = len(photo_caption) > _CAPTION_LIMIT
-        if overlong:
-            photo_caption = banner + f"<b>✨ {opp.title or 'Opportunity'}</b>"
-
         result = PublishResult()
         first_sent = None
         for chat_id in targets:
+            handle = self._handle_for(chat_id)
+            footer = "\n\n" + attribution_footer(handle, checked_on)
+            # format_opportunity trims the About section to fit _CAPTION_LIMIT
+            # when possible, so the common case (an overlong description) stays
+            # a single message. `caption` keeps the untrimmed text for the rare
+            # case where even eligibility/prize/notes alone don't fit — the
+            # last-resort follow-up message below.
+            caption = banner + format_opportunity(opp) + footer
+            photo_caption = banner + format_opportunity(
+                opp, max_length=_CAPTION_LIMIT - len(banner) - len(footer)
+            ) + footer
+            overlong = len(photo_caption) > _CAPTION_LIMIT
+            if overlong:
+                photo_caption = banner + f"<b>✨ {opp.title or 'Opportunity'}</b>" + footer
             try:
-                photo = BufferedInputFile(img_bytes, filename="card.jpg")
+                card = self._branded(img_bytes, handle, checked_on)
+                photo = BufferedInputFile(card, filename="card.jpg")
                 sent = await bot.send_photo(
                     chat_id=chat_id,
                     photo=photo,

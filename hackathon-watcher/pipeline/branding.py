@@ -182,10 +182,14 @@ def _band_layer(size: tuple[int, int], checked_on: date, brand_name: str, handle
     pill_x1 = w - margin
     pill_x0 = pill_x1 - pill_w
     pill_y0 = center_y - pill_h // 2
-    draw.rounded_rectangle(
+    # Own layer: ImageDraw replaces RGBA pixels instead of blending, so drawing
+    # the translucent pill directly would cut a lighter hole in the gradient.
+    pill = Image.new("RGBA", size, (0, 0, 0, 0))
+    ImageDraw.Draw(pill).rounded_rectangle(
         (pill_x0, pill_y0, pill_x1, pill_y0 + pill_h), radius=pill_h // 2,
         fill=GREEN + (34,), outline=GREEN + (150,), width=2,
     )
+    layer.alpha_composite(pill)
     cx = pill_x0 + pad_x
     draw.line(
         [(cx, center_y + 1), (cx + 6, center_y + 7), (cx + check_w, center_y - 7)],

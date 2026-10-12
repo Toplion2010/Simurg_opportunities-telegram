@@ -187,6 +187,14 @@ class Settings(BaseSettings):
     # Where an unknown / unresolvable slug lands instead of a bare 404.
     SIMURG_REDIRECT_FALLBACK_URL: str = "https://t.me/simurg_hackathons"
 
+    # Per-channel branding on published cards and the caption footer
+    # (src/publisher/branding.py, sender._send_card). Public @handles of the
+    # channels behind DEST_CHANNEL_ID_*; the wordmark is derived from them.
+    SIMURG_HANDLE_SCHOOL: str = "@simurg_opportunities"
+    SIMURG_HANDLE_UNIVERSITY: str = "@Simurg_Opportunities_University"
+    SIMURG_HANDLE_HACKATHON: str = "@simurg_hackathons"
+    ENABLE_CARD_BRANDING: bool = True
+
     # Feature flags
     ENABLE_EMBEDDING_DEDUP: bool = False
     SIMILARITY_THRESHOLD: float = 0.92

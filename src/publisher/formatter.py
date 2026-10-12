@@ -59,16 +59,37 @@ def _fit_caption(text: str, max_length: int) -> str:
     desc = text[content_start:content_end]
 
     overflow = len(text) - max_length
-    budget = len(desc) - overflow - 1  # room left for the trailing ellipsis
+    budget = len(desc) - overflow
 
-    if budget < 40:
+    # End on the last COMPLETE sentence that fits — never a cut-off clause
+    # with an invented "…" ("...user needs in prd.md and implementation…").
+    truncated = _complete_sentences_within(desc, budget) if budget >= 40 else ""
+    if len(truncated) < 40:
         # Not enough room for a meaningful excerpt — drop the section outright.
         result = text[:about_start] + after
     else:
-        truncated = desc[:budget].rsplit(" ", 1)[0].rstrip("\n .,;:—-") + "…"
         result = before + "\n" + truncated + "\n\n" + after.lstrip("\n")
 
     return re.sub(r"\n{3,}", "\n\n", result).strip()
+
+
+# A sentence end: terminal punctuation (not part of an ellipsis), optional
+# closing quote/bracket, then whitespace or the end of the text.
+_SENTENCE_END_RE = re.compile(r"(?<![.…])[.!?][\"'”’)\]]*(?=\s|$)")
+
+
+def _complete_sentences_within(desc: str, budget: int) -> str:
+    """Longest prefix of `desc` that fits `budget` and ends on a sentence end."""
+    window = desc[:budget]
+    ends = [m.end() for m in _SENTENCE_END_RE.finditer(window)]
+    return window[: ends[-1]].strip() if ends else ""
+
+
+def attribution_footer(handle: str | None, checked_on) -> str:
+    """Light attribution that travels with a copied post, same as the
+    hackathons bot's: '✓ Checked by Simurg · 12 Oct' + the channel handle."""
+    line = f"✓ Checked by Simurg · {checked_on.day} {checked_on.strftime('%b')}"
+    return f"{line}\n{handle}" if handle else line
 
 
 def _extra_links(opp: Opportunity) -> list[str]:
