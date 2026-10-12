@@ -84,6 +84,22 @@ and on manual dispatch. Nothing else to enable — it starts running once
 merged to the default branch, and only *new* hackathons (not seeded ones)
 get posted.
 
+### 7. Simurg branding (links, footer, cards)
+
+- **Branded links.** The post title links to `SIMURG_PUBLIC_BASE_URL/<slug>`
+  (default: the Vercel domain). Slugs are minted by `pipeline/links.py` and
+  stored in Neon's `short_links` table (migration `0010`); the Vercel function
+  (`api/index.py`) answers `302` to the organizer URL with
+  `utm_source/utm_medium/utm_campaign` appended. Needs the `DATABASE_URL`
+  secret — without it posts link straight to the organizer, as before.
+- **Footer.** Every post ends with `✓ Checked by Simurg · <date>` and
+  `@simurg_hackathons` (`SIMURG_CHANNEL_HANDLE`).
+- **Cards.** `pipeline/branding.py` overlays the logo, wordmark, handle,
+  check line and a faint diagonal watermark on every image. Swap the logo by
+  replacing `assets/simurg_mark.png` or pointing `SIMURG_LOGO_PATH` elsewhere;
+  `SIMURG_CARD_BRANDING=0` turns it off.
+- **Descriptions** always end on a complete sentence (`pipeline/description.py`).
+
 ## CLI
 
 ```

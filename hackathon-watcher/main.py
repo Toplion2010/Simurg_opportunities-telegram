@@ -14,9 +14,10 @@ import sys
 from datetime import date
 
 import config
-from pipeline.dedup import dedup, dedup_key
+from pipeline.dedup import dedup, dedup_key, is_new
 from pipeline.enrich import enrich
 from pipeline.filters import apply_filters
+from pipeline.links import registry_from_env
 from pipeline.normalize import canonicalize_url
 from pipeline.state import load as load_seen
 from pipeline.state import prune as prune_seen
@@ -147,14 +148,8 @@ def main() -> None:
     # out entries for hackathons this run didn't touch.
     seen = load_seen()
     check_against = {} if args.force else seen
-    # Secondary guard alongside dedup_key (title+start date): if either the
-    # title normalization or the parsed start date drifts slightly between
-    # fetches, the same URL matching a seen entry's URL still blocks a repost.
-    seen_urls = {v.get("url") for v in check_against.values() if v.get("url")}
-    new_items = [
-        h for h in filtered
-        if dedup_key(h) not in check_against and h.url not in seen_urls
-    ]
+    # dedup_key + exact URL + manual-post title guards: see pipeline/dedup.is_new.
+    new_items = [h for h in filtered if is_new(h, check_against)]
     logger.info("new: %d", len(new_items))
 
     if args.seed:
@@ -168,6 +163,17 @@ def main() -> None:
         logger.info("seeded seen.json with %d entries, nothing posted", len(filtered))
         return
 
+    # Branded title links (PUBLIC_BASE_URL/<slug>) live in the shared Neon DB;
+    # without DATABASE_URL posts simply link to the organizer as before.
+    links = registry_from_env(os.environ.get("DATABASE_URL"))
+    if not args.force:
+        # Second line of defence that doesn't depend on seen.json surviving:
+        # anything already holding a short link in Neon has been posted.
+        already = links.posted_urls([h.url for h in new_items])
+        if already:
+            logger.info("skipping %d already in short_links: %s", len(already), sorted(already))
+            new_items = [h for h in new_items if h.url not in already]
+
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
     firecrawl_api_key = os.environ.get("FIRECRAWL_API_KEY")
 
@@ -180,6 +186,7 @@ def main() -> None:
         logger.info("enriched: %d", len(new_items))
 
     if args.dry_run:
+        links.close()
         print(f"\n{len(new_items)} hackathon(s) would be posted:\n")
         for h in new_items:
             _print_hackathon(h)
@@ -192,10 +199,14 @@ def main() -> None:
             "TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set in the environment; "
             "nothing posted, seen.json left untouched"
         )
+        links.close()
         return
 
     image_gen_key = None if args.no_image_gen else gemini_api_key
-    posted = post_hackathons(token, chat_id, new_items, image_gen_key)
+    try:
+        posted = post_hackathons(token, chat_id, new_items, image_gen_key, links=links)
+    finally:
+        links.close()
     logger.info("posted: %d / %d new", len(posted), len(new_items))
 
     for h in posted:

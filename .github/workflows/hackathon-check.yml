@@ -29,7 +29,10 @@ jobs:
 
       - name: Install dependencies
         working-directory: hackathon-watcher
-        run: pip install -r requirements.txt
+        # DejaVu is what pipeline/branding.py draws the card branding with.
+        run: |
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core >/dev/null || true
+          pip install -r requirements.txt
 
       - name: Run watcher
         working-directory: hackathon-watcher
@@ -40,6 +43,13 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          # Branded title links: slugs are written to Neon's short_links
+          # (migration 0010) and served by the Vercel function. Unset or
+          # unreachable DB -> posts link to the organizer, nothing breaks.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Optional repo VARIABLE (not secret); defaults to the Vercel domain
+          # in config.py. Set it to switch to a custom domain later.
+          SIMURG_PUBLIC_BASE_URL: ${{ vars.SIMURG_PUBLIC_BASE_URL }}
           # Optional: reuse Simurg's already-authorized personal-account
           # session so posts also get a reaction from that account, not just
           # the bot. Reactions are skipped (not a failure) if these are unset.

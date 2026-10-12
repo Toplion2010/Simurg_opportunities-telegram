@@ -20,6 +20,40 @@ def dedup_key(hackathon: Hackathon) -> str:
     return f"{normalized_title(hackathon.title)}|{hackathon.starts_at}"
 
 
+_ARTICLES = {"the", "a", "an"}
+
+
+def title_core(title: str) -> str:
+    """normalized_title minus bare numbers, so a season label doesn't make
+    the same event look new: 'Diamond Challenge 2026–27' and 'Diamond
+    Challenge' both become 'diamond challenge'."""
+    return " ".join(
+        w for w in normalized_title(title).split() if not w.isdigit() and w not in _ARTICLES
+    )
+
+
+def is_new(h: Hackathon, seen: dict) -> bool:
+    """True if `h` hasn't been posted. Three guards, any one blocks:
+
+    - dedup_key (title + start date) — the watcher's own posts
+    - exact URL — survives a drifted key (tests/test_dedup_url_guard.py)
+    - title_core of a MANUAL entry (manual_post.py). A hand-posted event's
+      URL is usually not the one an aggregator later lists it under, so only
+      the name can match. Deliberately limited to manual entries: for the
+      watcher's own posts, same title + different URL stays a new event.
+    """
+    if dedup_key(h) in seen:
+        return False
+    if h.url in {v.get("url") for v in seen.values() if v.get("url")}:
+        return False
+    core = title_core(h.title)
+    if core and core in {
+        title_core(v["title"]) for v in seen.values() if v.get("manual") and v.get("title")
+    }:
+        return False
+    return True
+
+
 def _priority(source: str) -> int:
     entry = config.SOURCES.get(source)
     if entry is None:

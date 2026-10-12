@@ -16,6 +16,7 @@ on:
       - "src/bot/**"
       - "src/db/**"
       - "src/core/**"
+      - "src/links/**"
       - ".github/workflows/vercelcheck.yml"
 
 jobs:
@@ -110,6 +111,30 @@ jobs:
           status, body = call("GET", path="/api/setup?secret=wrong")
           assert status == 403, f"setup must reject a bad secret: {status} {body}"
           print("GET setup bad secret:", status)
+
+          # Branded redirects (GET /<slug>). urllib follows redirects, so use
+          # http.client to see the 302 itself.
+          import http.client
+          def raw_get(path):
+              c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=30)
+              c.request("GET", path, headers={"User-Agent": "Mozilla/5.0"})
+              r = c.getresponse(); r.read()
+              return r.status, r.getheader("Location")
+
+          # No database here: a slug must still 302 to the channel, never 500.
+          status, loc = raw_get("/codered-orion")
+          assert status == 302 and loc == "https://t.me/simurg_hackathons", (status, loc)
+          print("GET slug, db down:", status, loc)
+
+          async def fake_resolve(factory, slug, count=True):
+              return {"codered-orion": "https://codered.devpost.com/?ref=x"}.get(slug)
+          mod.resolve_slug = fake_resolve
+          expected = ("https://codered.devpost.com/?ref=x&utm_source=simurg_hackathons"
+                      "&utm_medium=telegram&utm_campaign=codered-orion")
+          for path in ("/codered-orion", "/api/index?__slug=codered-orion"):
+              status, loc = raw_get(path)
+              assert status == 302 and loc == expected, (path, status, loc)
+          print("GET slug:", status, loc)
 
           srv.shutdown()
 

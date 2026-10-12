@@ -3,3 +3,4 @@ beautifulsoup4>=4.12
 feedparser>=6.0
 Pillow>=10.0
 telethon>=1.36
+psycopg[binary]>=3.1

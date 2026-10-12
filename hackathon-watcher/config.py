@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 # --- Source registry ---
 # Adding a source = write sources/<name>.py + add one entry here. Never edit
 # main.py to add a source: it resolves `module` dynamically and looks up
@@ -107,6 +110,27 @@ DESCRIPTION_MIN_CHARS: int = 40
 # considerably longer than a plain fetch — 30s was cutting off dev.events
 # mid-render and losing the enrichment entirely.
 FIRECRAWL_TIMEOUT: int = 60
+
+# --- Simurg branding (pipeline/links.py, pipeline/branding.py, telegram.py) ---
+# Env-overridable so moving from the Vercel domain to a custom one (e.g. a
+# future simurg.link) is a secret/variable change, no code edit. Old posts keep
+# working as long as the old host still serves the same function.
+# `or` rather than a get() default: an unset ${{ vars.X }} arrives as "".
+PUBLIC_BASE_URL: str = (
+    os.environ.get("SIMURG_PUBLIC_BASE_URL") or "https://simurg-opportunities-telegram-ten.vercel.app"
+).strip()
+BRANDED_LINKS_ENABLED: bool = os.environ.get("SIMURG_BRANDED_LINKS", "1") != "0"
+CHANNEL_HANDLE: str = (os.environ.get("SIMURG_CHANNEL_HANDLE") or "@simurg_hackathons").strip()
+# Card branding. The logo is a transparent PNG; point SIMURG_LOGO_PATH at a
+# different file to swap it without touching code.
+CARD_BRANDING_ENABLED: bool = os.environ.get("SIMURG_CARD_BRANDING", "1") != "0"
+LOGO_PATH: str = os.environ.get("SIMURG_LOGO_PATH") or str(
+    Path(__file__).parent / "assets" / "simurg_mark.png"
+)
+# Optional explicit TTF; otherwise pipeline/branding.py tries common system
+# fonts (DejaVu on the Actions runner) and finally Pillow's built-in font.
+CARD_FONT_PATH: str | None = os.environ.get("SIMURG_CARD_FONT") or None
+CARD_FONT_BOLD_PATH: str | None = os.environ.get("SIMURG_CARD_FONT_BOLD") or None
 
 # --- HTTP ---
 REQUEST_TIMEOUT_SECONDS: int = 20

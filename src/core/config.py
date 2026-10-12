@@ -178,6 +178,15 @@ class Settings(BaseSettings):
     # that go out are the five closest to closing, and the rest wait.
     DAILY_PUBLISH_CAP: int = 5
 
+    # Branded redirects (api/index.py, GET /<slug>). The public base URL itself
+    # is only needed by whoever WRITES links (hackathon-watcher); the redirect
+    # side just answers whatever host it is served on, so moving to a custom
+    # domain later is a DNS + watcher env change, nothing here.
+    SIMURG_UTM_SOURCE: str = "simurg_hackathons"
+    SIMURG_UTM_MEDIUM: str = "telegram"
+    # Where an unknown / unresolvable slug lands instead of a bare 404.
+    SIMURG_REDIRECT_FALLBACK_URL: str = "https://t.me/simurg_hackathons"
+
     # Feature flags
     ENABLE_EMBEDDING_DEDUP: bool = False
     SIMILARITY_THRESHOLD: float = 0.92

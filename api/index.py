@@ -14,7 +14,14 @@ export a top-level app". So routing happens inside:
 
     POST any path            -> Telegram update
     GET  .../setup?secret=   -> register / inspect / delete the webhook
+    GET  /<slug>             -> branded redirect (302) to an organizer URL
     GET  anything else       -> health check
+
+The /<slug> route serves hackathon-watcher's post links: it looks the slug up
+in short_links, records a click and answers 302 (never 301 -- a cached
+permanent redirect could not be retargeted later) with utm_* appended. It
+reads the slug from the path, or from ?__slug= when vercel.json's rewrite
+delivered the request to /api/index.
 
 Two implementation details are load-bearing:
 
@@ -33,6 +40,7 @@ Env vars (Vercel project settings):
     TELETHON_API_ID, TELETHON_API_HASH                   unused, Settings requires them
     DEST_CHANNEL_ID_SCHOOL, DEST_CHANNEL_ID_UNIVERSITY   likewise
     SIMURG_WEBHOOK_SECRET   guards both the setup URL and the webhook itself
+    SIMURG_UTM_SOURCE, SIMURG_UTM_MEDIUM, SIMURG_REDIRECT_FALLBACK_URL  optional
 """
 import asyncio
 import json
@@ -58,6 +66,7 @@ try:
     from src.core.logging import get_logger, setup_logging
     from src.db.base import create_serverless_engine
     from src.db.session import create_session_factory
+    from src.links.redirect import append_utm, extract_slug, is_bot, resolve_slug
 
     _SECRET = os.environ["SIMURG_WEBHOOK_SECRET"]
 
@@ -91,6 +100,44 @@ def _telegram(method: str, params: dict | None = None) -> dict:
 class handler(BaseHTTPRequestHandler):
     """Vercel's Python runtime instantiates this per request."""
 
+    def _redirect(self, location: str) -> None:
+        # 302 + no-store: every click reaches the function (so it is counted)
+        # and a destination fixed in the DB takes effect immediately.
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _short_link(self, slug: str, count: bool) -> None:
+        # Only reached when init succeeded (_slug_for returns None otherwise,
+        # so a broken deploy keeps answering with its init error).
+        try:
+            destination = _loop.run_until_complete(
+                resolve_slug(_session_factory, slug, count=count)
+            )
+        except Exception:
+            _logger.exception("short_link_resolve_failed", slug=slug)
+            destination = None
+        if destination is None:
+            _logger.info("short_link_unknown", slug=slug)
+            self._redirect(_settings.SIMURG_REDIRECT_FALLBACK_URL)
+            return
+        self._redirect(
+            append_utm(
+                destination,
+                campaign=slug,
+                source=_settings.SIMURG_UTM_SOURCE,
+                medium=_settings.SIMURG_UTM_MEDIUM,
+            )
+        )
+
+    def _slug_for(self, parsed, query: dict) -> str | None:
+        if _init_error:
+            return None
+        raw = query.get("__slug", [""])[0] or parsed.path
+        return extract_slug(raw)
+
     def _reply(self, code: int, body: str = "") -> None:
         payload = body.encode("utf-8")
         self.send_response(code)
@@ -104,6 +151,11 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         query = urllib.parse.parse_qs(parsed.query)
+
+        slug = self._slug_for(parsed, query)
+        if slug:
+            self._short_link(slug, count=not is_bot(self.headers.get("User-Agent")))
+            return
 
         if not parsed.path.rstrip("/").endswith("setup"):
             if _init_error:
@@ -170,6 +222,15 @@ class handler(BaseHTTPRequestHandler):
             )
         except Exception:
             self._reply(500, traceback.format_exc())
+
+    def do_HEAD(self) -> None:
+        # Link checkers probe with HEAD; answer the same redirect, uncounted.
+        parsed = urllib.parse.urlparse(self.path)
+        slug = self._slug_for(parsed, urllib.parse.parse_qs(parsed.query))
+        if slug:
+            self._short_link(slug, count=False)
+        else:
+            self._reply(200)
 
     # --------------------------------------------------------------- POST
 

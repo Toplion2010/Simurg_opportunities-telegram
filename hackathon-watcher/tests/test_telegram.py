@@ -14,6 +14,9 @@ def _no_reactions(monkeypatch):
     """send_hackathon reacts to whatever it just posted (pipeline/reactions.py)
     -- irrelevant to these tests and would otherwise fire a real HTTP request."""
     monkeypatch.setattr("pipeline.telegram.react", lambda *a, **k: None)
+    # Real-photo fallback now fetches the photo to brand it; keep tests offline
+    # (None = "couldn't fetch", so the old send-by-URL path is exercised).
+    monkeypatch.setattr("pipeline.telegram.fetch_and_brand_photo", lambda *a, **k: None)
 
 
 def _h(**overrides) -> Hackathon:
@@ -140,7 +143,7 @@ def test_no_optional_fields_no_empty_lines_or_orphan_emoji():
         prize_text=None, prize_breakdown=[], is_online=None, location=None,
         ends_at=None, deadline=None,
     )
-    text = format_message(h)
+    text = format_message(h, footer=False)
     assert text == '<b><a href="https://example.com/hack">Test Hack</a></b>'
     for emoji in ("🏆", "📍", "🌐", "⏳", "⚠️", "🏢", "#"):
         assert emoji not in text
@@ -219,7 +222,9 @@ def test_photo_caption_default_is_1024_and_message_default_is_4096():
     assert len(caption) <= 1024
     assert len(full_text) <= 4096
     assert len(full_text) > len(caption)
-    assert caption.endswith("…")
+    # Never an invented ellipsis: whole sentences or nothing, footer kept.
+    assert "…" not in caption
+    assert caption.endswith("@simurg_hackathons")
 
 
 # --- send_hackathon: generation always attempted, even with a real photo --
@@ -322,3 +327,57 @@ def test_links_line_escapes_adversarial_label_and_url():
     text = format_message(h)
     assert "<script>alert(1)</script>" not in text
     assert "&lt;script&gt;" in text
+
+
+# --- Simurg attribution: branded link + footer --------------------------
+
+def test_title_links_to_branded_url_when_given():
+    text = format_message(_h(), link_url="https://simurg.example/test-hack")
+    assert '<b><a href="https://simurg.example/test-hack">Test Hack</a></b>' in text
+    assert "example.com/hack" not in text
+
+
+def test_footer_appended_after_description():
+    text = format_message(_h(description="A sentence."), checked_on=date(2026, 10, 11))
+    assert text.endswith("A sentence.\n\n✓ Checked by Simurg · 11 Oct\n@simurg_hackathons")
+
+
+def test_footer_survives_tight_caption_budget():
+    h = _h(description="Sentence one. " * 200, organizer="Org", eligibility="Students only")
+    text = format_message(h, max_length=300, checked_on=date(2026, 10, 11))
+    assert len(text) <= 300
+    assert text.endswith("✓ Checked by Simurg · 11 Oct\n@simurg_hackathons")
+
+
+def test_budget_shortens_description_by_whole_sentences():
+    desc = "First sentence here. Second sentence here. Third sentence here."
+    full = format_message(_h(description=desc, themes=[]))
+    tight = format_message(_h(description=desc, themes=[]), max_length=len(full) - 10)
+    assert "First sentence here. Second sentence here.\n\n" in tight
+    assert "Third" not in tight and "…" not in tight
+
+
+def test_send_hackathon_brands_generated_image_and_uses_branded_link(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(config, "IMAGE_GEN_ENABLED", True)
+    monkeypatch.setattr("pipeline.telegram.generate_image", lambda h, key: b"raw")
+    monkeypatch.setattr("pipeline.telegram.brand_image", lambda b, d: b"branded:" + b)
+
+    def fake_send(token, chat, photo, caption):
+        seen["photo"], seen["caption"] = photo, caption
+        return 1
+
+    monkeypatch.setattr("pipeline.telegram.send_photo_bytes", fake_send)
+    assert send_hackathon("t", "c", _h(), gemini_api_key="k", link_url="https://s.test/x") is True
+    assert seen["photo"] == b"branded:raw"
+    assert 'href="https://s.test/x"' in seen["caption"]
+
+
+def test_worldwide_location_uses_globe_not_pin():
+    text = format_message(_h(is_online=None, location="Worldwide"))
+    assert "🌍 Worldwide" in text and "📍" not in text
+
+
+def test_footer_handle_override_per_channel():
+    text = format_message(_h(), handle="@simurg_opportunities", checked_on=date(2026, 10, 11))
+    assert text.endswith("✓ Checked by Simurg · 11 Oct\n@simurg_opportunities")
