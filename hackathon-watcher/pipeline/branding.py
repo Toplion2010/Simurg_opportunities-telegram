@@ -36,6 +36,12 @@ HEIGHT = 628
 BRAND_NAME = "SIMURG HACKATHONS"
 GREEN = (124, 255, 79)        # the logo's neon green
 GREEN_SOFT = (164, 255, 128)
+# Simurg Opportunities has its own cyan logo; used when a manual post
+# (manual_post.py) is branded for one of its channels.
+CYAN = (51, 230, 250)
+CYAN_SOFT = (150, 240, 255)
+OPPORTUNITIES_LOGO_PATH = str(Path(__file__).resolve().parent.parent / "assets"
+                              / "simurg_opportunities_mark.png")
 INK = (3, 12, 6)              # near-black with a green cast, for the band
 
 _BOLD_FONTS = [
@@ -78,8 +84,16 @@ def _logo(path: str) -> Image.Image | None:
         return None
 
 
-def _logo_at_height(height: int, opacity: float = 1.0) -> Image.Image | None:
-    logo = _logo(config.LOGO_PATH)
+def _style_for(handle: str | None) -> tuple[str, tuple, tuple]:
+    """(logo path, accent, soft accent) for the channel a card is branded for."""
+    if handle and "opportunit" in handle.lower():
+        return OPPORTUNITIES_LOGO_PATH, CYAN, CYAN_SOFT
+    return config.LOGO_PATH, GREEN, GREEN_SOFT
+
+
+def _logo_at_height(height: int, opacity: float = 1.0,
+                    path: str | None = None) -> Image.Image | None:
+    logo = _logo(path or config.LOGO_PATH)
     if logo is None:
         return None
     width = max(1, round(logo.width * height / logo.height))
@@ -136,6 +150,7 @@ def _watermark_layer(size: tuple[int, int], brand_name: str, handle: str) -> Ima
 
 
 def _band_layer(size: tuple[int, int], checked_on: date, brand_name: str, handle: str) -> Image.Image:
+    logo_path, accent, accent_soft = _style_for(handle)
     w, h = size
     layer = Image.new("RGBA", size, (0, 0, 0, 0))
 
@@ -159,11 +174,11 @@ def _band_layer(size: tuple[int, int], checked_on: date, brand_name: str, handle
         edge = min(x - margin, w - margin - x) / 220
         alpha = round(90 * min(1.0, edge))
         if alpha:
-            layer.putpixel((x, line_y), GREEN + (alpha,))
+            layer.putpixel((x, line_y), accent + (alpha,))
 
     # Left: logo mark + wordmark + handle.
     x = margin
-    mark = _logo_at_height(56)
+    mark = _logo_at_height(56, path=logo_path)
     if mark is not None:
         layer.alpha_composite(mark, (x, center_y - mark.height // 2))
         x += mark.width + 14
@@ -171,7 +186,7 @@ def _band_layer(size: tuple[int, int], checked_on: date, brand_name: str, handle
     handle_font = _font(18, bold=False)
     _draw_tracked(draw, (x, center_y - 27), brand_name, title_font, (255, 255, 255, 245), tracking=3)
     if handle:
-        draw.text((x + 1, center_y + 5), handle, font=handle_font, fill=GREEN_SOFT + (235,))
+        draw.text((x + 1, center_y + 5), handle, font=handle_font, fill=accent_soft + (235,))
 
     # Right: verification pill with a drawn check mark (no glyph dependency).
     label = f"Checked by Simurg · {checked_on.day} {checked_on.strftime('%b')}"
@@ -187,13 +202,13 @@ def _band_layer(size: tuple[int, int], checked_on: date, brand_name: str, handle
     pill = Image.new("RGBA", size, (0, 0, 0, 0))
     ImageDraw.Draw(pill).rounded_rectangle(
         (pill_x0, pill_y0, pill_x1, pill_y0 + pill_h), radius=pill_h // 2,
-        fill=GREEN + (34,), outline=GREEN + (150,), width=2,
+        fill=accent + (34,), outline=accent + (150,), width=2,
     )
     layer.alpha_composite(pill)
     cx = pill_x0 + pad_x
     draw.line(
         [(cx, center_y + 1), (cx + 6, center_y + 7), (cx + check_w, center_y - 7)],
-        fill=GREEN + (255,), width=4, joint="curve",
+        fill=accent + (255,), width=4, joint="curve",
     )
     text_h = label_font.getbbox("Ag")[3] if hasattr(label_font, "getbbox") else 19
     draw.text((cx + check_w + 10, center_y - text_h // 2 - 1), label, font=label_font,
@@ -201,9 +216,9 @@ def _band_layer(size: tuple[int, int], checked_on: date, brand_name: str, handle
     return layer
 
 
-def _emblem_layer(size: tuple[int, int]) -> Image.Image | None:
+def _emblem_layer(size: tuple[int, int], handle: str | None = None) -> Image.Image | None:
     w, _ = size
-    mark = _logo_at_height(46, opacity=0.95)
+    mark = _logo_at_height(46, opacity=0.95, path=_style_for(handle)[0])
     if mark is None:
         return None
     layer = Image.new("RGBA", size, (0, 0, 0, 0))
@@ -259,7 +274,7 @@ def brand_image(image_bytes: bytes, checked_on: date | None = None,
             base = _fit(base)
         canvas = base.convert("RGBA")
         canvas.alpha_composite(_watermark_layer(canvas.size, brand_name, handle))
-        emblem = _emblem_layer(canvas.size)
+        emblem = _emblem_layer(canvas.size, handle)
         if emblem is not None:
             canvas.alpha_composite(emblem)
         canvas.alpha_composite(_band_layer(canvas.size, checked_on, brand_name, handle))

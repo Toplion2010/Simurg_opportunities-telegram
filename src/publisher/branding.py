@@ -31,11 +31,16 @@ from src.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-LOGO_PATH = Path(__file__).parent / "assets" / "simurg_mark.png"
-
+ASSETS = Path(__file__).parent / "assets"
+# Each channel family has its own logo and accent colour, taken from its logo:
+# neon green for Simurg Hackathons, cyan for Simurg Opportunities.
+HACKATHONS_LOGO = ASSETS / "simurg_hackathons_mark.png"
+OPPORTUNITIES_LOGO = ASSETS / "simurg_opportunities_mark.png"
 GREEN = (124, 255, 79)
 GREEN_SOFT = (164, 255, 128)
-INK = (3, 12, 6)
+CYAN = (51, 230, 250)
+CYAN_SOFT = (150, 240, 255)
+INK = (3, 10, 14)
 
 FOOTER_HEIGHT = 52  # src/publisher/design/spacing.py footer_height
 WATERMARK_LINE_GAP = 128
@@ -62,6 +67,17 @@ _REGULAR_FONTS = [
 class ChannelBrand:
     name: str     # wordmark, e.g. "SIMURG OPPORTUNITIES"
     handle: str   # "@simurg_opportunities"
+    logo: Path = OPPORTUNITIES_LOGO
+    accent: tuple[int, int, int] = CYAN
+    accent_soft: tuple[int, int, int] = CYAN_SOFT
+
+
+def opportunities_brand(handle: str) -> ChannelBrand:
+    return ChannelBrand("SIMURG OPPORTUNITIES", handle, OPPORTUNITIES_LOGO, CYAN, CYAN_SOFT)
+
+
+def hackathons_brand(handle: str) -> ChannelBrand:
+    return ChannelBrand("SIMURG HACKATHONS", handle, HACKATHONS_LOGO, GREEN, GREEN_SOFT)
 
 
 @lru_cache(maxsize=None)
@@ -77,22 +93,22 @@ def _font(size: int, bold: bool):
     return ImageFont.load_default(size=size)
 
 
-@lru_cache(maxsize=2)
-def _logo():
+@lru_cache(maxsize=4)
+def _logo(path: Path):
     from PIL import Image
 
     try:
-        with Image.open(LOGO_PATH) as img:
+        with Image.open(path) as img:
             return img.convert("RGBA")
     except Exception:  # noqa: BLE001
-        logger.warning("branding_logo_missing", path=str(LOGO_PATH))
+        logger.warning("branding_logo_missing", path=str(path))
         return None
 
 
-def _logo_at_height(height: int, opacity: float = 1.0):
+def _logo_at_height(path: Path, height: int, opacity: float = 1.0):
     from PIL import Image
 
-    logo = _logo()
+    logo = _logo(path)
     if logo is None:
         return None
     width = max(1, round(logo.width * height / logo.height))
@@ -146,16 +162,16 @@ def _footer_band(size, brand: ChannelBrand, checked_on: date):
         edge = min(x, w - x) / 260
         alpha = round(110 * min(1.0, edge))
         if alpha:
-            layer.putpixel((x, top), GREEN + (alpha,))
+            layer.putpixel((x, top), brand.accent + (alpha,))
 
     center_y = top + FOOTER_HEIGHT // 2
     x = 24
-    mark = _logo_at_height(38)
+    mark = _logo_at_height(brand.logo, 38)
     if mark is not None:
         layer.alpha_composite(mark, (x, center_y - mark.height // 2))
         x += mark.width + 10
     _tracked(draw, (x, center_y - 19), brand.name, _font(17, bold=True), (255, 255, 255, 245), 2)
-    draw.text((x + 1, center_y + 2), brand.handle, font=_font(14, bold=False), fill=GREEN_SOFT + (235,))
+    draw.text((x + 1, center_y + 2), brand.handle, font=_font(14, bold=False), fill=brand.accent_soft + (235,))
 
     label = f"Checked by Simurg · {checked_on.day} {checked_on.strftime('%b')}"
     label_font = _font(15, bold=False)
@@ -170,22 +186,22 @@ def _footer_band(size, brand: ChannelBrand, checked_on: date):
     pill = Image.new("RGBA", size, (0, 0, 0, 0))
     pdraw = ImageDraw.Draw(pill)
     pdraw.rounded_rectangle((x0, y0, x1, y0 + pill_h), radius=pill_h // 2,
-                            fill=GREEN + (34,), outline=GREEN + (150,), width=2)
+                            fill=brand.accent + (34,), outline=brand.accent + (150,), width=2)
     layer.alpha_composite(pill)
     cx = x0 + pad
     draw.line([(cx, center_y + 1), (cx + 5, center_y + 6), (cx + check_w, center_y - 6)],
-              fill=GREEN + (255,), width=3, joint="curve")
+              fill=brand.accent + (255,), width=3, joint="curve")
     text_h = label_font.getbbox("Ag")[3] if hasattr(label_font, "getbbox") else 15
     draw.text((cx + check_w + 8, center_y - text_h // 2 - 1), label, font=label_font,
               fill=(255, 255, 255, 240))
     return layer
 
 
-def _emblem(size):
+def _emblem(size, brand: ChannelBrand):
     from PIL import Image, ImageDraw, ImageFilter
 
     w, _ = size
-    mark = _logo_at_height(40, opacity=0.95)
+    mark = _logo_at_height(brand.logo, 40, opacity=0.95)
     if mark is None:
         return None
     layer = Image.new("RGBA", size, (0, 0, 0, 0))
@@ -208,7 +224,7 @@ def brand_card(image_bytes: bytes, brand: ChannelBrand, checked_on: date | None 
         with Image.open(io.BytesIO(image_bytes)) as src:
             canvas = src.convert("RGBA")
         canvas.alpha_composite(_watermark(canvas.size, brand))
-        emblem = _emblem(canvas.size)
+        emblem = _emblem(canvas.size, brand)
         if emblem is not None:
             canvas.alpha_composite(emblem)
         canvas.alpha_composite(_footer_band(canvas.size, brand, checked_on))

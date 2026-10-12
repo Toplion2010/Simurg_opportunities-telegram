@@ -100,6 +100,28 @@ class OpportunitySender:
         )
         return [chat_id]
 
+    async def _send_text(self, opp: Opportunity, bot: Bot, targets: list[int], banner: str,
+                         checked_on: date):
+        """Image-free send for university-only posts (see _text_only). A text
+        message allows 4096 chars, so the caption is never trimmed."""
+        result = PublishResult()
+        first_sent = None
+        for chat_id in targets:
+            text = (banner + format_opportunity(opp) + "\n\n"
+                    + attribution_footer(self._handle_for(chat_id), checked_on))
+            try:
+                sent = await bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+                first_sent = first_sent or sent
+                result.succeeded.append(chat_id)
+                await add_reactions(bot, chat_id, sent.message_id, self._telethon_clients)
+            except Exception as e:
+                logger.exception(
+                    "publish_failed_channel", opp_id=opp.id, chat_id=chat_id, error=str(e)
+                )
+                result.failed.append((chat_id, str(e)))
+        logger.info("published_text_only", opp_id=opp.id, targets=targets)
+        return result, first_sent
+
     async def publish(self, opp: Opportunity, bot: Bot) -> PublishResult:
         targets = self._resolve_targets(opp)
         result, first_sent = await self._send_card(opp, bot, targets, banner="")
@@ -158,14 +180,25 @@ class OpportunitySender:
             s.DEST_CHANNEL_ID_HACKATHON: s.SIMURG_HANDLE_HACKATHON,
         }.get(chat_id, s.SIMURG_HANDLE_SCHOOL)
 
-    def _branded(self, img_bytes: bytes, handle: str, checked_on: date) -> bytes:
+    def _branded(self, img_bytes: bytes, chat_id: int, checked_on: date) -> bytes:
         if not self._settings.ENABLE_CARD_BRANDING:
             return img_bytes
         # Lazy: Pillow is not installed on Vercel, which imports this module.
-        from src.publisher.branding import ChannelBrand, brand_card
+        from src.publisher.branding import brand_card, hackathons_brand, opportunities_brand
 
-        name = handle.lstrip("@").replace("_", " ").upper()
-        return brand_card(img_bytes, ChannelBrand(name=name, handle=handle), checked_on)
+        handle = self._handle_for(chat_id)
+        is_hackathons = bool(self._settings.DEST_CHANNEL_ID_HACKATHON) and (
+            chat_id == self._settings.DEST_CHANNEL_ID_HACKATHON
+        )
+        brand = hackathons_brand(handle) if is_hackathons else opportunities_brand(handle)
+        return brand_card(img_bytes, brand, checked_on)
+
+    def _text_only(self, targets: list[int]) -> bool:
+        """A post bound ONLY for the university channel goes out as plain text:
+        no Gemini background, no render. When it also goes to another channel,
+        that channel's card is rendered anyway and the university gets it too."""
+        university = self._settings.DEST_CHANNEL_ID_UNIVERSITY
+        return bool(targets) and all(chat_id == university for chat_id in targets)
 
     async def _send_card(self, opp: Opportunity, bot: Bot, targets: list[int], banner: str):
         """Render one card and send it, with `banner` + the post text, to every
@@ -175,6 +208,9 @@ class OpportunitySender:
         wordmark/@handle, and a caption ending in the matching attribution
         footer ("✓ Checked by Simurg · <date>" + @handle)."""
         checked_on = date.today()
+
+        if self._text_only(targets):
+            return await self._send_text(opp, bot, targets, banner, checked_on)
 
         # Generate the card ONCE — Gemini + Playwright render is expensive and
         # non-deterministic per call, so a "both" post must reuse one image.
@@ -203,7 +239,7 @@ class OpportunitySender:
             if overlong:
                 photo_caption = banner + f"<b>✨ {opp.title or 'Opportunity'}</b>" + footer
             try:
-                card = self._branded(img_bytes, handle, checked_on)
+                card = self._branded(img_bytes, chat_id, checked_on)
                 photo = BufferedInputFile(card, filename="card.jpg")
                 sent = await bot.send_photo(
                     chat_id=chat_id,
