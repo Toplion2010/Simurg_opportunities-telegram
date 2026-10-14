@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone
 
 from aiogram import Bot
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from telethon import TelegramClient
 
@@ -109,19 +110,25 @@ async def publish_scheduled(
         if not due:
             return
 
-        # Read identity for everything up front: commit()/rollback() expire
-        # EVERY object in the session, not just the one just processed, so
-        # touching opp.id/opp.title on a later iteration triggers a lazy
-        # reload. AsyncSession refuses that implicit IO and raises
-        # MissingGreenlet, which would abort the loop and skip every
-        # remaining opportunity, not just the one that failed.
-        identities = {opp.id: (opp.id, opp.title or "Untitled") for opp in due}
+        # Read identity for everything up front: rollback() expires EVERY
+        # object in the session, not just the one that failed, so touching
+        # opp.id/opp.title on a later iteration triggers a lazy reload.
+        # AsyncSession refuses that implicit IO and raises MissingGreenlet,
+        # which aborts the loop and skips every remaining opportunity. The
+        # identity must travel alongside the object -- keying a dict by
+        # opp.id still reads opp.id.
+        work = [(opp, opp.id, opp.title or "Untitled") for opp in due]
 
         failures: list[str] = []
         partials: list[str] = []
-        for opp in due:
-            opp_id, title = identities[opp.id]
+        for opp, opp_id, title in work:
             try:
+                # A previous failure's rollback expired this row; reload it
+                # explicitly (awaited, so no implicit IO), including the
+                # selectin-loaded raw_message the card renderer reads.
+                if sa_inspect(opp).expired_attributes:
+                    await session.refresh(opp)
+                    await session.refresh(opp, ["raw_message"])
                 result = await sender.publish(opp, bot)
                 # Queued here so publish_stories(), which runs right after this
                 # in the same job, posts it together with the post.
