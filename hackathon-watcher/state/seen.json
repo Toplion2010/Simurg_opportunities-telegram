@@ -772,6 +772,12 @@
     "title": "Health-a-thon 2026",
     "url": "https://healthathon.reskilll.com"
   },
+  "healthhack 48|2026-10-17": {
+    "ends_at": "2026-10-19",
+    "first_seen": "2026-10-17",
+    "title": "HEALTHHACK 48",
+    "url": "https://healthhack-48.devpost.com"
+  },
   "hefty hacks|2026-10-23": {
     "ends_at": "2026-10-31",
     "first_seen": "2026-08-23",
@@ -1432,6 +1438,12 @@
     "title": "Technica Hacks",
     "url": "https://gotechnica.org"
   },
+  "technica|2026-10-17": {
+    "ends_at": "2026-10-18",
+    "first_seen": "2026-10-17",
+    "title": "Technica 2026",
+    "url": "https://technica-2026.devpost.com"
+  },
   "techx rwanda|2026-08-27": {
     "ends_at": "2026-09-03",
     "first_seen": "2026-08-27",
@@ -1443,6 +1455,12 @@
     "first_seen": "2026-09-28",
     "title": "TEST ROWDYHACKS",
     "url": "https://test-rowdyhacks.devpost.com"
+  },
+  "the arcticathon|2026-10-17": {
+    "ends_at": "2027-01-30",
+    "first_seen": "2026-10-17",
+    "title": "The Arcticathon",
+    "url": "https://the-arcticathon.devpost.com"
   },
   "the great agent|2026-09-25": {
     "ends_at": "2026-09-26",
