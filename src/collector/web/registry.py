@@ -4,15 +4,8 @@ Adding a catalog is: write src/collector/web/sources/<name>.py with exactly one
 WebSource subclass, add one entry here, seed a source_channels row
 (scripts/seed_web_sources.py). Nothing else in the codebase needs to know.
 
-Two sites are deliberately absent and must stay absent unless the reason changes:
+One site is deliberately absent and must stay absent unless the reason changes:
 
-  doq.world  — its Terms of Service prohibit automated extraction and the
-               republication of listings without prior written permission, and
-               it states it embeds identifying markers. It has ~349 listings at
-               /competitions/<slug> and would slot in here in a single file IF
-               permission is obtained; they publish a contact address for
-               exactly that. Getting that permission is the prerequisite, not
-               an optimisation.
   pathwaystoscience.org — serves HTTP 500 to a plain client, paginates by
                ASP.NET __VIEWSTATE postback, and publishes no per-program URLs
                in its sitemap. Separately, its flagship REU programs are NSF
@@ -26,6 +19,14 @@ import inspect
 from src.collector.web.base import WebSource
 
 WEB_SOURCES: dict[str, dict] = {
+    # Written permission granted 2026-09-29. Kept unseeded until the required
+    # ten-item dry run has been reviewed; see docs/permissions/doq-world.md.
+    "doqworld": {
+        "module": "src.collector.web.sources.doqworld",
+        "enabled": True,
+        "seed": False,
+        "min_sleep_seconds": 3.0,
+    },
     "extracurricularhub": {
         "module": "src.collector.web.sources.extracurricularhub",
         "enabled": True,
@@ -35,8 +36,7 @@ WEB_SOURCES: dict[str, dict] = {
         "enabled": True,
     },
     # Runs without the site's permission, by the owner's explicit decision --
-    # see the module docstring. doq.world above was kept out on the same
-    # grounds; this one is an informed override, not an oversight.
+    # see the module docstring. This is an informed override, not an oversight.
     "zhaslink": {
         "module": "src.collector.web.sources.zhaslink",
         "enabled": True,

@@ -14,6 +14,7 @@ import pytest
 from src.collector.web.filters import admits
 from src.collector.web.sources import zhaslink
 from src.collector.web.sources.zhaslink import ZhasLinkSource, _cost, _is_stale, _slug
+from src.collector.web.to_dto import build_dto
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "web"
 
@@ -115,6 +116,7 @@ def test_item_fields(before_camp_ended):
         "engineering-camp-for-teens-2026-b5297c59"
     )
     assert camp.apply_url == "https://forms.gle/QUicAuizbaazZaq37"
+    assert build_dto(camp).apply_link == "https://forms.gle/QUicAuizbaazZaq37"
     assert camp.organizer == "American Corner & Makerspace Astana"
     assert camp.is_online is False
     assert camp.country == "Astana, Kazakhstan"
@@ -134,6 +136,15 @@ def test_item_fields(before_camp_ended):
     geometry = items[GEOMETRY]
     assert geometry.cost_amount is None
     assert geometry.cost_text == "10.000 тенге"
+
+
+def test_missing_external_link_never_falls_back_to_zhaslink(before_camp_ended):
+    row = dict(next(r for r in _rows() if r["id"] == VERITAS))
+    row["application_url"] = None
+    row["source_url"] = None
+    item = ZhasLinkSource(FakeFetcher())._build(row)
+    assert item is not None
+    assert build_dto(item).apply_link is None
 
 
 def test_tenge_price_does_not_trip_the_usd_fee_filter(before_camp_ended):

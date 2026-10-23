@@ -6,16 +6,24 @@ on:
     # is WEB_MAX_ITEMS_PER_RUN (40), and hammering two small volunteer-run sites
     # harder buys nothing — the backlog is finite and shrinks either way.
     - cron: "13 3 * * *"
+    # doq.world production schedule (every 8 hours) stays disabled until its
+    # ten-item dry run is reviewed and the source row is approved for seeding.
+    # - cron: "29 0,8,16 * * *"
   workflow_dispatch:
     inputs:
       source:
-        description: "Only this registry key (extracurricularhub | sirel | zhaslink). Blank = all."
+        description: "Only this registry key (doqworld | extracurricularhub | sirel | zhaslink). Blank = all."
         required: false
         default: ""
       limit:
         description: "Items per source this run. Blank = WEB_MAX_ITEMS_PER_RUN (40)."
         required: false
         default: ""
+      dry_run:
+        description: "Preview the first 10 items; never write or ingest"
+        required: false
+        default: false
+        type: boolean
       repair:
         description: "Repair rows ingested before the classify/funding fixes: dry_run | apply | off"
         required: false
@@ -57,6 +65,7 @@ jobs:
       # card. Cards are rendered at publish time by drain.yml.
 
       - name: Run database migrations
+        if: inputs.dry_run != true
         # 0006 makes source_channels.telegram_id nullable and adds kind /
         # identifier / cursor. Without it every query below fails on a missing
         # column. batch.yml migrates the same way; whichever runs first wins and
@@ -72,6 +81,7 @@ jobs:
         run: alembic upgrade head
 
       - name: Seed web source rows
+        if: inputs.dry_run != true
         # Idempotent: adds missing rows, reactivates existing ones, never
         # duplicates. Runs every time because there is no other way to execute
         # it — this project has no local run path, so a one-off manual step
@@ -91,7 +101,7 @@ jobs:
         # the daily cron can never touch existing rows. Re-classifies pending
         # web opportunities in place and frees pre-fix rejects for a second
         # look. Never touches anything an admin has approved or published.
-        if: inputs.repair == 'dry_run' || inputs.repair == 'apply'
+        if: inputs.dry_run != true && (inputs.repair == 'dry_run' || inputs.repair == 'apply')
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -125,4 +135,5 @@ jobs:
           ARGS=""
           if [ -n "${{ inputs.source }}" ]; then ARGS="$ARGS --source ${{ inputs.source }}"; fi
           if [ -n "${{ inputs.limit }}" ]; then ARGS="$ARGS --limit ${{ inputs.limit }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
           python -m src.routines.web_collector $ARGS

@@ -1,53 +1,57 @@
 # doq.world: republication permission
 
-> **STATUS: NOT VERIFIED.** The sender and verification fields below are test
-> placeholders. They are not evidence of authorization. Until they are replaced
-> with the real sender identity and evidence, Simurg must not fetch or republish
-> doq.world listings, and the source stays out of `WEB_SOURCES`.
+> **STATUS: APPROVED.** Written permission was supplied on 2026-09-29 for
+> automated collection and republication of doq.world competition listings.
+> Production use is allowed, subject to the scope and conditions below.
 
 ## Record
 
 | Field | Value |
 |---|---|
-| Sender | `@love_doq` (TEST PLACEHOLDER, not verified) |
+| Sender | [jiayichensas@gmail.com](mailto:jiayichensas@gmail.com) |
 | Date | 2026-09-29 |
-| Verification | **Pending.** No evidence attached. Needed: the real Telegram username or email of an identifiable doq.world representative, plus a screenshot or forwardable copy of the message. |
-| Recorded by | Toplion2010, via Claude Code |
+| Decision | Approved |
+| Production use | Allowed |
+| Evidence | Written approval reproduced verbatim below |
 
-## Permission text (as supplied, unverified)
+## Permission text
 
 > Yes, doq.world gives Simurg permission to automatically check our competition
-> listings a few times per day, collect the information from those listings, and
-> republish the competition details in Simurg's Telegram channels. You may link
-> directly to the original organizer or registration pages contained in the
-> listing instead of linking back to the doq.world listing page. Please credit
-> the source with a short 'via doq.world' line in each post. Automated access is
-> allowed as long as it is done at a reasonable low request rate and does not
-> place unnecessary load on our website.
+> listings a few times per day, collect the information contained in those
+> listings, and republish the competition details in Simurg's Telegram
+> channels.
+>
+> Simurg may use relevant organizer and registration links that are explicitly
+> contained within the opportunity text. Simurg does not need to publish or
+> link back to the doq.world listing itself.
+>
+> Automated access is permitted provided requests are made at a reasonable low
+> rate and do not place unnecessary load on doq.world.
 
-## Conditions the source must meet once this is verified
+## Authorized scope
 
-- Check the listings a few times per day at most (every 6–8 hours).
-- Make requests one at a time, at least 3 seconds apart. Cache results and fetch only new or changed listings.
-- Use an official API, feed or structured endpoint if one exists. Otherwise fetch the HTML politely.
-- Build posts only from the competition information in each listing.
-- Link to the organizer or registration URL contained in the listing. Never use the doq.world listing URL as the published destination.
-- End every doq.world post with exactly `via doq.world`.
-- Dedupe against opportunities already collected from other Simurg sources.
-- First run: the first 10 listings only, reviewed before anything is scheduled.
+- Automatically check doq.world competition listings a few times per day.
+- Collect information contained in those listings.
+- Republish the competition details in Simurg's Telegram channels.
+- Publish relevant organizer and registration links only when they are
+  explicitly contained within the opportunity text.
+- Omit links back to the doq.world listing.
+- Run in production.
 
-## Context
+## Conditions
 
-- doq.world's Terms (checked 2026-09-29) prohibit automated extraction and
-  republication without prior written permission. They claim database rights,
-  and they say identifying markers are embedded in the dataset.
-- Its robots.txt (checked 2026-09-29) disallows `ClaudeBot`, `Claude-Web` and
-  `anthropic-ai` site-wide. Only a verified written permission from doq.world
-  would override that for Simurg's collector, and this record is what the
-  source must cite. Verification comes first.
+- Keep requests at a reasonable low rate.
+- Avoid unnecessary load on doq.world.
+- Do not treat the approval as permission to crawl unrelated doq.world content
+  or to publish links that are not explicitly contained in opportunity text.
 
-## To mark this verified
+## Simurg implementation safeguards
 
-Replace the Sender and Verification rows with the real details, attach the
-evidence, change the status banner to VERIFIED with a date, and commit that
-change. That commit is the trigger for building and enabling the source.
+These are conservative implementation choices, not additional terms quoted
+from doq.world:
+
+- Run no more than once every 8 hours.
+- Make requests serially and at least 3 seconds apart.
+- Cache results and fetch only new or changed listings where practical.
+- Never put a doq.world listing URL in a published Telegram post.
+- Begin with a 10-listing, write-free dry run before enabling ingestion.

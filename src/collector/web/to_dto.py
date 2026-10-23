@@ -17,6 +17,7 @@ trade, and the admin queue's Edit flow (src/bot/routers/edit.py) is the
 escape hatch for any individual item worth polishing.
 """
 import re
+from urllib.parse import urlsplit
 
 from src.collector.web.base import WebItem
 from src.collector.web.classify import category_from
@@ -95,6 +96,22 @@ def _audience(item: WebItem) -> str | None:
     return None
 
 
+def _external_to_catalog(url: str | None, page_url: str) -> str | None:
+    """Only an absolute URL on a different host may reach a follower."""
+    if not url:
+        return None
+    try:
+        target = urlsplit(url)
+        catalog = urlsplit(page_url)
+    except ValueError:
+        return None
+    if target.scheme not in {"http", "https"} or not target.netloc:
+        return None
+    if target.hostname == catalog.hostname:
+        return None
+    return url
+
+
 def _description(item: WebItem) -> str:
     """The item's own description when it has a real one, else a factual
     sentence built from the fields. Never marketing, never inferred."""
@@ -169,26 +186,35 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         item.title, 130
     )
 
-    rewards = None
-    if cost and cost.lower() == "free":
+    rewards = item.rewards
+    if rewards is None and cost and cost.lower() == "free":
         rewards = "Free to enter"
-    elif funding_signals:
+    elif rewards is None and funding_signals:
         rewards = f"Financial aid available ({', '.join(funding_signals[:3])})"
 
-    extra_notes = None
+    extra_notes = item.extra_notes
     if funding_signals:
-        extra_notes = (
+        funding_note = (
             "Cost is listed as "
             f"{cost or 'unstated'}, but the official site mentions: "
             f"{', '.join(funding_signals)}. Verify the amount and the deadline "
             "for aid before publishing."
         )
+        extra_notes = " ".join(filter(None, [extra_notes, funding_note]))
 
     # Never the catalog page: a published post links to the opportunity
     # itself, not to the site we found it on. The catalog page stays reachable
-    # for admins as source_url ("Original post" on the queue card), and is
-    # still apply_link when the catalog gives no official link at all.
-    additional_links: list[str] = []
+    # for admins as source_url ("Original post" on the queue card). A missing
+    # official link stays missing rather than being replaced by the catalog.
+    apply_link = _external_to_catalog(item.apply_url, item.page_url)
+    additional_links = list(
+        dict.fromkeys(
+            link
+            for raw_link in item.additional_urls
+            if (link := _external_to_catalog(raw_link, item.page_url))
+            and link != apply_link
+        )
+    )
 
     return OpportunityDTO(
         is_opportunity=True,
@@ -205,7 +231,7 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         organizer=item.organizer,
         duration=item.duration,
         rewards=rewards,
-        apply_link=item.apply_url or item.page_url,
+        apply_link=apply_link,
         description=description,
         rewritten_text=description,
         card_summary=card_summary,
@@ -213,7 +239,7 @@ def build_dto(item: WebItem, funding_signals: list[str] | None = None) -> Opport
         card_rewards=_fit(rewards or cost, 90),
         additional_links=additional_links,
         extra_notes=extra_notes,
-        source_excerpt=_fit(description, 400),
+        source_excerpt=_fit(item.source_excerpt or description, 400),
         min_age=min_age,
         # 0-100, coolness (reachability) + fit — src/core/scoring.py, shared
         # with the Telegram pipeline. relevance_reason names both components

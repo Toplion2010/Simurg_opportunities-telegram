@@ -113,7 +113,10 @@ async def _collect_one(
         user_agent=settings.WEB_USER_AGENT,
         timeout=settings.WEB_REQUEST_TIMEOUT_SECONDS,
         retries=settings.WEB_REQUEST_RETRIES,
-        sleep_seconds=settings.WEB_FETCH_SLEEP_SECONDS,
+        sleep_seconds=max(
+            settings.WEB_FETCH_SLEEP_SECONDS,
+            float(config.get("min_sleep_seconds", 0.0)),
+        ),
     )
     try:
         return await _collect_with(settings, raw_repo, row, key, config, cap, fetcher)

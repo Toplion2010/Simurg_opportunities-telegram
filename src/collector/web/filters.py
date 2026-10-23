@@ -66,7 +66,7 @@ def admits(item, small_fee_usd: float = 50.0) -> tuple[bool, str]:
     misfiring pattern shows up in the run log without a redeploy."""
     text = _haystack(item)
 
-    if item.deadline and _CLOSED_RE.search(item.deadline):
+    if item.raw.get("is_closed") or (item.deadline and _CLOSED_RE.search(item.deadline)):
         return (False, REASON_CLOSED)
 
     if _CITIZENSHIP_RE.search(text):
