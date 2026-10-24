@@ -305,12 +305,6 @@
     "title": "Build Models to Transcribe Handwritten Historical Records",
     "url": "https://zindi.africa/competitions/road-barbados-historic-handwriting-challenge"
   },
-  "build on device llms for laptop hardware|2026-06-16": {
-    "ends_at": "2026-08-24",
-    "first_seen": "2026-08-24",
-    "title": "Build On-Device LLMs for Laptop Hardware",
-    "url": "https://adtc-2026.devpost.com"
-  },
   "build ship shape amazon developer|2026-08-31": {
     "ends_at": "2026-10-23",
     "first_seen": "2026-08-31",
@@ -928,12 +922,6 @@
     "title": "IEEE Hack For Humanity",
     "url": "https://ieee-ai-hack-for-humanity.devpost.com"
   },
-  "impactforge|2026-06-19": {
-    "ends_at": "2026-08-24",
-    "first_seen": "2026-08-23",
-    "title": "ImpactForge",
-    "url": "https://impactforge.devpost.com"
-  },
   "impacthack|2026-10-01": {
     "ends_at": "2026-10-08",
     "first_seen": "2026-10-01",
@@ -969,12 +957,6 @@
     "first_seen": "2026-10-18",
     "title": "HACK INSIGHT",
     "url": "https://hack-insight.devpost.com"
-  },
-  "inspire|2026-08-14": {
-    "ends_at": "2026-08-24",
-    "first_seen": "2026-08-23",
-    "title": "Inspire Hackathon ",
-    "url": "https://inspire-hackathon.devpost.com"
   },
   "international codethecure|2026-10-10": {
     "ends_at": "2026-10-28",
@@ -1174,12 +1156,6 @@
     "title": "Neeley AI Forward: AI Innovation Competition ",
     "url": "https://neeley-ai-forward.devpost.com"
   },
-  "neuralsprint|2026-06-18": {
-    "ends_at": "2026-08-24",
-    "first_seen": "2026-08-23",
-    "title": "NeuralSprint",
-    "url": "https://neuralsprint.devpost.com"
-  },
   "next byte hacks v4|2026-09-05": {
     "ends_at": "2026-09-30",
     "first_seen": "2026-09-05",
@@ -1371,12 +1347,6 @@
     "first_seen": "2026-08-24",
     "title": "Quantitative Physical Reasoning for VLMs",
     "url": "https://quantiphy.stanford.edu/competition/index.html"
-  },
-  "quantumhacks|2026-06-21": {
-    "ends_at": "2026-08-24",
-    "first_seen": "2026-08-22",
-    "title": "QuantumHacks",
-    "url": "https://quantumhacks.devpost.com/"
   },
   "realpde scientific ml for real world physical systems|2026-07-05": {
     "ends_at": "2026-10-25",
@@ -1599,6 +1569,12 @@
     "first_seen": "2026-08-24",
     "title": "The Rice University Urban Sustainability Hackathon",
     "url": "https://rice-urban-sustainability.devpost.com"
+  },
+  "the top 500 uh v2|2026-10-23": {
+    "ends_at": "2026-10-25",
+    "first_seen": "2026-10-24",
+    "title": "The Top 500 (UH v2)",
+    "url": "https://the-top-500-uh-v2.devpost.com"
   },
   "the weather|2026-09-05": {
     "ends_at": "2026-09-09",
