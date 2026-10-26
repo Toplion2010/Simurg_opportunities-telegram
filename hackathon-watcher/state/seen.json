@@ -467,6 +467,12 @@
     "title": "CSH Social Impact Ideathon",
     "url": "https://csh-social-impact-ideathon.devpost.com"
   },
+  "dakar bitcoin by btrust|2026-10-26": {
+    "ends_at": "2026-11-20",
+    "first_seen": "2026-10-26",
+    "title": "Dakar Bitcoin Hack by BTrust",
+    "url": "https://dakar-bitcoin-hack-2026.devpost.com"
+  },
   "databricks queens college|2026-09-18": {
     "ends_at": "2026-09-20",
     "first_seen": "2026-09-18",
@@ -1150,6 +1156,12 @@
     "title": "Neeley AI Forward: AI Innovation Competition ",
     "url": "https://neeley-ai-forward.devpost.com"
   },
+  "nexconn build challenge|2026-10-23": {
+    "ends_at": "2026-12-01",
+    "first_seen": "2026-10-26",
+    "title": "Nexconn Build Challenge 2026",
+    "url": "https://reskilll.com/hack/nexconn"
+  },
   "next byte hacks v4|2026-09-05": {
     "ends_at": "2026-09-30",
     "first_seen": "2026-09-05",
@@ -1221,6 +1233,12 @@
     "first_seen": "2026-09-17",
     "title": "Optimise LLM Operators & Inference Across AI Chips",
     "url": "https://flagos.io/race-detail-season2"
+  },
+  "optimise quantum circuits|2026-10-22": {
+    "ends_at": "2027-01-20",
+    "first_seen": "2026-10-26",
+    "title": "Optimise Quantum Circuits",
+    "url": "https://www.kaggle.com/competitions/google-verifiable-quantum-circuit-compilation"
   },
   "optimize a trading agent on live market data|2026-07-07": {
     "ends_at": "2026-10-15",
