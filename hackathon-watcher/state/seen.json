@@ -5,23 +5,11 @@
     "title": "305 EmpowHER Edition October 2026",
     "url": "https://305empowheroct2026.devpost.com"
   },
-  "305 hackfiesta miami edition august|2026-08-26": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-27",
-    "title": "305 HackFiesta Miami Edition August 2026",
-    "url": "https://305hackfiestamiamiaug2026.devpost.com"
-  },
   "305 hackshells edition september|2026-09-15": {
     "ends_at": "2026-09-30",
     "first_seen": "2026-09-15",
     "title": "305 HackShells Edition September 2026",
     "url": "https://305hackshellssep2026.devpost.com"
-  },
-  "3d websites|2026-06-22": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-23",
-    "title": "3D Websites Hackathon",
-    "url": "https://3d-websites-hackathon.devpost.com"
   },
   "3rd web|2026-08-22": {
     "ends_at": "2026-09-27",
@@ -131,12 +119,6 @@
     "title": "ALGOTHON'26",
     "url": "https://algothon.devfolio.co"
   },
-  "all things agentic|2026-08-04": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-23",
-    "title": "All Things Agentic Hackathon",
-    "url": "https://allthingsagentichackathon.devpost.com"
-  },
   "all you can do with ai|2026-10-07": {
     "ends_at": "2026-10-12",
     "first_seen": "2026-10-07",
@@ -233,12 +215,6 @@
     "title": "Hack Atlantic",
     "url": "https://hack-atlantic1.devpost.com"
   },
-  "automated speech recognition under diverse speech patterns|2025-12-03": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-24",
-    "title": "Automated Speech Recognition Under Diverse Speech Patterns",
-    "url": "https://xiuwenz2.github.io/SAPC2-website"
-  },
   "avalon openhack|2026-09-12": {
     "ends_at": "2026-09-20",
     "first_seen": "2026-09-03",
@@ -310,18 +286,6 @@
     "first_seen": "2026-08-23",
     "title": "Build Speech Recognition Systems for Caribbean Voices",
     "url": "https://zindi.africa/competitions/caribbean-voices-hackathon"
-  },
-  "build useful end to end differentiable systems|2026-08-03": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-24",
-    "title": "Build Useful End-to-End Differentiable Systems",
-    "url": "https://pasteurlabs.ai/tesseract-hackathon-2026"
-  },
-  "build vision ai online|2026-08-31": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-23",
-    "title": "Build Vision AI- Online",
-    "url": "https://allhackathons.com/hackathon/build-vision-ai-online"
   },
   "build with ai basics|2026-09-22": {
     "ends_at": "2026-10-26",
@@ -430,12 +394,6 @@
     "first_seen": "2026-09-25",
     "title": "CodeSprint by Elite Coders",
     "url": "https://codesprint-by-elitecoders.devpost.com"
-  },
-  "codestorm futureforge|2026-07-31": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-23",
-    "title": "CodeStorm 2026: FutureForge",
-    "url": "https://codestorm-futureforge.devfolio.co"
   },
   "codex x twitchcon|2026-10-23": {
     "ends_at": "2026-11-02",
@@ -819,12 +777,6 @@
     "first_seen": "2026-09-30",
     "title": "hackodisha-6.0",
     "url": "https://hackodisha-6a.devfolio.co"
-  },
-  "hacksocial|2026-08-01": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-23",
-    "title": "Hacksocial 2026",
-    "url": "https://hacksocial2026.devpost.com"
   },
   "hackwithaditya|2026-10-16": {
     "ends_at": "2026-11-25",
@@ -1390,6 +1342,12 @@
     "title": "RealPDE: Scientific ML for Real-World Physical Systems",
     "url": "https://realpdecompetition.github.io"
   },
+  "remote control ai|2026-10-31": {
+    "ends_at": "2026-11-05",
+    "first_seen": "2026-10-31",
+    "title": "Remote Control AI",
+    "url": "https://remote-control-ai.devpost.com"
+  },
   "research norwegian companies with an ai agent|None": {
     "ends_at": "2026-10-21",
     "first_seen": "2026-10-15",
@@ -1498,6 +1456,12 @@
     "title": "STEM2Connect AI Hackathon",
     "url": "https://stem2connect-online-hackathon.devpost.com"
   },
+  "stemergent hacks|2026-10-31": {
+    "ends_at": "2026-11-15",
+    "first_seen": "2026-10-31",
+    "title": "STEMergent Hacks 2026",
+    "url": "https://stemergent-hacks.devpost.com"
+  },
   "steminate wildcard|2026-09-12": {
     "ends_at": "2026-09-19",
     "first_seen": "2026-09-12",
@@ -1575,12 +1539,6 @@
     "first_seen": "2026-08-23",
     "title": "The Great Agent Hackathon",
     "url": "https://the-great-agent-hackathon.devfolio.co"
-  },
-  "the habitat|2026-08-07": {
-    "ends_at": "2026-08-31",
-    "first_seen": "2026-08-23",
-    "title": "Hack the Habitat",
-    "url": "https://hack-the-habitat-2026.devpost.com"
   },
   "the harry houdini centennial game jam|2026-10-29": {
     "ends_at": "2026-11-02",
