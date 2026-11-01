@@ -11,6 +11,12 @@
     "title": "305 HackShells Edition September 2026",
     "url": "https://305hackshellssep2026.devpost.com"
   },
+  "305 veterans edition november 305hackathons vercel app|2026-11-01": {
+    "ends_at": "2026-11-30",
+    "first_seen": "2026-11-01",
+    "title": "305 Veterans Hackathon Edition November 2026 — 305Hackathons.vercel.app",
+    "url": "https://305veteransnov2026.devpost.com"
+  },
   "3rd web|2026-08-22": {
     "ends_at": "2026-09-27",
     "first_seen": "2026-08-23",
@@ -46,6 +52,12 @@
     "first_seen": "2026-08-23",
     "title": "Agentic Cinema: The Blockbuster Hackathon",
     "url": "https://agentic-cinema.devpost.com"
+  },
+  "agentic|2026-11-01": {
+    "ends_at": "2026-11-10",
+    "first_seen": "2026-11-01",
+    "title": "Agentic Hackathon",
+    "url": "https://agentic-hackathon.devpost.com"
   },
   "agents for humans|2026-08-10": {
     "ends_at": "2026-09-14",
@@ -100,12 +112,6 @@
     "first_seen": "2026-09-22",
     "title": "AI Lodge Hackathon 2026",
     "url": "https://ai-lodge-hackathon-2026.devpost.com"
-  },
-  "ai yes international youth ai competition|2026-06-17": {
-    "ends_at": "2026-09-01",
-    "first_seen": "2026-08-23",
-    "title": "AI YES :International Youth AI Competition",
-    "url": "https://ai-yes-competition-30441.devpost.com/"
   },
   "aic internal competition agentic ai|2026-09-30": {
     "ends_at": "2026-10-12",
@@ -622,12 +628,6 @@
     "title": "Financial Cybersecurity Challenge 2026",
     "url": "https://finance-cybersecurity2026.devpost.com"
   },
-  "find multi step ai agent attack paths|2026-06-11": {
-    "ends_at": "2026-09-01",
-    "first_seen": "2026-08-23",
-    "title": "Find Multi-step AI Agent Attack Paths",
-    "url": "https://www.kaggle.com/competitions/ai-agent-security-multi-step-tool-attacks"
-  },
   "five nights with ai|2026-10-24": {
     "ends_at": "2026-10-24",
     "first_seen": "2026-10-24",
@@ -723,6 +723,12 @@
     "first_seen": "2026-08-24",
     "title": "Generative Modeling of Mouse Embryo Development",
     "url": "https://virtualembryo.ai/challenge"
+  },
+  "genhacks|2026-11-01": {
+    "ends_at": "2026-12-26",
+    "first_seen": "2026-11-01",
+    "title": "GenHacks",
+    "url": "https://genhacks-open.devpost.com"
   },
   "girls who code hhs|2026-10-15": {
     "ends_at": "2026-10-29",
@@ -1258,6 +1264,12 @@
     "title": "Optimize a Trading Agent on Live Market Data",
     "url": "https://www.builderr.ai/trading-v0"
   },
+  "ostad presents yunet aignite buildathon|2026-11-01": {
+    "ends_at": "2026-11-05",
+    "first_seen": "2026-11-01",
+    "title": "Ostad Presents YUNet AIgnite Buildathon 2026",
+    "url": "https://yunet-aignite26.devpost.com"
+  },
   "paypal ai|2026-10-01": {
     "ends_at": "2026-11-12",
     "first_seen": "2026-10-01",
@@ -1408,11 +1420,11 @@
     "title": "SASEhack 2026",
     "url": "https://sasehack-2026.devpost.com"
   },
-  "segment lesions in whole body scans|2026-04-01": {
-    "ends_at": "2026-09-01",
-    "first_seen": "2026-08-24",
-    "title": "Segment Lesions in Whole-Body Scans",
-    "url": "https://autopet-v.grand-challenge.org"
+  "scope ai thon ai for detection of acute patient deterioration|2026-11-01": {
+    "ends_at": "2026-11-14",
+    "first_seen": "2026-11-01",
+    "title": "Scope-AI-Thon 2026 - AI for Detection of Acute Patient Deterioration",
+    "url": "https://scope-ai-thon-2026.devpost.com"
   },
   "sephacks|2026-10-16": {
     "ends_at": "2026-10-17",
@@ -1587,12 +1599,6 @@
     "first_seen": "2026-08-25",
     "title": "The WebMCP Challenge",
     "url": "https://webmcp.devpost.com"
-  },
-  "tiktok techjam|2026-08-29": {
-    "ends_at": "2026-09-01",
-    "first_seen": "2026-08-29",
-    "title": "TikTok TechJam 2026",
-    "url": "https://tiktoktechjam2026.devpost.com"
   },
   "tln|2026-09-19": {
     "ends_at": "2026-09-20",
