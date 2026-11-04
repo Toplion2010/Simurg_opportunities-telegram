@@ -70,4 +70,15 @@ jobs:
           fi
           git add hackathon-watcher/state/seen.json
           git commit -m "hackathon-watcher: update seen.json [skip ci]"
-          git push
+          # Posts have already gone out by now, so a transient push failure must
+          # not lose the state: retry, rebasing in case main moved meanwhile.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "push failed (attempt $attempt of 5), retrying"
+            sleep $((attempt * 15))
+            git pull --rebase origin "$GITHUB_REF_NAME" || git rebase --abort || true
+          done
+          echo "::error::could not push seen.json after 5 attempts"
+          exit 1
