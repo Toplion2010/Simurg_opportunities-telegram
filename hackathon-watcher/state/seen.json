@@ -101,6 +101,12 @@
     "title": "AI Content Engine Hackathon",
     "url": "https://ai-content-engine-hacks.devpost.com"
   },
+  "ai for medicine a global student on the future of care|2026-11-04": {
+    "ends_at": "2026-12-04",
+    "first_seen": "2026-11-05",
+    "title": "AI for Medicine: A Global Student Hackathon on the Future of Care",
+    "url": "https://ai-for-medicine.devpost.com"
+  },
   "ai kenya|2026-10-16": {
     "ends_at": "2026-10-17",
     "first_seen": "2026-10-16",
@@ -352,12 +358,6 @@
     "first_seen": "2026-10-13",
     "title": "Child Safety in AI",
     "url": "https://child-safety-in-ai.devpost.com"
-  },
-  "classify and segment intracranial aneurysms|None": {
-    "ends_at": "2026-09-05",
-    "first_seen": "2026-08-24",
-    "title": "Classify and Segment Intracranial Aneurysms",
-    "url": "https://topaneu-26.grand-challenge.org"
   },
   "classify dat scans for parkinson s detection|2026-07-23": {
     "ends_at": "2026-09-16",
@@ -1168,12 +1168,6 @@
     "title": "Mozilla Otari Hackathon - Devs Wilding Online!",
     "url": "https://dorahacks.io/hackathon/mozilla-devs-wilding/detail"
   },
-  "muba blockchain|2026-08-26": {
-    "ends_at": "2026-09-05",
-    "first_seen": "2026-08-23",
-    "title": "MUBA Blockchain Hackathon",
-    "url": "https://muba-hackathon.devfolio.co"
-  },
   "multimodal ai|2026-09-29": {
     "ends_at": "2026-10-14",
     "first_seen": "2026-09-29",
@@ -1318,6 +1312,12 @@
     "title": "PayPal AI Hackathon",
     "url": "https://paypalaihackathon.devpost.com"
   },
+  "phystech physical activity and technology day|2026-11-04": {
+    "ends_at": "2027-06-26",
+    "first_seen": "2026-11-05",
+    "title": "PhysTech 2027: Physical Activity and Technology Hack Day",
+    "url": "https://phystech2027.devpost.com"
+  },
   "pixel forge mega jam|2026-11-28": {
     "ends_at": "2026-12-08",
     "first_seen": "2026-09-21",
@@ -1377,12 +1377,6 @@
     "first_seen": "2026-08-30",
     "title": "Prometheus September AI Challenge (Hybrid)",
     "url": "https://prometheus-aug-ml-hackathon.devpost.com"
-  },
-  "prometheus september ai challenge|2026-08-19": {
-    "ends_at": "2026-09-05",
-    "first_seen": "2026-08-23",
-    "title": "Prometheus September AI Challenge",
-    "url": "https://prometheus-sept-ai-classic.devpost.com"
   },
   "pumpkin playground|2026-10-12": {
     "ends_at": "2026-10-23",
@@ -1570,12 +1564,6 @@
     "title": "Syntax Error 2026",
     "url": "https://syntax-error-6.devfolio.co"
   },
-  "syntax summit|2026-07-18": {
-    "ends_at": "2026-09-05",
-    "first_seen": "2026-08-23",
-    "title": "Syntax Summit",
-    "url": "https://syntax-summit.devpost.com"
-  },
   "taskforge|2026-10-17": {
     "ends_at": "2026-10-24",
     "first_seen": "2026-10-18",
@@ -1713,12 +1701,6 @@
     "first_seen": "2026-09-28",
     "title": "Verifiable AI Agents for Quantitative Finance",
     "url": "https://www.agenthon.net"
-  },
-  "volthacks|2026-05-22": {
-    "ends_at": "2026-09-05",
-    "first_seen": "2026-08-24",
-    "title": "VoltHacks",
-    "url": "https://volthacks.devpost.com"
   },
   "warriorhacks 2 0|2026-09-28": {
     "ends_at": "2026-10-14",
