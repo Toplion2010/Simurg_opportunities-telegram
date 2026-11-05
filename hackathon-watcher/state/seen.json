@@ -41,6 +41,12 @@
     "title": "Acodemic X G.I.R.L.S. Global SDG Hackathon",
     "url": "https://acodemic-hackathon.devpost.com"
   },
+  "aevum builder challenge 1|2026-11-16": {
+    "ends_at": "2026-12-11",
+    "first_seen": "2026-11-05",
+    "title": "Aevum Builder Challenge #1",
+    "url": "https://dorahacks.io/hackathon/qday/detail"
+  },
   "affinda ai innovation challenge|2026-10-05": {
     "ends_at": "2026-10-08",
     "first_seen": "2026-10-05",
@@ -370,6 +376,12 @@
     "first_seen": "2026-08-24",
     "title": "Classify DaT Scans for Parkinson's Detection",
     "url": "https://www.drivendata.org/competitions/311/dat-parkinsons-challenge"
+  },
+  "clocked build challenge online ai|2026-10-21": {
+    "ends_at": "2026-11-10",
+    "first_seen": "2026-11-05",
+    "title": "Clocked Build Challenge: Online AI Hackathon",
+    "url": "https://allhackathons.com/hackathon/clocked-build-challenge-online-ai-hackathon"
   },
   "code con|2026-10-28": {
     "ends_at": "2026-10-30",
@@ -922,6 +934,12 @@
     "title": "IBM Bob 2.0 hackathon",
     "url": "https://lablab.ai/ai-hackathons/ibm-bob-2-hackathon"
   },
+  "ibm db2hack|2026-11-05": {
+    "ends_at": "2026-11-10",
+    "first_seen": "2026-11-05",
+    "title": "IBM Db2Hack 2026",
+    "url": "https://ibm-db2hack-2026.devpost.com"
+  },
   "ibm dev day bob in action|2026-08-27": {
     "ends_at": null,
     "first_seen": "2026-08-23",
@@ -1425,6 +1443,12 @@
     "first_seen": "2026-08-24",
     "title": "Quantitative Physical Reasoning for VLMs",
     "url": "https://quantiphy.stanford.edu/competition/index.html"
+  },
+  "reactive omni buildathon|2026-11-05": {
+    "ends_at": "2026-12-05",
+    "first_seen": "2026-11-05",
+    "title": "Reactive Omni Buildathon",
+    "url": "https://dorahacks.io/hackathon/reactive-omni-buildathon/detail"
   },
   "realpde scientific ml for real world physical systems|2026-07-05": {
     "ends_at": "2026-10-25",
