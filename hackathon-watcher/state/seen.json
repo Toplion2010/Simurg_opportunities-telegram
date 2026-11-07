@@ -545,12 +545,6 @@
     "title": "Detect Knee Abnormalities in Multimodal Imaging Data",
     "url": "https://www.kaggle.com/competitions/rsna-knee-abnormality-detection"
   },
-  "detect rare early stage cancers in endoscopy|2026-05-01": {
-    "ends_at": "2026-09-07",
-    "first_seen": "2026-08-24",
-    "title": "Detect Rare Early-Stage Cancers in Endoscopy",
-    "url": "https://rare26.grand-challenge.org"
-  },
   "detect root misconceptions in k 12 math solutions|2026-10-07": {
     "ends_at": "2026-11-17",
     "first_seen": "2026-10-08",
@@ -1030,6 +1024,12 @@
     "title": "HACK INSIGHT",
     "url": "https://hack-insight.devpost.com"
   },
+  "intermountain quantum competition|2026-11-06": {
+    "ends_at": "2026-11-07",
+    "first_seen": "2026-11-07",
+    "title": "Intermountain Quantum Competition",
+    "url": "https://iqc.devpost.com"
+  },
   "international codethecure|2026-10-10": {
     "ends_at": "2026-10-28",
     "first_seen": "2026-10-10",
@@ -1455,6 +1455,12 @@
     "first_seen": "2026-08-24",
     "title": "Quantitative Physical Reasoning for VLMs",
     "url": "https://quantiphy.stanford.edu/competition/index.html"
+  },
+  "qux design a thon|2026-11-06": {
+    "ends_at": "2026-11-08",
+    "first_seen": "2026-11-07",
+    "title": "QUX Design-a-thon 2026!",
+    "url": "https://qux-design-a-thon-2026.devpost.com"
   },
   "reactive omni buildathon|2026-11-05": {
     "ends_at": "2026-12-05",
