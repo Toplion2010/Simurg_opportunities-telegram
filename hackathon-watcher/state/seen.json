@@ -491,6 +491,12 @@
     "title": "Databricks Hackathon @ Queens College 2026",
     "url": "https://databricks-hackathon-2026.devpost.com"
   },
+  "datajam|2026-11-09": {
+    "ends_at": "2026-11-15",
+    "first_seen": "2026-11-09",
+    "title": "DataJam 2026",
+    "url": "https://datajam-2026.devpost.com"
+  },
   "datanova global data thon|2026-10-26": {
     "ends_at": "2026-11-10",
     "first_seen": "2026-10-26",
@@ -939,6 +945,12 @@
     "first_seen": "2026-08-28",
     "title": "IBM Z Day 2026",
     "url": "https://www.hackathon.com/event/ibm-z-day-2026-6a90a131d4372f7cdf912da6"
+  },
+  "icehacks|2026-11-08": {
+    "ends_at": "2026-11-15",
+    "first_seen": "2026-11-09",
+    "title": "IceHacks",
+    "url": "https://icehacks.devpost.com"
   },
   "identify which llm generated text samples|2026-10-14": {
     "ends_at": "2027-01-13",
@@ -1539,6 +1551,12 @@
     "first_seen": "2026-09-11",
     "title": "Shared OS Hackathon",
     "url": "https://shared-os-hackathon.devpost.com"
+  },
+  "silicon valley buildathon|2026-11-08": {
+    "ends_at": "2026-12-15",
+    "first_seen": "2026-11-09",
+    "title": "Silicon Valley Buildathon",
+    "url": "https://silicon-valley-buildathon.devpost.com"
   },
   "sim2real bimanual robot manipulation|2026-07-13": {
     "ends_at": "2026-10-11",
