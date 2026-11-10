@@ -449,6 +449,12 @@
     "title": "Craftable 3D Website Challenge",
     "url": "https://allhackathons.com/hackathon/craftable-3d-website-challenge"
   },
+  "crc hacks|2026-11-09": {
+    "ends_at": "2026-11-17",
+    "first_seen": "2026-11-10",
+    "title": "CRC Hacks ",
+    "url": "https://crc-student-hackathon.devpost.com"
+  },
   "creator colosseum the startup showdown|2026-09-20": {
     "ends_at": "2026-10-10",
     "first_seen": "2026-09-20",
@@ -807,12 +813,6 @@
     "first_seen": "2026-11-09",
     "title": "GWC Projects Program Fall 2026",
     "url": "https://projects-program-fall-2026.devpost.com"
-  },
-  "hack2heal 2 0 global healthcare innovation|2026-08-25": {
-    "ends_at": "2026-09-10",
-    "first_seen": "2026-08-25",
-    "title": "Hack2Heal 2.0 - Global Healthcare Innovation Hackathon",
-    "url": "https://hack2heal.devpost.com"
   },
   "hack47 offgrid|2026-09-15": {
     "ends_at": "2026-10-15",
@@ -1359,6 +1359,12 @@
     "first_seen": "2026-10-01",
     "title": "PayPal AI Hackathon",
     "url": "https://paypalaihackathon.devpost.com"
+  },
+  "peninsula innovation|2026-11-10": {
+    "ends_at": "2026-12-10",
+    "first_seen": "2026-11-10",
+    "title": "Peninsula Innovation Hackathon",
+    "url": "https://peninsula-innovation-hackathon.devpost.com"
   },
   "phyrc robot assisted dressing in simulation|2026-10-15": {
     "ends_at": "2026-12-15",
