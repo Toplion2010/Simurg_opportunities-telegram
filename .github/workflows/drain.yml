@@ -42,7 +42,25 @@ jobs:
           pip install -e .
 
       - name: Install Chromium for card rendering
-        run: playwright install --with-deps chromium
+        # --with-deps pulls fonts via apt, which fails outright when the
+        # runner's DNS to the Ubuntu mirrors blips (seen 2026-11-11). Retry a
+        # few times with a backoff, refreshing apt's index between attempts.
+        # A healthy install takes ~25s, but a DNS outage makes apt hang ~10min,
+        # so cap each attempt at 3min to fit all three inside the step timeout.
+        timeout-minutes: 12
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 180 playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "::warning::Chromium install attempt $attempt failed"
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+              sudo apt-get update || true
+            fi
+          done
+          echo "::error::Chromium install failed after 3 attempts"
+          exit 1
 
       - name: Drain and publish
         env:
