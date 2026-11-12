@@ -34,6 +34,12 @@ _TAXONOMY_TO_CATEGORY: dict[str, Category] = {
     # and are left to the title rules below.
     "olympiad": Category.Olympiad,
     "hackathon": Category.Hackathon,
+    # Jasa's `opportunity_type`, translated to English in sources/jasa.py.
+    "grant": Category.Grant,
+    "accelerator": Category.Accelerator,
+    "incubator": Category.Incubator,
+    "startup": Category.Startup,
+    "job": Category.Job,
     # "Club" and "Program" are real SIREL terms with no Category equivalent.
     # Mapped to the closest honest bucket rather than left Unknown.
     "club": Category.Volunteer,
