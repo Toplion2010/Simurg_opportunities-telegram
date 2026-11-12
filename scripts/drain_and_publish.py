@@ -22,12 +22,39 @@ from src.core.telethon_client import (
 )
 from src.db.base import create_engine
 from src.db.session import create_session_factory
+from src.processor.manual import process_manual_posts
 from src.publisher.reminders import publish_reminders
-from src.publisher.scheduler import publish_scheduled
+from src.publisher.scheduler import PublishNotStartedError, publish_scheduled
 from src.publisher.story import publish_stories
 from src.routines.batch_processor import _drain_admin_updates
 
 logger = get_logger(__name__)
+
+# Seconds to wait before each retry of publish_scheduled() after the database
+# dropped the connection before anything was sent. Neon takes a few seconds to
+# come back after a restart, so retrying immediately would just fail again.
+PUBLISH_RETRY_DELAYS = (5, 15)
+
+
+async def publish_with_retry(publish, delays=PUBLISH_RETRY_DELAYS) -> None:
+    """Run ``publish`` (a no-arg coroutine function wrapping publish_scheduled),
+    retrying only on PublishNotStartedError -- the one failure that is known
+    to have happened before any post went out. Any other error, or running
+    out of retries, propagates so the job still fails loudly."""
+    for attempt, delay in enumerate((*delays, None), start=1):
+        try:
+            await publish()
+            return
+        except PublishNotStartedError as e:
+            if delay is None:
+                raise
+            logger.warning(
+                "publish_db_connection_lost_retrying",
+                attempt=attempt,
+                retry_in_s=delay,
+                error=str(e),
+            )
+            await asyncio.sleep(delay)
 
 
 async def run() -> None:
@@ -55,8 +82,17 @@ async def run() -> None:
         logger.info("draining_admin_updates")
         await _drain_admin_updates(settings, session_factory, bot)
 
+        try:
+            await process_manual_posts(settings, session_factory, bot)
+        except Exception:
+            logger.exception("process_manual_posts_failed")
+
         logger.info("publishing_due")
-        await publish_scheduled(settings, session_factory, bot, telethon_clients=telethon_clients)
+        await publish_with_retry(
+            lambda: publish_scheduled(
+                settings, session_factory, bot, telethon_clients=telethon_clients
+            )
+        )
 
         try:
             await publish_stories(settings, session_factory, bot, client=primary)

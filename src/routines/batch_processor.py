@@ -27,6 +27,7 @@ from src.core.notify import notify_admins
 from src.core.telethon_client import connect_second_reaction_client
 from src.db.base import create_engine
 from src.db.session import create_session_factory
+from src.processor.manual import process_manual_posts
 from src.processor.worker import build_pipeline, process_payloads
 from src.publisher.reminders import publish_reminders
 from src.publisher.scheduler import publish_scheduled
@@ -116,6 +117,14 @@ async def run() -> int:
             logger.info("drain_skipped", reason="SIMURG_SKIP_DRAIN")
         else:
             await _drain_admin_updates(settings, session_factory, bot)
+
+        # --- 3b: the admin's own posts, queued via the bot -------------------
+        # Outside the skip-drain branch: the queue is in the DB, not in
+        # getUpdates, so both workflows can safely work it.
+        try:
+            await process_manual_posts(settings, session_factory, bot)
+        except Exception:
+            logger.exception("process_manual_posts_failed")
 
         # --- 4: publish whatever is approved and due -------------------------
         telethon_clients = [c for c in (client, second_client) if c is not None]
