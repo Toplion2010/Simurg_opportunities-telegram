@@ -46,7 +46,7 @@ def test_defaults_match_the_agreed_rules():
     assert d["DAILY_PICK_MIN_SCORE"] == 60
     assert d["AUTO_STORY_PRIZE_USD"] == 5000
     assert d["REMINDER_MIN_SCORE"] == 70
-    assert d["REMINDER_DAYS_BEFORE"] == 14
+    assert d["REMINDER_DAYS_BEFORE"] == 5
 
 
 # --- prize parsing ------------------------------------------------------------
