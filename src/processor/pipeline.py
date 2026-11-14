@@ -45,6 +45,7 @@ class ProcessingPipeline:
         source_channel: SourceChannel | None = None,
         dtos: list[OpportunityDTO] | None = None,
         source_url: str | None = None,
+        manual: bool = False,
     ) -> list[Opportunity]:
         """Turn one raw item into Opportunity rows.
 
@@ -59,6 +60,13 @@ class ProcessingPipeline:
 
         ``source_url`` overrides the t.me permalink for sources that have their
         own canonical page.
+
+        ``manual`` marks a post the admin wrote and explicitly sent for
+        publishing (src/bot/routers/manual_post.py). The admin already decided
+        it belongs in the channel, so the filters that exist to throw away
+        collected noise -- "not an opportunity", the Job drop, audience 'none'
+        and dedup -- are skipped. The age gate still applies: it protects the
+        school channel, not the admin's judgement.
         """
         if dtos is None and not raw.text:
             return []
@@ -96,7 +104,7 @@ class ProcessingPipeline:
                 extraction_input = raw.text or ""
 
             for dto in dtos:
-                if not dto.is_opportunity:
+                if not dto.is_opportunity and not manual:
                     logger.info("not_an_opportunity_skipped", raw_id=raw.id)
                     continue
 
@@ -104,7 +112,7 @@ class ProcessingPipeline:
 
                 # Regular job vacancies (not student internships) are out of scope for
                 # this students' channel — drop them before a row is ever created.
-                if dto.category == Category.Job:
+                if dto.category == Category.Job and not manual:
                     logger.info("job_skipped", raw_id=raw.id, title=dto.title)
                     continue
 
@@ -126,6 +134,8 @@ class ProcessingPipeline:
                 # null/invalid -> both. No keyword guessing: "students" alone is too
                 # ambiguous (school vs university) to classify by keyword.
                 audience = dto.audience or RawAudience.both
+                if audience == RawAudience.none and manual:
+                    audience = RawAudience.both
                 if audience == RawAudience.none:
                     logger.info("audience_none_skipped", raw_id=raw.id)
                     continue
@@ -158,7 +168,7 @@ class ProcessingPipeline:
                     audience = RawAudience.university
 
                 hash_key = self._deduplicator.make_hash(dto)
-                if await self._deduplicator.check(dto, self._opp_repo):
+                if not manual and await self._deduplicator.check(dto, self._opp_repo):
                     # Logged because this `continue` is the ONLY place
                     # cross-source overlap is observable. Without it there is no
                     # way to answer "what does a new source actually add that

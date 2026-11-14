@@ -8,6 +8,7 @@ from telethon import TelegramClient
 from src.core.config import Settings
 from src.core.enums import OpportunityStatus
 from src.core.logging import get_logger
+from src.db.base import is_connection_lost
 from src.db.repositories.opportunity import OpportunityRepository
 from src.publisher.deadlines import deadline_sort_key, is_expired
 from src.publisher.sender import OpportunitySender
@@ -46,6 +47,87 @@ def partition_by_deadline(
     return live, expired
 
 
+def split_manual(opportunities: list) -> tuple[list, list]:
+    """Split into (admin's own posts, everything else), order preserved."""
+    manual, rest = [], []
+    for opp in opportunities:
+        raw = getattr(opp, "raw_message", None)
+        external_id = (raw.external_id if raw is not None else None) or ""
+        (manual if external_id.startswith("manual:") else rest).append(opp)
+    return manual, rest
+
+
+class PublishNotStartedError(Exception):
+    """The database connection dropped while choosing what to publish, before
+    anything was sent to Telegram -- so running publish_scheduled() again
+    cannot post anything twice. Only this phase is retry-safe: once a send has
+    happened, a dropped connection can lose the commit that marks the row
+    published, and a retry would post it again."""
+
+
+async def _select_batch(
+    settings: Settings,
+    session: AsyncSession,
+    repo: OpportunityRepository,
+    now: datetime,
+) -> list:
+    """Everything publish_scheduled() does before its first send: load what's
+    due, retire expired rows, apply the daily cap. Returns the rows to send,
+    in order. Re-running it is harmless -- the only write (rejecting expired
+    rows) is idempotent."""
+    due = await repo.get_due_for_publish(now)
+
+    # Log the empty case too. Without it, "nobody approved anything" and
+    # "every publish blew up" produce identical (silent) logs, which is what
+    # made this failure invisible for days.
+    logger.info("publishing_due_opportunities", count=len(due))
+    if not due:
+        return []
+
+    # Retire anything whose deadline has already passed and re-order the
+    # rest soonest-deadline-first, BEFORE the cap trims the list -- a cap
+    # applied to approval order is what let a closed opportunity take one
+    # of the day's slots. Expired rows are marked rejected so they leave
+    # the approved pool instead of being re-examined every run.
+    due, expired = partition_by_deadline(due, now.date())
+    if expired:
+        logger.info(
+            "expired_deadline_rejected",
+            count=len(expired),
+            ids=[o.id for o in expired],
+        )
+        for opp in expired:
+            opp.status = OpportunityStatus.rejected
+        await session.commit()
+    if not due:
+        return []
+
+    # DAILY_PUBLISH_CAP bounds actual channel posts per day regardless of
+    # WHEN a row was approved -- daily_digest.py's auto-approvals and a
+    # human tap from days ago both flow through this same due-for-publish
+    # list, so the cap has to live here, not in the digest step, to be a
+    # true ceiling. Anything trimmed simply stays 'approved' for a later
+    # run to pick up.
+    #
+    # The admin's own posts (src/processor/manual.py) are exempt and go
+    # first: the cap rations collected content, and someone who just
+    # pressed "Publish" expects to see the post, not wait for tomorrow.
+    manual, due = split_manual(due)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    already_published = await repo.count_published_since(start_of_day)
+    remaining_cap = remaining_publish_cap(settings.DAILY_PUBLISH_CAP, already_published)
+    if len(due) > remaining_cap:
+        logger.info(
+            "daily_publish_cap_trimmed",
+            due=len(due),
+            already_published=already_published,
+            cap=settings.DAILY_PUBLISH_CAP,
+            kept=remaining_cap,
+        )
+        due = due[:remaining_cap]
+    return manual + due
+
+
 async def publish_scheduled(
     settings: Settings,
     session_factory: async_sessionmaker[AsyncSession],
@@ -62,51 +144,12 @@ async def publish_scheduled(
 
     async with session_factory() as session:
         repo = OpportunityRepository(session)
-        due = await repo.get_due_for_publish(now)
-
-        # Log the empty case too. Without it, "nobody approved anything" and
-        # "every publish blew up" produce identical (silent) logs, which is what
-        # made this failure invisible for days.
-        logger.info("publishing_due_opportunities", count=len(due))
-        if not due:
-            return
-
-        # Retire anything whose deadline has already passed and re-order the
-        # rest soonest-deadline-first, BEFORE the cap trims the list -- a cap
-        # applied to approval order is what let a closed opportunity take one
-        # of the day's slots. Expired rows are marked rejected so they leave
-        # the approved pool instead of being re-examined every run.
-        due, expired = partition_by_deadline(due, now.date())
-        if expired:
-            logger.info(
-                "expired_deadline_rejected",
-                count=len(expired),
-                ids=[o.id for o in expired],
-            )
-            for opp in expired:
-                opp.status = OpportunityStatus.rejected
-            await session.commit()
-        if not due:
-            return
-
-        # DAILY_PUBLISH_CAP bounds actual channel posts per day regardless of
-        # WHEN a row was approved -- daily_digest.py's auto-approvals and a
-        # human tap from days ago both flow through this same due-for-publish
-        # list, so the cap has to live here, not in the digest step, to be a
-        # true ceiling. Anything trimmed simply stays 'approved' for a later
-        # run to pick up.
-        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        already_published = await repo.count_published_since(start_of_day)
-        remaining_cap = remaining_publish_cap(settings.DAILY_PUBLISH_CAP, already_published)
-        if len(due) > remaining_cap:
-            logger.info(
-                "daily_publish_cap_trimmed",
-                due=len(due),
-                already_published=already_published,
-                cap=settings.DAILY_PUBLISH_CAP,
-                kept=remaining_cap,
-            )
-            due = due[:remaining_cap]
+        try:
+            due = await _select_batch(settings, session, repo, now)
+        except Exception as e:
+            if is_connection_lost(e):
+                raise PublishNotStartedError(str(e)) from e
+            raise
         if not due:
             return
 
