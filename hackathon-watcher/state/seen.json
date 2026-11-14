@@ -59,12 +59,6 @@
     "title": "Agentic Hackathon",
     "url": "https://agentic-hackathon.devpost.com"
   },
-  "agents for humans|2026-08-10": {
-    "ends_at": "2026-09-14",
-    "first_seen": "2026-08-23",
-    "title": "Agents for Humans Hackathon",
-    "url": "https://agentsforhumans.devpost.com"
-  },
   "agéntico softwarechido 2026b|2026-10-05": {
     "ends_at": "2026-11-25",
     "first_seen": "2026-10-06",
@@ -352,12 +346,6 @@
     "first_seen": "2026-08-23",
     "title": "BunnieX Hackathon",
     "url": "https://buuniex-hackathon.devpost.com"
-  },
-  "call e your code is calling|2026-07-23": {
-    "ends_at": "2026-09-14",
-    "first_seen": "2026-08-23",
-    "title": "CALL-E: Your Code Is Calling",
-    "url": "https://call-e.devpost.com"
   },
   "chain jam vol 1|2026-08-27": {
     "ends_at": null,
@@ -922,12 +910,6 @@
     "title": "Hyperbloom October- UI/UX and Web Design",
     "url": "https://hyperbloom-october.devpost.com"
   },
-  "hyperbloom september ai ml|2026-08-25": {
-    "ends_at": "2026-09-14",
-    "first_seen": "2026-08-25",
-    "title": "Hyperbloom September - AI/ML",
-    "url": "https://hyperbloom-september.devpost.com"
-  },
   "hyperbloom september beginer freindly|2026-09-14": {
     "ends_at": "2026-09-23",
     "first_seen": "2026-09-14",
@@ -1066,17 +1048,17 @@
     "title": "InterWell Hack2.0",
     "url": "https://interwell-hack2-0.devpost.com"
   },
-  "judging 10 stars|2026-09-11": {
-    "ends_at": "2026-09-14",
-    "first_seen": "2026-09-11",
-    "title": "judging 10 stars",
-    "url": "https://ai-innovation-challenge-2026.devpost.com"
-  },
   "jāgriti hacks|2026-09-25": {
     "ends_at": "2026-09-29",
     "first_seen": "2026-09-26",
     "title": "Jāgriti Hacks",
     "url": "https://jagriti-hacks1.devpost.com"
+  },
+  "kearney perlab x velocity ai|2026-11-13": {
+    "ends_at": "2026-11-15",
+    "first_seen": "2026-11-14",
+    "title": "Kearney PERLab x Velocity AI Hackathon",
+    "url": "https://kearney-x-velocity-ai.devpost.com"
   },
   "keeperhub the agent economy|2026-09-06": {
     "ends_at": null,
