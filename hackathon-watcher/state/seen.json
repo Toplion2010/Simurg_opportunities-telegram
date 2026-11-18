@@ -317,6 +317,12 @@
     "title": "Build With AI: Basics",
     "url": "https://learn-ai-basics.devpost.com"
   },
+  "build with ai pico space program|2026-11-18": {
+    "ends_at": "2027-02-01",
+    "first_seen": "2026-11-18",
+    "title": "Build with AI - Pico Space Program",
+    "url": "https://pico-space-program.devpost.com"
+  },
   "build with ai vibe with x google cloud|None": {
     "ends_at": null,
     "first_seen": "2026-08-23",
@@ -1317,6 +1323,12 @@
     "first_seen": "2026-10-12",
     "title": "NTU x ST Engineering Hackathon",
     "url": "https://ntu-x-st-engineering-hackathon.devpost.com"
+  },
+  "obscura satellite ai research challenge|2026-11-18": {
+    "ends_at": "2026-11-24",
+    "first_seen": "2026-11-18",
+    "title": "OBSCURA: Satellite AI Research Challenge",
+    "url": "https://obscura.devpost.com"
   },
   "oneaquahealth ieee global|2026-09-14": {
     "ends_at": "2026-10-01",
