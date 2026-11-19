@@ -563,12 +563,6 @@
     "title": "DevFest Hackathon 2026",
     "url": "https://ucsc-devfest2026.devpost.com"
   },
-  "dfa design sprint fall|2026-09-08": {
-    "ends_at": "2026-09-19",
-    "first_seen": "2026-09-08",
-    "title": "DFA Design Sprint (Fall 2026)",
-    "url": "https://dfa-kickoff.devpost.com"
-  },
   "diamond challenge 27|2026-09-16": {
     "ends_at": "2027-01-14",
     "first_seen": "2026-10-12",
@@ -610,12 +604,6 @@
     "title": "DSH Hacks V2 ",
     "url": "https://dsh-hacks-v2.devpost.com"
   },
-  "estimate neural network activations from weights|2026-06-02": {
-    "ends_at": "2026-09-19",
-    "first_seen": "2026-08-24",
-    "title": "Estimate Neural Network Activations from Weights",
-    "url": "https://www.aicrowd.com/challenges/white-box-estimation-challenge-2026"
-  },
   "ethnohack|2026-11-02": {
     "ends_at": "2026-11-08",
     "first_seen": "2026-11-02",
@@ -651,12 +639,6 @@
     "first_seen": "2026-08-23",
     "title": "Evorozen Apex: NextGen AI Buildathon",
     "url": "https://evorozen-apex.devpost.com"
-  },
-  "expand your agents horizons build with k2 horizon|2026-09-18": {
-    "ends_at": "2026-09-19",
-    "first_seen": "2026-09-18",
-    "title": "Expand your Agents' Horizons - Build with K2 Horizon",
-    "url": "https://mdshacks.devpost.com"
   },
   "fall projects|2026-11-15": {
     "ends_at": "2026-11-16",
@@ -717,12 +699,6 @@
     "first_seen": "2026-10-03",
     "title": "Future innovators hackothon ",
     "url": "https://future-innovators-hackothon.devpost.com"
-  },
-  "future legends|2026-09-19": {
-    "ends_at": "2026-09-19",
-    "first_seen": "2026-09-19",
-    "title": "Future Legends",
-    "url": "https://future-legends.devpost.com"
   },
   "galuxium nexus v2|2026-07-15": {
     "ends_at": "2026-10-31",
@@ -1624,6 +1600,12 @@
     "title": "SLAY HACKS",
     "url": "https://slayy-hacks.devpost.com"
   },
+  "smbp finhack|2026-11-18": {
+    "ends_at": "2026-11-20",
+    "first_seen": "2026-11-19",
+    "title": "SMBP FinHack",
+    "url": "https://smbp-finhack.devpost.com"
+  },
   "society of software engineers 2nd annual halloween|2026-10-15": {
     "ends_at": "2026-10-24",
     "first_seen": "2026-10-16",
@@ -1642,12 +1624,6 @@
     "title": "SPEED Fall Classic",
     "url": "https://prometheus-fall-classic.devpost.com"
   },
-  "speed virgo challenge|2026-08-31": {
-    "ends_at": "2026-09-19",
-    "first_seen": "2026-08-31",
-    "title": "SPEED Virgo Challenge",
-    "url": "https://virgo.devpost.com"
-  },
   "spu hacks|2026-10-15": {
     "ends_at": "2026-10-18",
     "first_seen": "2026-10-16",
@@ -1665,12 +1641,6 @@
     "first_seen": "2026-10-31",
     "title": "STEMergent Hacks 2026",
     "url": "https://stemergent-hacks.devpost.com"
-  },
-  "steminate wildcard|2026-09-12": {
-    "ends_at": "2026-09-19",
-    "first_seen": "2026-09-12",
-    "title": "STEMinate Wildcard Hack",
-    "url": "https://steminate-texas-wildcard-hack.devpost.com"
   },
   "stranger builds halloween ai online|2026-10-31": {
     "ends_at": "2026-11-08",
