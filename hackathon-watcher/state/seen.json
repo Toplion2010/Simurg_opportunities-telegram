@@ -652,6 +652,12 @@
     "title": "Fall 2026 Projects",
     "url": "https://fall-2026-projects.devpost.com"
   },
+  "fca hacks|2026-11-19": {
+    "ends_at": "2026-11-19",
+    "first_seen": "2026-11-19",
+    "title": "FCA Hacks",
+    "url": "https://lis-hack-day.devpost.com"
+  },
   "fik fair|2026-09-29": {
     "ends_at": "2026-10-04",
     "first_seen": "2026-09-29",
@@ -1438,6 +1444,12 @@
     "title": "Predict Cross-sectional Equity Returns",
     "url": "https://hub.crunchdao.com/competitions/datacrunch-2"
   },
+  "predict memecoin pumps from on chain launch data|2026-09-27": {
+    "ends_at": "2026-11-30",
+    "first_seen": "2026-11-19",
+    "title": "Predict Memecoin Pumps from On-Chain Launch Data",
+    "url": "https://www.kaggle.com/competitions/memecoins-pump-or-dump"
+  },
   "predict price movements from limit order book data|2026-09-11": {
     "ends_at": "2026-11-15",
     "first_seen": "2026-09-14",
@@ -1563,6 +1575,12 @@
     "first_seen": "2026-08-23",
     "title": "SahAI for Shiksha Hackathon",
     "url": "https://wadhwaniai.reskilll.com"
+  },
+  "santa write short programs to solve arithmetic puzzles|2026-11-18": {
+    "ends_at": "2027-01-28",
+    "first_seen": "2026-11-19",
+    "title": "Santa 2026: Write Short Programs To Solve Arithmetic Puzzles",
+    "url": "https://www.kaggle.com/competitions/santa-2026"
   },
   "sasehack|2026-09-18": {
     "ends_at": "2026-09-21",
