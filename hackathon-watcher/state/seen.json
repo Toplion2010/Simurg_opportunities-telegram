@@ -233,6 +233,12 @@
     "title": "Banana Hacks",
     "url": "https://www.bananahacks.tech"
   },
+  "bath game jam|2026-11-23": {
+    "ends_at": "2026-11-30",
+    "first_seen": "2026-11-23",
+    "title": "Bath Game Jam 2026",
+    "url": "https://jam26.devpost.com"
+  },
   "bch blaze|2026-10-10": {
     "ends_at": "2026-11-21",
     "first_seen": "2026-10-10",
@@ -557,6 +563,12 @@
     "title": "Detect root misconceptions in K–12 math solutions",
     "url": "https://www.kaggle.com/competitions/misconception-detection-in-k-12-student-math-workings/overview"
   },
+  "dev 2 0|2026-11-23": {
+    "ends_at": "2026-11-25",
+    "first_seen": "2026-11-23",
+    "title": "Dev 2.0 ",
+    "url": "https://dev-2-0.devpost.com"
+  },
   "devfest|2026-11-14": {
     "ends_at": "2026-11-15",
     "first_seen": "2026-11-14",
@@ -735,6 +747,12 @@
     "first_seen": "2026-08-31",
     "title": "Gator Quant Hacks",
     "url": "https://www.gqhacks.com"
+  },
+  "gdg x cs project sprint|2026-11-23": {
+    "ends_at": "2026-11-24",
+    "first_seen": "2026-11-23",
+    "title": "GDG x CS Project Sprint",
+    "url": "https://gdg-project-sprint.devpost.com"
   },
   "generate synthetic humanitarian survey responses|2026-08-01": {
     "ends_at": "2026-11-14",
