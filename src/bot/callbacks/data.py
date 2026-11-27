@@ -29,3 +29,8 @@ class AudienceChoice(CallbackData, prefix="ac"):
 class SearchPage(CallbackData, prefix="sp"):
     query: str
     page: int
+
+
+class ManualPostAction(CallbackData, prefix="mp"):
+    raw_id: int
+    action: str  # publish | discard

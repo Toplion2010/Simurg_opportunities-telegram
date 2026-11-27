@@ -165,7 +165,7 @@ class Settings(BaseSettings):
     # nearing their deadline (src/publisher/reminders.py). The cap bounds the
     # extra Gemini image spend per day.
     REMINDER_MIN_SCORE: int = 70
-    REMINDER_DAYS_BEFORE: int = 14
+    REMINDER_DAYS_BEFORE: int = 5
     DAILY_REMINDER_CAP: int = 2
     # Ceiling on actual channel posts per day, enforced in
     # publisher/scheduler.py regardless of whether a row was auto-approved

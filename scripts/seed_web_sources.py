@@ -39,6 +39,7 @@ LABELS: dict[str, str] = {
     "extracurricularhub": "ExtracurricularHub (extracurricularhub.com)",
     "sirel": "SIREL (sirel.org)",
     "zhaslink": "ZhasLink (zhaslink.invisionu.education)",
+    "jasa": "Jasa Project (jasa.dev)",
 }
 
 

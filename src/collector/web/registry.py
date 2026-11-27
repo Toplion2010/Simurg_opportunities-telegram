@@ -41,6 +41,12 @@ WEB_SOURCES: dict[str, dict] = {
         "module": "src.collector.web.sources.zhaslink",
         "enabled": True,
     },
+    # robots.txt allows /opportunities; reads the same public edge function
+    # the site's own listing page calls. See the module docstring.
+    "jasa": {
+        "module": "src.collector.web.sources.jasa",
+        "enabled": True,
+    },
 }
 
 

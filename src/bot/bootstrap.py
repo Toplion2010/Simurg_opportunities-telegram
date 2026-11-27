@@ -4,7 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.middlewares.auth import AdminAuthMiddleware
 from src.bot.middlewares.db_session import DbSessionMiddleware
-from src.bot.routers import edit, hooks, queue, schedule, search, setup, start, stats
+from src.bot.routers import (
+    edit,
+    hooks,
+    manual_post,
+    queue,
+    schedule,
+    search,
+    setup,
+    start,
+    stats,
+)
 from src.core.config import Settings
 
 
@@ -30,5 +40,7 @@ def build_dispatcher(
     dp.include_router(hooks.router)
     dp.include_router(search.router)
     dp.include_router(stats.router)
+    # Last: catches every stateless private message the routers above didn't.
+    dp.include_router(manual_post.router)
 
     return dp
